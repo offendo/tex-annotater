@@ -86,7 +86,10 @@ export const displaySplits = (content: string, annotations: TextSpan[]) => {
 }
 
 
-export const selectionIsEmpty = (selection: Selection): boolean => {
+export const selectionIsEmpty = (selection: Selection | null): boolean => {
+  if (selection == null) {
+    return true;
+  }
   if (selection.anchorNode === null) {
     return true;
   }

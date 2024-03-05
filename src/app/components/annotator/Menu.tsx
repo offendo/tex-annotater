@@ -1,5 +1,7 @@
 import React, { useState, useRef } from "react";
 import { List, ListItemButton } from "@mui/material"
+import Menu from "@mui/material/Menu"
+import MenuItem from "@mui/material/MenuItem"
 
 export interface MenuProps {
   left: number;
@@ -11,7 +13,7 @@ export interface MenuProps {
   onMouseLeave: (e: any) => any
 }
 
-export const Menu = (props: MenuProps) => {
+export const LabelMenu = (props: MenuProps) => {
   const [name, setName] = useState("")
   const [selected, setSelected] = useState("")
   const [start, end] = props.range;

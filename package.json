@@ -2,6 +2,7 @@
   "name": "tex-annotater",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://localhost:5000",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +13,9 @@
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.15.11",
+    "@mui/joy": "^5.0.0-beta.30",
     "@mui/material": "^5.15.11",
+    "@mui/x-data-grid": "^6.19.6",
     "fuzzysort": "^2.0.4",
     "lodash": "^4.17.21",
     "lodash.sortby": "^4.7.0",

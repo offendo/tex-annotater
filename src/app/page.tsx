@@ -7,16 +7,15 @@ import { defaultColorMap } from "./lib/colors";
 import "./style.css";
 
 type AnnotationToolProps = {
-  fileid: string;
   labels: string[];
   colors: ColorMap;
-  content: string;
-  annotations: TextSpan[];
-  otherAnnotations: TextSpan[];
 }
 
 type AnnotationToolState = {
+  fileid: string;
+  content: string;
   annotations: TextSpan[];
+  otherAnnotations: TextSpan[];
 }
 
 export class AnnotationTool extends React.Component<AnnotationToolProps, AnnotationToolState> {
@@ -24,7 +23,15 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
     super(props);
     this.state = {
       annotations: [],
+      content: "",
+      fileid: "",
+      otherAnnotations: [],
     };
+
+  }
+
+  componentDidMount() {
+    this.loadAnnotations("", "", "");
   }
 
   saveAnnotations = (annotations: TextSpan[]) => {
@@ -32,16 +39,19 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
   }
 
   loadAnnotations = (fileid: string, userid: string, savename: string) => {
-
+    fetch('/saves')
+      .then((res) => res.json())
+      .then(res => { this.setState({ content: res['content'] }); })
+      .catch(error => console.log(error));
   }
 
   render() {
-    const fileid = this.props.fileid;
-    // const annotations = this.props.annotations;
-    const otherAnnotations = this.props.otherAnnotations;
+    const fileid = this.state.fileid;
+    const annotations = this.state.annotations;
+    const otherAnnotations = this.state.otherAnnotations;
     const colors = this.props.colors;
     const labels = this.props.labels;
-    const content = this.props.content;
+    const content = this.state.content;
 
     return (
       <div>
@@ -55,7 +65,7 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
           colors={colors}
           labels={labels}
           content={content}
-          annotations={this.state.annotations}
+          annotations={annotations}
           otherAnnotations={otherAnnotations}
           onAddAnnotation={this.saveAnnotations}
           getSpan={(span: TextSpan) => ({ ...span })}
@@ -70,12 +80,8 @@ export default function Home() {
   return (
     <div>
       <AnnotationTool
-        fileid={"test.tex"}
         labels={Object.keys(defaultColorMap)}
         colors={defaultColorMap}
-        content={"This is a test"}
-        annotations={[]}
-        otherAnnotations={[]}
       />
     </div>
   );

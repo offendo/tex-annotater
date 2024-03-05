@@ -26,31 +26,10 @@ export function LinkMenu(props: LinkMenuProps) {
     const [filterTag, setFilterTag] = useState("");
     const [filterFileId, setFilterFileId] = useState("");
 
-    /* Toggle selected item */
-    const toggleSelected = (index: number) => {
-        if (selected == index) {
-            setSelected(-1);
-        } else {
-            setSelected(index);
-        }
-    }
-    const toggleFileId = (fid: string) => {
-        // Deselect current fileid
-        if (fid == filterFileId) {
-            setFilterFileId("");
-        } else { // Set new tag
-            setFilterFileId(fid);
-        }
-    }
-
-    const toggleTag = (tag: string) => {
-        // Deselect current tag
-        if (tag == filterTag) {
-            setFilterTag("");
-        } else { // Set new tag
-            setFilterTag(tag);
-        }
-    }
+    /* Toggle states */
+    const toggleSelected = (index: number) => selected == index ? setSelected(-1) : setSelected(index);
+    const toggleFileId = (fid: string) => fid == filterFileId ? setFilterFileId("") : setFilterFileId(fid);
+    const toggleTag = (tag: string) => tag == filterTag ? setFilterTag("") : setFilterTag(tag);
 
     /* Partition in array given a predicate isValid */
     function partition<T>(array: T[], isValid: (x: T) => boolean) {

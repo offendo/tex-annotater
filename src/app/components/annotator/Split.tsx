@@ -1,16 +1,44 @@
-import React from "react";
-import ColorMap from "./colors";
-import { TextSpan } from "./span";
+import React, { useState } from "react";
+import { MenuButton } from '@mui/base/MenuButton';
+import { Dropdown } from '@mui/base/Dropdown';
+import { MarkMenu } from './MarkMenu';
+import ColorMap from "@/app/lib/colors";
+import { TextSpan } from "@/app/lib/span";
+import { selectionIsEmpty } from "@/app/lib/utils";
 
 export interface SplitProps {
   content: string
   tags?: any[]
+  annotations?: TextSpan[]
   hasLink?: boolean
   colors?: ColorMap
   start: number
   end: number
-  onClick?: (arg: any, anno: TextSpan) => any
+  onClick?: (arg: any, anno: TextSpan, location: any) => any
   onContextMenu?: (e: any, location: any) => (any)
+  onAddLinkPress: (e: any, annotation: TextSpan, index: number) => any;
+  onDeletePress: (e: any, annotation: TextSpan, index: number) => any;
+  onEditPress: (e: any, annotation: TextSpan, index: number) => any;
+  onMouseLeave: (e: any) => any
+}
+
+export interface MarkProps extends SplitProps {
+  key: string
+  tags: any[]
+  mark?: boolean
+  hasLink?: boolean
+  colors: ColorMap
+  annotations: TextSpan[]
+  onClick: (e: any, anno: TextSpan, location: any) => (any)
+  onContextMenu: (e: any, location: any) => (any)
+  onAddLinkPress: (e: any, annotation: TextSpan, index: number) => any;
+  onDeletePress: (e: any, annotation: TextSpan, index: number) => any;
+  onEditPress: (e: any, annotation: TextSpan, index: number) => any;
+  onMouseLeave: (e: any) => any
+}
+
+export function isMarkProps(props: SplitProps): props is MarkProps {
+  return "tags" in props && props.tags.length > 0;
 }
 
 export function Split(props: SplitProps): React.JSX.Element {
@@ -29,21 +57,8 @@ export function Split(props: SplitProps): React.JSX.Element {
 
 };
 
-export interface MarkProps extends SplitProps {
-  key: string
-  tags: any[]
-  mark?: boolean
-  hasLink?: boolean
-  colors: ColorMap
-  onClick: (e: any, anno: TextSpan) => (any)
-  onContextMenu: (e: any, location: any) => (any)
-}
-
-export function isMarkProps(props: SplitProps): props is MarkProps {
-  return "tags" in props && props.tags.length > 0;
-}
-
 export function Mark(props: MarkProps): React.JSX.Element {
+  const [menuOpen, setMenuOpen] = useState(false);
 
   let final: any = props.content;
 
@@ -61,28 +76,75 @@ export function Mark(props: MarkProps): React.JSX.Element {
     }
   }
 
+  const handleOpenChange = (e, split) => {
+    if (menuOpen) {
+      setMenuOpen(true);
+      return;
+    } else {
+      props.onClick(e, split.anno, { start: props.start, end: props.end })
+      setMenuOpen(false);
+    }
+  }
+
+
   // Nest the tag as many times as necessary
   props.tags.forEach((split, idx) => {
-    final = (
-      <span
-        className="annotation"
-        style={{
-          borderColor: props.colors[split.tag],
-          paddingBottom: split.height * 4,
-          backgroundColor: getSplitColor(split),
-          backgroundClip: "content-box"
-        }}
-        data-start={props.start}
-        data-end={props.end}
-        data-uid={split.tag}
-        key={`${props.start}-${props.end}-${split.tag}-${split.height}`}
-        // only proc onClick if it's the inner-most span
-        onClick={(e) => (idx == props.tags.length - 1) ? props.onClick(e, split.anno) : null}
-        onContextMenu={(e) => props.onContextMenu(e, { start: props.start, end: props.end })}
-      >
-        {final}
-      </span>
-    );
+    if (idx == props.tags.length - 1) {
+      final = (
+        <span
+          data-start={props.start}
+          data-end={props.end}
+          data-uid={split.tag}
+          className="annotation"
+          style={{
+            borderColor: props.colors[split.tag],
+            paddingBottom: split.height * 4,
+            backgroundColor: getSplitColor(split),
+            backgroundClip: "content-box",
+          }}
+        >
+          <Dropdown onOpenChange={(e) => handleOpenChange(e, split)} >
+            <MenuButton
+              slots={{ root: "span" }} // necessary to ensure formatting stays correct after highlighting
+              key={`${props.start}-${props.end}-${split.tag}-${split.height}`}
+              data-start={props.start}
+              data-end={props.end}
+              data-uid={split.tag}
+              disabled={!selectionIsEmpty(window.getSelection())}
+            >
+              {final}
+            </MenuButton>
+            <MarkMenu
+              colors={props.colors}
+              annotations={props.annotations}
+              onAddLinkPress={props.onAddLinkPress}
+              onDeletePress={props.onDeletePress}
+              onEditPress={props.onEditPress}
+              onMouseLeave={props.onMouseLeave}
+            />
+          </Dropdown>
+        </span>
+      )
+    }
+    else {
+      final = (
+        <span
+          className="annotation"
+          style={{
+            borderColor: props.colors[split.tag],
+            paddingBottom: split.height * 4,
+            backgroundColor: getSplitColor(split),
+            backgroundClip: "content-box"
+          }}
+          data-start={props.start}
+          data-end={props.end}
+          data-uid={split.tag}
+          key={`${props.start}-${props.end}-${split.tag}-${split.height}`}
+        >
+          {final}
+        </span>
+      );
+    }
   });
 
   return final;
