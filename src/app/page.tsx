@@ -31,7 +31,7 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
   }
 
   componentDidMount() {
-    this.loadAnnotations("", "", "");
+    this.loadAnnotations("test.tex", "nilay", "savename");
   }
 
   saveAnnotations = (annotations: TextSpan[]) => {
@@ -39,9 +39,18 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
   }
 
   loadAnnotations = (fileid: string, userid: string, savename: string) => {
-    fetch('/saves')
+    fetch(`/saves?fileid=${fileid}&userid=${userid}&savename=${savename}`)
       .then((res) => res.json())
-      .then(res => { this.setState({ content: res['content'] }); })
+      .then(res => {
+        this.setState(
+          {
+            content: res['content'],
+            fileid: res['fileid'],
+            annotations: res['annotations'],
+            otherAnnotations: res['otherAnnotations']
+          });
+        console.log(this.state)
+      })
       .catch(error => console.log(error));
   }
 

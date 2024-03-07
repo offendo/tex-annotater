@@ -9,7 +9,9 @@ import { selectionIsEmpty } from "@/app/lib/utils";
 export interface SplitProps {
   content: string
   tags?: any[]
-  annotations?: TextSpan[]
+  allAnnotations?: TextSpan[]
+  otherAnnotations?: TextSpan[]
+  clickedAnnotations?: TextSpan[]
   hasLink?: boolean
   colors?: ColorMap
   start: number
@@ -28,7 +30,9 @@ export interface MarkProps extends SplitProps {
   mark?: boolean
   hasLink?: boolean
   colors: ColorMap
-  annotations: TextSpan[]
+  allAnnotations: TextSpan[]
+  otherAnnotations: TextSpan[]
+  clickedAnnotations: TextSpan[]
   onClick: (e: any, anno: TextSpan, location: any) => (any)
   onContextMenu: (e: any, location: any) => (any)
   onAddLinkPress: (e: any, annotation: TextSpan, index: number) => any;
@@ -116,7 +120,9 @@ export function Mark(props: MarkProps): React.JSX.Element {
             </MenuButton>
             <MarkMenu
               colors={props.colors}
-              annotations={props.annotations}
+              annotations={props.clickedAnnotations}
+              allAnnotations={props.allAnnotations}
+              otherAnnotations={props.otherAnnotations}
               onAddLinkPress={props.onAddLinkPress}
               onDeletePress={props.onDeletePress}
               onEditPress={props.onEditPress}

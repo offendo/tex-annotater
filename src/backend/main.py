@@ -22,8 +22,7 @@ def download_s3(bucket, filename):
 
 def load_tex(fname):
     with open(fname, "r") as f:
-        content = f.read()
-    return {"content": content}
+        return f.read()
 
 
 @app.get("/saves/")
@@ -33,6 +32,12 @@ def load_saves():
     fileid = request.args.get("fileid")
     savename = request.args.get("savename")
 
-    return load_tex(
+    content = load_tex(
         "/users/offendo/src/autoformalization/annotation/texs/0705.1690-alpha-Brjuno_arxiv.tex"
     )
+    return {
+        "fileid": fileid,
+        "content": content,
+        "annotations": [],
+        "otherAnnotations": [],
+    }

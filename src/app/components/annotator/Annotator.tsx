@@ -2,14 +2,13 @@ import React, { useEffect, useState } from "react";
 
 import { LabelMenu } from "./Menu";
 import { Split } from "./Split";
-import { Link, TextSpan } from "../../lib/span";
+import { Link, TextSpan } from "@/app/lib/span";
 import {
   selectionIsEmpty,
   selectionIsBackwards,
   displaySplits,
-} from "../../lib/utils";
-import { ColorMap, colors } from "../../lib/colors"
-import LinkMenu from "./LinkMenu";
+} from "@/app/lib/utils";
+import { ColorMap, colors } from "@/app/lib/colors"
 import sortBy from "lodash.sortby";
 
 type AnnotatorProps = {
@@ -137,10 +136,10 @@ const Annotator = (props: AnnotatorProps) => {
     setHoveredAnnotations(annotations);
 
     // Hide the link menu
-    setLinkMenuClicked(false);
+    // setLinkMenuClicked(false);
 
     // Reveal the menu
-    setMarkMenuClicked(true);
+    // setMarkMenuClicked(true);
 
     // Move the menu to the right location
     setCursorPos({ x: e.pageX, y: e.pageY });
@@ -149,7 +148,7 @@ const Annotator = (props: AnnotatorProps) => {
   const handleSplitPress = (e: any, anno: TextSpan, loc: { start: number, end: number }) => {
     if (linkMenuClicked && anno != clickedAnnotation) {
       toggleLink(clickedAnnotation, anno as Link);
-      setLinkMenuClicked(false);
+      // setLinkMenuClicked(false);
     } else {
       const selection = window.getSelection();
       if (selection == null || !selectionIsEmpty(selection)) {
@@ -263,8 +262,8 @@ const Annotator = (props: AnnotatorProps) => {
     switch (e.key) {
       case "Escape":
         setSelectionClicked(false);
-        setMarkMenuClicked(false);
-        setLinkMenuClicked(false);
+        // setMarkMenuClicked(false);
+        // setLinkMenuClicked(false);
         const selection = window.getSelection();
         if (selection != null) { selection.empty(); }
         break;
@@ -305,11 +304,13 @@ const Annotator = (props: AnnotatorProps) => {
               colors={props.colors}
               {...split}
               onClick={handleSplitPress}
-              annotations={hoveredAnnotations}
+              clickedAnnotations={hoveredAnnotations}
+              allAnnotations={props.annotations}
+              otherAnnotations={props.annotations}
               onAddLinkPress={handleAddLinkPress}
-              onDeletePress={(e, anno, index) => { removeMark(anno); setMarkMenuClicked(false); }}
+              onDeletePress={(e, anno, index) => { removeMark(anno); /*setMarkMenuClicked(false)*/; }}
               onEditPress={(e, anno, index) => {}}
-              onMouseLeave={(e) => { setMarkMenuClicked(false); }}
+              onMouseLeave={(e) => { /*setMarkMenuClicked(false)*/; }}
             />
           )
           )}
@@ -326,20 +327,20 @@ const Annotator = (props: AnnotatorProps) => {
           onMouseLeave={(e) => { setSelectionClicked(false); }}
         />
       )}
-      {linkMenuClicked && (
-        <LinkMenu
-          top={cursorPos.y - 10}
-          left={cursorPos.x - 10}
-          colors={props.colors}
-          selectedAnnotation={clickedAnnotation}
-          annotations={props.annotations}
-          otherAnnotations={props.otherAnnotations}
-          onLinkSelectPress={(e, anno, link) => { toggleLink(anno, link); setLinkMenuClicked(false); }}
-          onMouseLeave={(e) => {}}
-          onClosePress={(e) => { setLinkMenuClicked(false); }}
-          onDeletePress={(e, anno) => { removeMark(anno); setLinkMenuClicked(false); }}
-        />
-      )}
+      {/*linkMenuClicked && (
+      <LinkMenu
+        top={cursorPos.y - 10}
+        left={cursorPos.x - 10}
+        colors={props.colors}
+        selectedAnnotation={clickedAnnotation}
+        annotations={props.annotations}
+        otherAnnotations={props.otherAnnotations}
+        onLinkSelectPress={(e, anno, link) => { toggleLink(anno, link); setLinkMenuClicked(false); }}
+        onMouseLeave={(e) => {}}
+        onClosePress={(e) => { setLinkMenuClicked(false); }}
+        onDeletePress={(e, anno) => { removeMark(anno); setLinkMenuClicked(false); }}
+      )
+       */}
     </div>
   );
 };

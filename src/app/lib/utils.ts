@@ -1,14 +1,23 @@
 import { useEffect, useState } from "react";
 import sortBy from "lodash.sortby";
-import { SplitProps, MarkProps } from "./Split";
+import { SplitProps, MarkProps } from "@/app/components/annotator/Split";
 import { TextSpan } from "./span"
+
+type SplitTagProps = {
+  tag: string,
+  height: number,
+  start: number,
+  end: number,
+  fileid: string,
+  anno: TextSpan,
+};
 
 
 export const displaySplits = (content: string, annotations: TextSpan[]) => {
   let offsetStart = 0;
   let offsetEnd = 0;
   const splits: SplitProps[] = [];
-  let currentTags: any[] = [];
+  let currentTags: SplitTagProps[] = [];
   let hasLink: boolean = false;
   let hasBackLink: boolean = false;
   const allLinks = annotations.flatMap(anno => anno.links)

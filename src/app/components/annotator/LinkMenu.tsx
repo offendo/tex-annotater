@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, TextSpan } from "../../lib/span";
 import fuzzysort from "fuzzysort"
-import { Checkbox, FormControlLabel, Button, TextField, Switch } from "@mui/material";
+import { FormControlLabel, Button, TextField, Switch } from "@mui/material";
 import { IconButton } from "@mui/material";
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
@@ -13,21 +13,20 @@ export interface LinkMenuProps {
     selectedAnnotation: TextSpan;
     annotations: TextSpan[];
     otherAnnotations: TextSpan[];
-    onLinkSelectPress: (e: any, annotation: TextSpan, link: Link) => any;
-    onMouseLeave: (e: any) => any
+    onAddLinkPress: (e: any, annotation: TextSpan, link: Link) => any;
     onClosePress: (e: any) => any
     onDeletePress: (e: any, anno: any) => any
 }
 
 export function LinkMenu(props: LinkMenuProps) {
-    const [selected, setSelected] = useState<number>(-1);
+    const [expandedIndex, setExpandedIndex] = useState<number>(-1);
     const [showAllAnnotations, setShowAnnotations] = useState<boolean>(false);
     const [query, setQuery] = useState("");
     const [filterTag, setFilterTag] = useState("");
     const [filterFileId, setFilterFileId] = useState("");
 
     /* Toggle states */
-    const toggleSelected = (index: number) => selected == index ? setSelected(-1) : setSelected(index);
+    const toggleExpandedIndex = (index: number) => expandedIndex == index ? setExpandedIndex(-1) : setExpandedIndex(index);
     const toggleFileId = (fid: string) => fid == filterFileId ? setFilterFileId("") : setFilterFileId(fid);
     const toggleTag = (tag: string) => tag == filterTag ? setFilterTag("") : setFilterTag(tag);
 
@@ -39,18 +38,17 @@ export function LinkMenu(props: LinkMenuProps) {
     }
 
     /* Full list of all annotations. If we're showing all annotations, include the ones from other files. */
-    let all_annotations = [...props.annotations, ...(showAllAnnotations ? props.otherAnnotations : [])];
-    all_annotations = all_annotations.filter((anno) => anno != props.selectedAnnotation);
+    let allAnnos = [...props.annotations, ...(showAllAnnotations ? props.otherAnnotations : [])];
+    allAnnos = allAnnos.filter((anno) => anno != props.selectedAnnotation);
     if (filterTag != "") {
-        all_annotations = all_annotations.filter((anno) => anno.tag == filterTag);
+        allAnnos = allAnnos.filter((anno) => anno.tag == filterTag);
     }
     if (filterFileId != "") {
-        all_annotations = all_annotations.filter((anno) => anno.fileid == filterFileId);
+        allAnnos = allAnnos.filter((anno) => anno.fileid == filterFileId);
     }
 
-
     /* Split by "linked" and "non-linked" */
-    const [linked_annotations, non_linked_annotations] = partition(all_annotations, (candidate) => {
+    const [linkedAnnos, nonLinkedAnnos] = partition(allAnnos, (candidate) => {
         const anno = props.selectedAnnotation;
         const lookup = { start: candidate.start, end: candidate.end, tag: candidate.tag, fileid: candidate.fileid };
 
@@ -64,7 +62,7 @@ export function LinkMenu(props: LinkMenuProps) {
     }
 
     const highlightResult = (annotation: TextSpan, query: string, index: number) => {
-        const text = selected == index ? annotation.text : annotation.text.slice(0, 50) + '...';
+        const text = expandedIndex == index ? annotation.text : annotation.text.slice(0, 50) + '...';
         if (query.length == 0) {
             return text;
         }
@@ -76,61 +74,51 @@ export function LinkMenu(props: LinkMenuProps) {
         return fuzzysort.highlight(match, (m, i) => <span style={{ width: "60%", fontWeight: "bold", color: "red" }}>{m}</span>);
     }
 
+    const makeRow = (annotation: any, index: number, selected: boolean = false) => {
+        let icon = selected ? <CloseIcon /> : <CheckIcon />;
+        return (
+            <tr
+                key={`${index}-${annotation.tag}-${annotation.start}-${annotation.end}-${annotation.fileid}`}
+                className={selected ? "link-menu-item link-selected" : "link-menu-item"}
+            >
+                <td> <IconButton size="small" onClick={(e) => props.onAddLinkPress(e, props.selectedAnnotation, annotation as Link)}> {icon} </IconButton></td>
+                <td> <Button size="small" variant="text" onClick={(e) => toggleTag(annotation.tag)} style={{ color: props.colors[annotation.tag] }}> {`${annotation.tag}`} </Button> </td>
+                <td> <Button size="small" variant="text" onClick={(e) => toggleFileId(annotation.fileid)}> {`${annotation.fileid}`} </Button> </td>
+                <td onClick={(e) => toggleExpandedIndex(index)} className="expand-text" style={{ overflowX: "scroll", width: "80%" }}>
+                    <pre style={{ whiteSpace: "pre-wrap" }}>
+                        {selected
+                            ? (index == expandedIndex ? annotation.text : annotation.text.slice(0, 50) + '...')
+                            : highlightResult(annotation, query, index)
+                        }
+                    </pre>
+                </td>
+            </tr>
+        );
+    }
+
     return (
-        <div className="link-menu" style={{ top: props.top, left: props.left }}>
-            <div >
+        <div style={{ width: "100%" }} onClick={(e) => { e.stopPropagation() }}>
+            {/* Header */}
+            <div>
                 <IconButton style={{ float: "right" }} onClick={props.onClosePress}> <CloseIcon /> </IconButton>
                 <FormControlLabel style={{ float: "left" }} control={<Switch checked={showAllAnnotations} onChange={() => { setShowAnnotations(!showAllAnnotations); }} />} label="Show all annotations" />
             </div>
             <TextField fullWidth size="small" id="search-bar" label="Search" variant="outlined" onChange={(q) => setQuery(q.target.value)} />
             <hr />
+
+            {/* Table content */}
             <table style={{ overflowX: "scroll" }}>
                 <thead>
                     <tr>
                         <th> Select </th>
                         <th> Type </th>
                         <th> File ID</th>
-                        <th style={{ width: "100%" }}> Text </th>
+                        <th> Text </th>
                     </tr>
                 </thead>
                 <tbody>
-                    {linked_annotations.map((annotation, index) => {
-                        return (
-                            <tr
-                                key={`${index}-{annotation.tag}-{annotation.text}`}
-                                className="link-menu-item link-selected"
-                                style={{ width: "80%" }}
-                            >
-
-                                <td> <IconButton size="small" onClick={(e) => props.onLinkSelectPress(e, props.selectedAnnotation, annotation as Link)}> <CloseIcon /> </IconButton></td>
-                                <td> <Button size="small" variant="text" onClick={(e) => toggleTag(annotation.tag)} style={{ color: props.colors[annotation.tag] }}> {`${annotation.tag}`} </Button> </td>
-                                <td> <Button size="small" variant="text" onClick={(e) => toggleFileId(annotation.fileid)}> {`${annotation.fileid}`} </Button> </td>
-                                <td onClick={(e) => toggleSelected(index)} className="expand-text" style={{ overflowX: "scroll", width: "80%" }}>
-                                    <pre style={{ whiteSpace: "pre-wrap" }}>
-                                        {index == selected ? annotation.text : annotation.text.slice(0, 50) + '...'}
-                                    </pre>
-                                </td>
-                            </tr>
-                        );
-                    })}
-                    {filterSearch(non_linked_annotations, query).map((annotation, index) => {
-                        return (
-                            <tr
-                                key={`${index}-{annotation.tag}-{annotation.text}`}
-                                className="link-menu-item"
-                            >
-
-                                <td> <IconButton size="small" onClick={(e) => props.onLinkSelectPress(e, props.selectedAnnotation, annotation as Link)}> <CheckIcon /> </IconButton></td>
-                                <td> <Button size="small" variant="text" onClick={(e) => toggleTag(annotation.tag)} style={{ color: props.colors[annotation.tag] }}> {`${annotation.tag}`} </Button> </td>
-                                <td> <Button size="small" variant="text" onClick={(e) => toggleFileId(annotation.fileid)}> {`${annotation.fileid}`} </Button> </td>
-                                <td onClick={(e) => toggleSelected(index)} className="expand-text" style={{ overflowX: "scroll", width: "80%" }}>
-                                    <pre style={{ whiteSpace: "pre-wrap" }}>
-                                        {highlightResult(annotation, query, index)}
-                                    </pre>
-                                </td>
-                            </tr>
-                        );
-                    })}
+                    {linkedAnnos.map((annotation, index) => makeRow(annotation, index, true))}
+                    {filterSearch(nonLinkedAnnos, query).map((annotation, index) => makeRow(annotation, index, false))}
                 </tbody>
             </table>
         </div>
