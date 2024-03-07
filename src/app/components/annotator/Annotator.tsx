@@ -7,6 +7,7 @@ import {
   selectionIsEmpty,
   selectionIsBackwards,
   displaySplits,
+  parseSelection,
 } from "@/app/lib/utils";
 import { ColorMap, colors } from "@/app/lib/colors"
 import sortBy from "lodash.sortby";
@@ -177,7 +178,6 @@ const Annotator = (props: AnnotatorProps) => {
       setCurrentSelection(null);
       return;
     }
-
     const range = selection.getRangeAt(0);
     const bb = range.getBoundingClientRect();
 
@@ -268,27 +268,6 @@ const Annotator = (props: AnnotatorProps) => {
         if (selection != null) { selection.empty(); }
         break;
     }
-  }
-
-  const parseSelection = (selection: Selection | null) => {
-    if (selection == null || selectionIsEmpty(selection)) {
-      return [0, 0];
-    }
-
-    // This if block is just for type checking
-    if (selection.anchorNode == null || selection.anchorNode.parentElement == null
-      || selection.focusNode == null || selection.focusNode.parentElement == null) {
-      return [0, 0];
-    }
-
-    let start = parseInt(selection.anchorNode.parentElement.getAttribute("data-start") || "0", 10) + selection.anchorOffset;
-    let end = parseInt(selection.focusNode.parentElement.getAttribute("data-start") || "0", 10) + selection.focusOffset;
-
-    if (selectionIsBackwards(selection)) {
-      [start, end] = [end, start];
-    }
-
-    return [start, end];
   }
 
   const splits = displaySplits(props.content, props.annotations);

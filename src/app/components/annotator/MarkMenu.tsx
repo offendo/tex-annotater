@@ -10,6 +10,7 @@ import LinkMenu from "./LinkMenu";
 
 
 export interface MarkMenuProps {
+    pos: any;
     colors: any;
     annotations: TextSpan[];
     allAnnotations: TextSpan[];
@@ -22,7 +23,6 @@ export interface MarkMenuProps {
 
 export function MarkMenu(props: MarkMenuProps) {
     const [selected, setSelected] = useState<number>(-1);
-    const [pos, setPos] = useState({ left: 0, top: 0 });
 
     const toggleSelected = (index: number) => {
         if (selected == index) {
@@ -36,9 +36,7 @@ export function MarkMenu(props: MarkMenuProps) {
     const Row = ({ annotation, index }: { annotation: TextSpan, index: number }) => {
         const [open, setOpen] = useState<boolean>(false);
         const handleLinkButtonPress = (e) => {
-            // setPos({ left: e.clientX, top: e.clientY });
             setOpen(!open);
-            console.log(`Set open to ${open}`)
             e.stopPropagation();
         }
 
@@ -82,8 +80,8 @@ export function MarkMenu(props: MarkMenuProps) {
                         <Collapse in={open} timeout="auto" unmountOnExit orientation="vertical" collapsedSize={0}>
                             <CardContent>
                                 <LinkMenu
-                                    left={pos.left}
-                                    top={pos.top}
+                                    left={0}
+                                    top={0}
                                     colors={props.colors}
                                     selectedAnnotation={annotation}
                                     annotations={props.allAnnotations}
@@ -102,30 +100,29 @@ export function MarkMenu(props: MarkMenuProps) {
 
 
     return (
-        <div>
-            <Menu
-                // anchorPosition={pos}
-                // anchorReference="anchorPosition"
-                style={{
-                    backgroundColor: "var(--secondary-background-color)",
-                    display: "grid",
-                    width: "500px",
-                    maxWidth: "700px",
-                    border: "1px solid black",
-                    borderRadius: "5px"
-                }}
-            >
-                {props.annotations.map((annotation, index) => (
-                    <MenuItem
-                        key={`${annotation.start}-${annotation.end}-${annotation.tag}-${index}`}
-                    >
-                        <Row annotation={annotation} index={index} />
+        <Menu
+            style={{
+                backgroundColor: "var(--secondary-background-color)",
+                display: "grid",
+                width: "500px",
+                maxWidth: "700px",
+                border: "1px solid black",
+                borderRadius: "5px",
+                position: "absolute",
+                left: props.pos.left,
+                top: props.pos.top,
+            }}
+        >
+            {props.annotations.map((annotation, index) => (
+                <MenuItem
+                    key={`${annotation.start}-${annotation.end}-${annotation.tag}-${index}`}
+                >
+                    <Row annotation={annotation} index={index} />
 
-                    </MenuItem >
-                ))
-                }
-            </Menu >
-        </div>
+                </MenuItem >
+            ))
+            }
+        </Menu >
     );
 }
 export default MarkMenu;

@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { MenuButton } from '@mui/base/MenuButton';
 import { Dropdown } from '@mui/base/Dropdown';
 import { MarkMenu } from './MarkMenu';
 import ColorMap from "@/app/lib/colors";
 import { TextSpan } from "@/app/lib/span";
 import { selectionIsEmpty } from "@/app/lib/utils";
+import { MARGINS } from "@/app/lib/consts";
 
 export interface SplitProps {
   content: string
@@ -63,8 +64,10 @@ export function Split(props: SplitProps): React.JSX.Element {
 
 export function Mark(props: MarkProps): React.JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pos, setPos] = useState({ left: 0, top: 0 });
 
   let final: any = props.content;
+  const finalRef = useRef();
 
   const getSplitColor = (split: any) => {
     // If it's linked to something, use the link's target color
@@ -94,19 +97,23 @@ export function Mark(props: MarkProps): React.JSX.Element {
   // Nest the tag as many times as necessary
   props.tags.forEach((split, idx) => {
     if (idx == props.tags.length - 1) {
+      // on the last iteration, grab the bounding box
       final = (
         <span
           data-start={props.start}
           data-end={props.end}
           data-uid={split.tag}
           className="annotation"
+          ref={finalRef}
           style={{
             borderColor: props.colors[split.tag],
             paddingBottom: split.height * 4,
             backgroundColor: getSplitColor(split),
             backgroundClip: "content-box",
+            position: "relative",
           }}
         >
+
           <Dropdown onOpenChange={(e) => handleOpenChange(e, split)} >
             <MenuButton
               slots={{ root: "span" }} // necessary to ensure formatting stays correct after highlighting
@@ -115,10 +122,15 @@ export function Mark(props: MarkProps): React.JSX.Element {
               data-end={props.end}
               data-uid={split.tag}
               disabled={!selectionIsEmpty(window.getSelection())}
+              onClick={(e) => {
+                const { width, height } = finalRef.current.getBoundingClientRect();
+                setPos({ left: e.pageX - MARGINS, top: e.pageY - height - MARGINS })
+              }}
             >
               {final}
             </MenuButton>
             <MarkMenu
+              pos={pos}
               colors={props.colors}
               annotations={props.clickedAnnotations}
               allAnnotations={props.allAnnotations}
@@ -135,6 +147,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
     else {
       final = (
         <span
+          ref={finalRef}
           className="annotation"
           style={{
             borderColor: props.colors[split.tag],
