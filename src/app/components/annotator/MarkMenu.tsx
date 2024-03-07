@@ -1,15 +1,19 @@
 import React, { useState } from "react";
 import { TextSpan } from "@/app/lib/span";
 import { Card, CardActions, CardContent, Grid, IconButton, Popover, Tooltip } from "@mui/material";
-import { Menu } from '@mui/base/Menu';
-import { MenuItem } from '@mui/base/MenuItem';
 import DeleteIcon from '@mui/icons-material/Delete';
 import BoltIcon from '@mui/icons-material/Bolt';
 import Collapse from '@mui/material/Collapse';
 import LinkMenu from "./LinkMenu";
+import { selectionIsEmpty, parseSelection } from "@/app/lib/utils";
+
+import Button from '@mui/material/Button';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 
 
 export interface MarkMenuProps {
+    innerContent: any;
     colors: any;
     annotations: TextSpan[];
     allAnnotations: TextSpan[];
@@ -23,6 +27,23 @@ export interface MarkMenuProps {
 export function MarkMenu(props: MarkMenuProps) {
     const [selected, setSelected] = useState<number>(-1);
     const [pos, setPos] = useState({ left: 0, top: 0 });
+    const [menuOpen, setMenuOpen] = useState<boolean>(false);
+    const [hoveredAnnotations, setHoveredAnnotations] = useState<TextSpan[]>([]);
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        // setAnchorEl(e.currentTarget);
+        const selection = window.getSelection();
+        if (selectionIsEmpty(selection)) {
+            setPos({ left: e.clientX, top: e.clientY });
+            const [start, end] = parseSelection(selection)
+            const annotations = props.allAnnotations.filter((s: TextSpan) => { return start >= s.start && end <= s.end });
+            setHoveredAnnotations(annotations);
+            setMenuOpen(!menuOpen);
+        }
+    };
+    const handleClose = () => {
+        setMenuOpen(false);
+    };
 
     const toggleSelected = (index: number) => {
         if (selected == index) {
@@ -34,11 +55,10 @@ export function MarkMenu(props: MarkMenuProps) {
 
 
     const Row = ({ annotation, index }: { annotation: TextSpan, index: number }) => {
-        const [open, setOpen] = useState<boolean>(false);
+        const [linksOpen, setLinksOpen] = useState<boolean>(false);
         const handleLinkButtonPress = (e) => {
-            // setPos({ left: e.clientX, top: e.clientY });
-            setOpen(!open);
-            console.log(`Set open to ${open}`)
+            setPos({ left: e.clientX, top: e.clientY });
+            setLinksOpen(!linksOpen);
             e.stopPropagation();
         }
 
@@ -79,7 +99,7 @@ export function MarkMenu(props: MarkMenuProps) {
                     </Grid>
                     <Grid item xs={12}>
                         {/* Link menu card*/}
-                        <Collapse in={open} timeout="auto" unmountOnExit orientation="vertical" collapsedSize={0}>
+                        <Collapse in={linksOpen} timeout="auto" unmountOnExit orientation="vertical" collapsedSize={0}>
                             <CardContent>
                                 <LinkMenu
                                     left={pos.left}
@@ -102,30 +122,37 @@ export function MarkMenu(props: MarkMenuProps) {
 
 
     return (
-        <div>
+        <span>
+            <span onClick={handleClick} >
+                {props.innerContent}
+            </span>
             <Menu
-                // anchorPosition={pos}
-                // anchorReference="anchorPosition"
+                open={menuOpen}
+                onClose={handleClose}
+                anchorPosition={pos}
+                anchorReference="anchorPosition"
                 style={{
                     backgroundColor: "var(--secondary-background-color)",
-                    display: "grid",
+                    display: "block",
+                    height: "fit-content",
                     width: "500px",
                     maxWidth: "700px",
                     border: "1px solid black",
                     borderRadius: "5px"
                 }}
             >
-                {props.annotations.map((annotation, index) => (
-                    <MenuItem
-                        key={`${annotation.start}-${annotation.end}-${annotation.tag}-${index}`}
-                    >
-                        <Row annotation={annotation} index={index} />
-
-                    </MenuItem >
-                ))
+                {hoveredAnnotations.map((annotation, index) => {
+                    console.log("Testing")
+                    return (
+                        <MenuItem key={`${annotation.start}-${annotation.end}-${annotation.tag}-${index}`} >
+                            {/*<Row annotation={annotation} index={index} />*/}
+                            {(() => { console.log("This is a test"); return " This is a test "; })()}
+                        </MenuItem >
+                    );
                 }
+                )}
             </Menu >
-        </div>
+        </span >
     );
 }
 export default MarkMenu;

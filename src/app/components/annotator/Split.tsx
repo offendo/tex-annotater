@@ -4,14 +4,13 @@ import { Dropdown } from '@mui/base/Dropdown';
 import { MarkMenu } from './MarkMenu';
 import ColorMap from "@/app/lib/colors";
 import { TextSpan } from "@/app/lib/span";
-import { selectionIsEmpty } from "@/app/lib/utils";
+import { selectionIsEmpty, parseSelection } from "@/app/lib/utils";
 
 export interface SplitProps {
   content: string
   tags?: any[]
   allAnnotations?: TextSpan[]
   otherAnnotations?: TextSpan[]
-  clickedAnnotations?: TextSpan[]
   hasLink?: boolean
   colors?: ColorMap
   start: number
@@ -32,7 +31,6 @@ export interface MarkProps extends SplitProps {
   colors: ColorMap
   allAnnotations: TextSpan[]
   otherAnnotations: TextSpan[]
-  clickedAnnotations: TextSpan[]
   onClick: (e: any, anno: TextSpan, location: any) => (any)
   onContextMenu: (e: any, location: any) => (any)
   onAddLinkPress: (e: any, annotation: TextSpan, index: number) => any;
@@ -80,17 +78,6 @@ export function Mark(props: MarkProps): React.JSX.Element {
     }
   }
 
-  const handleOpenChange = (e, split) => {
-    if (menuOpen) {
-      setMenuOpen(true);
-      return;
-    } else {
-      props.onClick(e, split.anno, { start: props.start, end: props.end })
-      setMenuOpen(false);
-    }
-  }
-
-
   // Nest the tag as many times as necessary
   props.tags.forEach((split, idx) => {
     if (idx == props.tags.length - 1) {
@@ -107,28 +94,17 @@ export function Mark(props: MarkProps): React.JSX.Element {
             backgroundClip: "content-box",
           }}
         >
-          <Dropdown onOpenChange={(e) => handleOpenChange(e, split)} >
-            <MenuButton
-              slots={{ root: "span" }} // necessary to ensure formatting stays correct after highlighting
-              key={`${props.start}-${props.end}-${split.tag}-${split.height}`}
-              data-start={props.start}
-              data-end={props.end}
-              data-uid={split.tag}
-              disabled={!selectionIsEmpty(window.getSelection())}
-            >
-              {final}
-            </MenuButton>
-            <MarkMenu
-              colors={props.colors}
-              annotations={props.clickedAnnotations}
-              allAnnotations={props.allAnnotations}
-              otherAnnotations={props.otherAnnotations}
-              onAddLinkPress={props.onAddLinkPress}
-              onDeletePress={props.onDeletePress}
-              onEditPress={props.onEditPress}
-              onMouseLeave={props.onMouseLeave}
-            />
-          </Dropdown>
+          <MarkMenu
+            innerContent={final}
+            colors={props.colors}
+            annotations={parseSelection()}
+            allAnnotations={props.allAnnotations}
+            otherAnnotations={props.otherAnnotations}
+            onAddLinkPress={props.onAddLinkPress}
+            onDeletePress={props.onDeletePress}
+            onEditPress={props.onEditPress}
+            onMouseLeave={props.onMouseLeave}
+          />
         </span>
       )
     }

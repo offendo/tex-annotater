@@ -7,6 +7,7 @@ import {
   selectionIsEmpty,
   selectionIsBackwards,
   displaySplits,
+  parseSelection,
 } from "@/app/lib/utils";
 import { ColorMap, colors } from "@/app/lib/colors"
 import sortBy from "lodash.sortby";
@@ -43,7 +44,6 @@ const Annotator = (props: AnnotatorProps) => {
 
   /* State */
   const [currentSelection, setCurrentSelection] = useState<Selection | null>(null);
-  const [hoveredAnnotations, setHoveredAnnotations] = useState<TextSpan[]>([]);
   const [clickedAnnotation, setClickedAnnotation] = useState<TextSpan>({} as TextSpan);
   const [currentColor, setCurrentColor] = useState<string>("");
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
@@ -123,28 +123,6 @@ const Annotator = (props: AnnotatorProps) => {
     }
   }
 
-  const launchMarkContextMenu = (e: any, { start, end }) => {
-    e.preventDefault();
-
-    // If we have anything selected, ignore the menu press
-    const selection = window.getSelection();
-    if (selection == null || !selectionIsEmpty(selection)) {
-      return;
-    }
-
-    const annotations = props.annotations.filter((s: TextSpan) => { return start >= s.start && end <= s.end });
-    setHoveredAnnotations(annotations);
-
-    // Hide the link menu
-    // setLinkMenuClicked(false);
-
-    // Reveal the menu
-    // setMarkMenuClicked(true);
-
-    // Move the menu to the right location
-    setCursorPos({ x: e.pageX, y: e.pageY });
-  };
-
   const handleSplitPress = (e: any, anno: TextSpan, loc: { start: number, end: number }) => {
     if (linkMenuClicked && anno != clickedAnnotation) {
       toggleLink(clickedAnnotation, anno as Link);
@@ -189,6 +167,8 @@ const Annotator = (props: AnnotatorProps) => {
 
     // Pass the selection to the menu
     setCurrentSelection(selection);
+    console.log('range: ', parseSelection(selection))
+    console.log('selection: ', selection);
 
     // Reveal the menu
     setSelectionClicked(true);
@@ -270,27 +250,6 @@ const Annotator = (props: AnnotatorProps) => {
     }
   }
 
-  const parseSelection = (selection: Selection | null) => {
-    if (selection == null || selectionIsEmpty(selection)) {
-      return [0, 0];
-    }
-
-    // This if block is just for type checking
-    if (selection.anchorNode == null || selection.anchorNode.parentElement == null
-      || selection.focusNode == null || selection.focusNode.parentElement == null) {
-      return [0, 0];
-    }
-
-    let start = parseInt(selection.anchorNode.parentElement.getAttribute("data-start") || "0", 10) + selection.anchorOffset;
-    let end = parseInt(selection.focusNode.parentElement.getAttribute("data-start") || "0", 10) + selection.focusOffset;
-
-    if (selectionIsBackwards(selection)) {
-      [start, end] = [end, start];
-    }
-
-    return [start, end];
-  }
-
   const splits = displaySplits(props.content, props.annotations);
 
   // Return the formatted code
@@ -304,13 +263,12 @@ const Annotator = (props: AnnotatorProps) => {
               colors={props.colors}
               {...split}
               onClick={handleSplitPress}
-              clickedAnnotations={hoveredAnnotations}
               allAnnotations={props.annotations}
-              otherAnnotations={props.annotations}
+              otherAnnotations={props.otherAnnotations}
               onAddLinkPress={handleAddLinkPress}
-              onDeletePress={(e, anno, index) => { removeMark(anno); /*setMarkMenuClicked(false)*/; }}
+              onDeletePress={(e, anno, index) => { removeMark(anno); }}
               onEditPress={(e, anno, index) => {}}
-              onMouseLeave={(e) => { /*setMarkMenuClicked(false)*/; }}
+              onMouseLeave={(e) => {}}
             />
           )
           )}
@@ -327,20 +285,6 @@ const Annotator = (props: AnnotatorProps) => {
           onMouseLeave={(e) => { setSelectionClicked(false); }}
         />
       )}
-      {/*linkMenuClicked && (
-      <LinkMenu
-        top={cursorPos.y - 10}
-        left={cursorPos.x - 10}
-        colors={props.colors}
-        selectedAnnotation={clickedAnnotation}
-        annotations={props.annotations}
-        otherAnnotations={props.otherAnnotations}
-        onLinkSelectPress={(e, anno, link) => { toggleLink(anno, link); setLinkMenuClicked(false); }}
-        onMouseLeave={(e) => {}}
-        onClosePress={(e) => { setLinkMenuClicked(false); }}
-        onDeletePress={(e, anno) => { removeMark(anno); setLinkMenuClicked(false); }}
-      )
-       */}
     </div>
   );
 };
