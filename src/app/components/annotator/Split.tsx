@@ -4,12 +4,12 @@ import { Dropdown } from '@mui/base/Dropdown';
 import { MarkMenu } from './MarkMenu';
 import ColorMap from "@/app/lib/colors";
 import { TextSpan } from "@/app/lib/span";
-import { selectionIsEmpty } from "@/app/lib/utils";
+import { selectionIsEmpty, SplitTagProps } from "@/app/lib/utils";
 import { MARGINS } from "@/app/lib/consts";
 
 export interface SplitProps {
   content: string
-  tags?: any[]
+  tags?: SplitTagProps[]
   allAnnotations?: TextSpan[]
   otherAnnotations?: TextSpan[]
   clickedAnnotations?: TextSpan[]
@@ -27,7 +27,7 @@ export interface SplitProps {
 
 export interface MarkProps extends SplitProps {
   key: string
-  tags: any[]
+  tags: SplitTagProps[]
   mark?: boolean
   hasLink?: boolean
   colors: ColorMap
@@ -66,9 +66,6 @@ export function Mark(props: MarkProps): React.JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false);
   const [pos, setPos] = useState({ left: 0, top: 0 });
 
-  let final: any = props.content;
-  const finalRef = useRef();
-
   const getSplitColor = (split: any) => {
     // If it's linked to something, use the link's target color
     if (split.anno.links.length > 0) {
@@ -95,6 +92,9 @@ export function Mark(props: MarkProps): React.JSX.Element {
 
 
   // Nest the tag as many times as necessary
+  let final: any = props.content;
+  const finalRef = useRef<any>(null);
+
   props.tags.forEach((split, idx) => {
     if (idx == props.tags.length - 1) {
       // on the last iteration, grab the bounding box
@@ -110,7 +110,6 @@ export function Mark(props: MarkProps): React.JSX.Element {
             paddingBottom: split.height * 4,
             backgroundColor: getSplitColor(split),
             backgroundClip: "content-box",
-            position: "relative",
           }}
         >
 
@@ -122,9 +121,11 @@ export function Mark(props: MarkProps): React.JSX.Element {
               data-end={props.end}
               data-uid={split.tag}
               disabled={!selectionIsEmpty(window.getSelection())}
-              onClick={(e) => {
+              onClick={(e: any) => {
                 const { width, height } = finalRef.current.getBoundingClientRect();
-                setPos({ left: e.pageX - MARGINS, top: e.pageY - height - MARGINS })
+                console.log('pos: ', [e.pageX, e.pageY]);
+                console.log('scaled pos: ', [e.pageX - MARGINS, e.pageY  - MARGINS]);
+                setPos({ left: e.pageX  - MARGINS, top: e.pageY - MARGINS })
               }}
             >
               {final}

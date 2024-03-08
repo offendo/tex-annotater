@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
 import sortBy from "lodash.sortby";
-import { SplitProps, MarkProps } from "@/app/components/annotator/Split";
 import { TextSpan } from "./span"
 
-type SplitTagProps = {
+export type SplitTagProps = {
   tag: string,
   height: number,
   start: number,
@@ -16,7 +14,7 @@ type SplitTagProps = {
 export const displaySplits = (content: string, annotations: TextSpan[]) => {
   let offsetStart = 0;
   let offsetEnd = 0;
-  const splits: SplitProps[] = [];
+  const splits: any[] = [];
   let currentTags: SplitTagProps[] = [];
   let hasLink: boolean = false;
   let hasBackLink: boolean = false;
@@ -57,7 +55,7 @@ export const displaySplits = (content: string, annotations: TextSpan[]) => {
           return (ctag.tag == tag && ctag.start == start && ctag.end == end && ctag.fileid == fileid);
         })
         if (!isIn) {
-          currentTags.push({ tag: tag, height: height, start: start, end: end, fileid: fileid, anno: anno });
+          currentTags.push({ tag: tag, height: height, start: start, end: end, fileid: fileid, anno: anno } as SplitTagProps);
           height += 1;
         }
         currentEnd = Math.min(end, currentEnd);
