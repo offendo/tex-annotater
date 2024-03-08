@@ -100,10 +100,9 @@ export function LinkMenu(props: LinkMenuProps) {
         <div style={{ width: "100%" }} onClick={(e) => { e.stopPropagation() }}>
             {/* Header */}
             <div>
-                <IconButton style={{ float: "right" }} onClick={props.onClosePress}> <CloseIcon /> </IconButton>
+                <TextField style={{ width: "300px" }} size="small" id="search-bar" label="Search" variant="outlined" onChange={(q) => setQuery(q.target.value)} />
                 <FormControlLabel style={{ float: "left" }} control={<Switch checked={showAllAnnotations} onChange={() => { setShowAnnotations(!showAllAnnotations); }} />} label="Show all annotations" />
             </div>
-            <TextField fullWidth size="small" id="search-bar" label="Search" variant="outlined" onChange={(q) => setQuery(q.target.value)} />
             <hr />
 
             {/* Table content */}

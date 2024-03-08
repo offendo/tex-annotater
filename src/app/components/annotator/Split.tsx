@@ -97,9 +97,10 @@ export function Mark(props: MarkProps): React.JSX.Element {
           <MarkMenu
             innerContent={final}
             colors={props.colors}
-            annotations={parseSelection()}
-            allAnnotations={props.allAnnotations}
-            otherAnnotations={props.otherAnnotations}
+            start={props.start}
+            end={props.end}
+            annotations={props.allAnnotations}
+            otherFileAnnotations={props.otherAnnotations}
             onAddLinkPress={props.onAddLinkPress}
             onDeletePress={props.onDeletePress}
             onEditPress={props.onEditPress}
