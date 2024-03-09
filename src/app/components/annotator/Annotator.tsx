@@ -38,7 +38,6 @@ const getNextColor = function (start_color: string = "") {
 const Annotator = (props: AnnotatorProps) => {
   /*  Context Menu stuff */
   const [selectionClicked, setSelectionClicked] = useState(false);
-  const [markMenuClicked, setMarkMenuClicked] = useState(false);
   const [linkMenuClicked, setLinkMenuClicked] = useState(false);
 
 
@@ -97,8 +96,8 @@ const Annotator = (props: AnnotatorProps) => {
 
   const updateMark = (anno: TextSpan) => {
     const splitIndex = props.annotations.findIndex((s) => s.end == anno.end && s.start == anno.start && s.tag == anno.tag);
-    // If it doesn't already exist in the annotations, add it
 
+    // If it doesn't already exist in the annotations, add it
     if (splitIndex == -1) {
       props.onAddAnnotation([...props.annotations, anno]);
     } else {
@@ -114,36 +113,27 @@ const Annotator = (props: AnnotatorProps) => {
     const splitIndex = anno.links.findIndex((s) => s.end == link.end && s.start == link.start && s.tag == link.tag && s.fileid == link.fileid);
     if (splitIndex == -1) {
       anno.links = [...anno.links, link];
-      updateMark(anno);
     } else {
       anno.links = [
         ...anno.links.slice(0, splitIndex),
         ...anno.links.slice(splitIndex + 1),
       ]
     }
+    // Update the mark (this is necessary to redraw the screen & save the annotations)
+    updateMark(anno)
   }
 
   const handleSplitPress = (e: any, anno: TextSpan, loc: { start: number, end: number }) => {
     if (linkMenuClicked && anno != clickedAnnotation) {
       toggleLink(clickedAnnotation, anno as Link);
-      // setLinkMenuClicked(false);
-    } else {
-      const selection = window.getSelection();
-      if (selection == null || !selectionIsEmpty(selection)) {
-        return;
-      }
-      const annotations = props.annotations.filter((s: TextSpan) => { return loc.start >= s.start && loc.end <= s.end });
-      setHoveredAnnotations(annotations);
+      setLinkMenuClicked(false);
     }
   }
 
-
-  const handleAddLinkPress = (e: any, anno: TextSpan, index: number) => {
-    // Launch the link menu button
+  const handleAddLinkPress = (anno: TextSpan, link: Link) => {
     setClickedAnnotation(anno);
-    // setLinkMenuClicked(true);
+    toggleLink(anno, link);
   };
-
   const launchContextMenu = (e: any) => {
     e.preventDefault();
     const selection = window.getSelection();
@@ -176,6 +166,7 @@ const Annotator = (props: AnnotatorProps) => {
     // Move the menu to the right location
     setCursorPos({ x: e.pageX, y: e.pageY });
   };
+
 
   const autoLink = (anno: TextSpan) => {
 
@@ -242,8 +233,7 @@ const Annotator = (props: AnnotatorProps) => {
     switch (e.key) {
       case "Escape":
         setSelectionClicked(false);
-        // setMarkMenuClicked(false);
-        // setLinkMenuClicked(false);
+        setLinkMenuClicked(false);
         const selection = window.getSelection();
         if (selection != null) { selection.empty(); }
         break;
@@ -254,7 +244,7 @@ const Annotator = (props: AnnotatorProps) => {
 
   // Return the formatted code
   return (
-    <div className="tex-container" tabIndex={-1} onKeyUp={handleSelectionKeyPress} >
+    <div className="tex-container" tabIndex={-1} onKeyUp={handleSelectionKeyPress}>
       <pre style={{ whiteSpace: "pre-wrap" }}>
         <div style={props.style} onContextMenu={launchContextMenu} onMouseUp={launchContextMenu}>
           {splits.map((split) => (
@@ -263,12 +253,11 @@ const Annotator = (props: AnnotatorProps) => {
               colors={props.colors}
               {...split}
               onClick={handleSplitPress}
-              allAnnotations={props.annotations}
-              otherAnnotations={props.otherAnnotations}
-              onAddLinkPress={handleAddLinkPress}
-              onDeletePress={(e, anno, index) => { removeMark(anno); }}
-              onEditPress={(e, anno, index) => {}}
-              onMouseLeave={(e) => {}}
+              annotations={props.annotations}
+              otherFileAnnotations={props.otherAnnotations}
+              toggleLink={toggleLink}
+              deleteAnnotation={removeMark}
+              editAnnotation={(anno) => {}}
             />
           )
           )}
@@ -276,9 +265,8 @@ const Annotator = (props: AnnotatorProps) => {
       </pre>
       {selectionClicked && (
         <LabelMenu
-          top={cursorPos.y - 10}
-          left={cursorPos.x - 10}
-          range={parseSelection(currentSelection)}
+          pos={cursorPos}
+          span={parseSelection(currentSelection)}
           colors={props.colors}
           labels={props.labels}
           onButtonPress={(e, label, name, start, end) => { e.preventDefault(); handleContextMenuButtonPress(start, end, label, name) }}
