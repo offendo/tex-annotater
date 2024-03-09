@@ -1,34 +1,42 @@
-import React from "react";
+import React, { useState } from "react";
+import { MenuButton } from '@mui/base/MenuButton';
+import { Dropdown } from '@mui/base/Dropdown';
 import { MarkMenu } from './MarkMenu';
 import ColorMap from "@/app/lib/colors";
-import { TextSpan, Link } from "@/app/lib/span";
-import { selectionIsEmpty } from "@/app/lib/utils"
-
+import { TextSpan } from "@/app/lib/span";
+import { selectionIsEmpty, parseSelection } from "@/app/lib/utils";
 
 export interface SplitProps {
   content: string
   tags?: any[]
-  annotations?: TextSpan[]
-  otherFileAnnotations?: TextSpan[]
+  allAnnotations?: TextSpan[]
+  otherAnnotations?: TextSpan[]
+  hasLink?: boolean
   colors?: ColorMap
   start: number
   end: number
-  onClick?: (e: any, anno: TextSpan, location: any) => any
-  toggleLink?: (annotation: TextSpan, link: Link) => any;
-  deleteAnnotation?: (annotation: TextSpan) => any;
-  editAnnotation?: (annotation: TextSpan) => any;
+  onClick?: (arg: any, anno: TextSpan, location: any) => any
+  onContextMenu?: (e: any, location: any) => (any)
+  onAddLinkPress: (e: any, annotation: TextSpan, index: number) => any;
+  onDeletePress: (e: any, annotation: TextSpan, index: number) => any;
+  onEditPress: (e: any, annotation: TextSpan, index: number) => any;
+  onMouseLeave: (e: any) => any
 }
 
 export interface MarkProps extends SplitProps {
   key: string
   tags: any[]
+  mark?: boolean
+  hasLink?: boolean
   colors: ColorMap
-  annotations: TextSpan[]
-  otherFileAnnotations: TextSpan[]
-  onClick: (e: any, anno: TextSpan, location: any) => any
-  toggleLink: (annotation: TextSpan, link: Link) => any;
-  deleteAnnotation: (annotation: TextSpan) => any;
-  editAnnotation: (annotation: TextSpan) => any;
+  allAnnotations: TextSpan[]
+  otherAnnotations: TextSpan[]
+  onClick: (e: any, anno: TextSpan, location: any) => (any)
+  onContextMenu: (e: any, location: any) => (any)
+  onAddLinkPress: (e: any, annotation: TextSpan, index: number) => any;
+  onDeletePress: (e: any, annotation: TextSpan, index: number) => any;
+  onEditPress: (e: any, annotation: TextSpan, index: number) => any;
+  onMouseLeave: (e: any) => any
 }
 
 export function isMarkProps(props: SplitProps): props is MarkProps {
@@ -52,6 +60,8 @@ export function Split(props: SplitProps): React.JSX.Element {
 };
 
 export function Mark(props: MarkProps): React.JSX.Element {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   let final: any = props.content;
 
   const getSplitColor = (split: any) => {
@@ -87,12 +97,14 @@ export function Mark(props: MarkProps): React.JSX.Element {
           <MarkMenu
             innerContent={final}
             colors={props.colors}
-            span={{ start: props.start, end: props.end }}
-            annotations={props.annotations}
-            otherFileAnnotations={props.otherFileAnnotations}
-            toggleLink={props.toggleLink}
-            deleteAnnotation={props.deleteAnnotation}
-            editAnnotation={props.editAnnotation}
+            start={props.start}
+            end={props.end}
+            annotations={props.allAnnotations}
+            otherFileAnnotations={props.otherAnnotations}
+            onAddLinkPress={props.onAddLinkPress}
+            onDeletePress={props.onDeletePress}
+            onEditPress={props.onEditPress}
+            onMouseLeave={props.onMouseLeave}
           />
         </span>
       )

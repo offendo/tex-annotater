@@ -3,25 +3,27 @@ import { List, ListItemButton } from "@mui/material"
 import Menu from "@mui/material/Menu"
 import MenuItem from "@mui/material/MenuItem"
 
-export interface LabelMenuProps {
-  span: number[];
-  pos: { x: number, y: number };
+export interface MenuProps {
+  left: number;
+  top: number;
   colors: any;
   labels: any;
+  range: number[];
   onButtonPress: (e: any, label: string, name: string, start: number, end: number) => any;
-  onMouseLeave?: (e: any) => any
+  onMouseLeave: (e: any) => any
 }
 
-export const LabelMenu = (props: LabelMenuProps) => {
+export const LabelMenu = (props: MenuProps) => {
   const [name, setName] = useState("")
   const [selected, setSelected] = useState("")
-  const [start, end] = props.span;
+  const [start, end] = props.range;
+
   return (
     <div
       onClick={(e) => { e.preventDefault() }}
       onMouseLeave={props.onMouseLeave}
       className="label-menu"
-      style={{ top: props.pos.y, left: props.pos.x, position: "absolute", boxSizing: "border-box" }}
+      style={{ top: props.top, left: props.left, position: "absolute", boxSizing: "border-box" }}
     >
       <List>
         {props.labels.map((label: string, index: number) => (
@@ -29,7 +31,7 @@ export const LabelMenu = (props: LabelMenuProps) => {
             key={label}
             style={{ color: props.colors[label] }}
             onMouseDown={(e) => { e.preventDefault() }}
-            onClick={(e) => { props.onButtonPress(e, label, "", start, end) }}
+            onClick={(e) => { props.onButtonPress(e, label, name, start, end) }}
           >
             {label}
           </ListItemButton>

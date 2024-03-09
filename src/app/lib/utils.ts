@@ -79,7 +79,7 @@ export const displaySplits = (content: string, annotations: TextSpan[]) => {
     }
 
     // Add the Mark with all the necessary tags
-    splits.push({ start: offsetStart, end: offsetEnd, content: content.slice(offsetStart, offsetEnd), tags: [...currentTags] })
+    splits.push({ start: offsetStart, end: offsetEnd, content: content.slice(offsetStart, offsetEnd), tags: [...currentTags], hasLink: hasLink })
 
     // update the new start value to the most recent end
     offsetStart = offsetEnd;
