@@ -12,9 +12,8 @@ export interface LinkMenuProps {
     colors: any;
     selectedAnnotation: TextSpan;
     annotations: TextSpan[];
-    otherAnnotations: TextSpan[];
-    onAddLinkPress: (e: any, annotation: TextSpan, link: Link) => any;
-    onClosePress: (e: any) => any
+    otherFileAnnotations: TextSpan[];
+    toggleLink: (annotation: TextSpan, link: Link) => any;
     onDeletePress: (e: any, anno: any) => any
 }
 
@@ -38,7 +37,7 @@ export function LinkMenu(props: LinkMenuProps) {
     }
 
     /* Full list of all annotations. If we're showing all annotations, include the ones from other files. */
-    let allAnnos = [...props.annotations, ...(showAllAnnotations ? props.otherAnnotations : [])];
+    let allAnnos = [...props.annotations, ...(showAllAnnotations ? props.otherFileAnnotations : [])];
     allAnnos = allAnnos.filter((anno) => anno != props.selectedAnnotation);
     if (filterTag != "") {
         allAnnos = allAnnos.filter((anno) => anno.tag == filterTag);
@@ -81,7 +80,7 @@ export function LinkMenu(props: LinkMenuProps) {
                 key={`${index}-${annotation.tag}-${annotation.start}-${annotation.end}-${annotation.fileid}`}
                 className={selected ? "link-menu-item link-selected" : "link-menu-item"}
             >
-                <td> <IconButton size="small" onClick={(e) => props.onAddLinkPress(e, props.selectedAnnotation, annotation as Link)}> {icon} </IconButton></td>
+                <td> <IconButton size="small" onClick={(e) => props.toggleLink(props.selectedAnnotation, annotation as Link)}> {icon} </IconButton></td>
                 <td> <Button size="small" variant="text" onClick={(e) => toggleTag(annotation.tag)} style={{ color: props.colors[annotation.tag] }}> {`${annotation.tag}`} </Button> </td>
                 <td> <Button size="small" variant="text" onClick={(e) => toggleFileId(annotation.fileid)}> {`${annotation.fileid}`} </Button> </td>
                 <td onClick={(e) => toggleExpandedIndex(index)} className="expand-text" style={{ overflowX: "scroll", width: "80%" }}>

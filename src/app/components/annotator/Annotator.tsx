@@ -114,13 +114,13 @@ const Annotator = (props: AnnotatorProps) => {
     const splitIndex = anno.links.findIndex((s) => s.end == link.end && s.start == link.start && s.tag == link.tag && s.fileid == link.fileid);
     if (splitIndex == -1) {
       anno.links = [...anno.links, link];
-      updateMark(anno);
     } else {
       anno.links = [
         ...anno.links.slice(0, splitIndex),
         ...anno.links.slice(splitIndex + 1),
       ]
     }
+    updateMark(anno);
   }
 
   const handleSplitPress = (e: any, anno: TextSpan, loc: { start: number, end: number }) => {
@@ -138,9 +138,10 @@ const Annotator = (props: AnnotatorProps) => {
   }
 
 
-  const handleAddLinkPress = (e: any, anno: TextSpan, index: number) => {
+  const handleAddLinkPress = (anno: TextSpan, link: Link) => {
     // Launch the link menu button
     setClickedAnnotation(anno);
+    toggleLink(anno, link)
     // setLinkMenuClicked(true);
   };
 
@@ -263,12 +264,11 @@ const Annotator = (props: AnnotatorProps) => {
               colors={props.colors}
               {...split}
               onClick={handleSplitPress}
-              allAnnotations={props.annotations}
-              otherAnnotations={props.otherAnnotations}
-              onAddLinkPress={handleAddLinkPress}
-              onDeletePress={(e, anno, index) => { removeMark(anno); }}
-              onEditPress={(e, anno, index) => {}}
-              onMouseLeave={(e) => {}}
+              annotations={props.annotations}
+              otherFileAnnotations={props.otherAnnotations}
+              toggleLink={handleAddLinkPress}
+              deleteAnnotation={(anno, index) => { removeMark(anno); }}
+              editAnnotation={(anno, index) => {}}
             />
           )
           )}

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { TextSpan } from "@/app/lib/span";
+import { TextSpan, Link } from "@/app/lib/span";
 import { Card, CardActions, CardContent, Grid, IconButton, Tooltip } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import BoltIcon from '@mui/icons-material/Bolt';
@@ -18,10 +18,9 @@ export interface MarkMenuProps {
     end: number;
     annotations: TextSpan[];
     otherFileAnnotations: TextSpan[];
-    onAddLinkPress: (e: any, annotation: TextSpan, index: number) => any;
-    onDeletePress: (e: any, annotation: TextSpan, index: number) => any;
-    onEditPress: (e: any, annotation: TextSpan, index: number) => any;
-    onMouseLeave: (e: any) => any
+    toggleLink: (annotation: TextSpan, link: Link) => any;
+    deleteAnnotation: (annotation: TextSpan, index: number) => any;
+    editAnnotation: (annotation: TextSpan, index: number) => any;
 }
 
 export function MarkMenu(props: MarkMenuProps) {
@@ -73,7 +72,7 @@ export function MarkMenu(props: MarkMenuProps) {
                             <IconButton onClick={(e) => { handleLinkButtonPress(e) }}> <BoltIcon /> </IconButton>
 
                             {/* Delete button */}
-                            <IconButton size="small" onClick={(e) => props.onDeletePress(e, annotation, index)}> <DeleteIcon /> </IconButton>
+                            <IconButton size="small" onClick={(e) => props.deleteAnnotation(annotation, index)}> <DeleteIcon /> </IconButton>
                         </CardActions>
                     </Grid>
 
@@ -107,9 +106,8 @@ export function MarkMenu(props: MarkMenuProps) {
                                     colors={props.colors}
                                     selectedAnnotation={annotation}
                                     annotations={props.annotations}
-                                    otherAnnotations={props.otherFileAnnotations}
-                                    onClosePress={() => {}}
-                                    onAddLinkPress={() => {}}
+                                    otherFileAnnotations={props.otherFileAnnotations}
+                                    toggleLink={props.toggleLink}
                                     onDeletePress={() => {}}
                                 />
                             </CardContent>
@@ -122,8 +120,12 @@ export function MarkMenu(props: MarkMenuProps) {
 
 
     return (
-        <span>
-            <span onClick={handleClick} >
+        <span data-start={props.start} data-end={props.end} >
+            <span
+                onClick={handleClick}
+                data-start={props.start}
+                data-end={props.end}
+            >
                 {props.innerContent}
             </span>
             <Popover

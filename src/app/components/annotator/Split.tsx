@@ -3,24 +3,23 @@ import { MenuButton } from '@mui/base/MenuButton';
 import { Dropdown } from '@mui/base/Dropdown';
 import { MarkMenu } from './MarkMenu';
 import ColorMap from "@/app/lib/colors";
-import { TextSpan } from "@/app/lib/span";
+import { TextSpan, Link } from "@/app/lib/span";
 import { selectionIsEmpty, parseSelection } from "@/app/lib/utils";
 
 export interface SplitProps {
   content: string
   tags?: any[]
-  allAnnotations?: TextSpan[]
-  otherAnnotations?: TextSpan[]
+  annotations?: TextSpan[]
+  otherFileAnnotations?: TextSpan[]
   hasLink?: boolean
   colors?: ColorMap
   start: number
   end: number
   onClick?: (arg: any, anno: TextSpan, location: any) => any
   onContextMenu?: (e: any, location: any) => (any)
-  onAddLinkPress: (e: any, annotation: TextSpan, index: number) => any;
-  onDeletePress: (e: any, annotation: TextSpan, index: number) => any;
-  onEditPress: (e: any, annotation: TextSpan, index: number) => any;
-  onMouseLeave: (e: any) => any
+  toggleLink: (annotation: TextSpan, link: Link) => any;
+  deleteAnnotation: (annotation: TextSpan, index: number) => any;
+  editAnnotation: (annotation: TextSpan, index: number) => any;
 }
 
 export interface MarkProps extends SplitProps {
@@ -29,14 +28,13 @@ export interface MarkProps extends SplitProps {
   mark?: boolean
   hasLink?: boolean
   colors: ColorMap
-  allAnnotations: TextSpan[]
-  otherAnnotations: TextSpan[]
+  annotations: TextSpan[]
+  otherFileAnnotations: TextSpan[]
   onClick: (e: any, anno: TextSpan, location: any) => (any)
   onContextMenu: (e: any, location: any) => (any)
-  onAddLinkPress: (e: any, annotation: TextSpan, index: number) => any;
-  onDeletePress: (e: any, annotation: TextSpan, index: number) => any;
-  onEditPress: (e: any, annotation: TextSpan, index: number) => any;
-  onMouseLeave: (e: any) => any
+  toggleLink: (annotation: TextSpan, link: Link) => any;
+  deleteAnnotation: (annotation: TextSpan, index: number) => any;
+  editAnnotation: (annotation: TextSpan, index: number) => any;
 }
 
 export function isMarkProps(props: SplitProps): props is MarkProps {
@@ -99,12 +97,11 @@ export function Mark(props: MarkProps): React.JSX.Element {
             colors={props.colors}
             start={props.start}
             end={props.end}
-            annotations={props.allAnnotations}
-            otherFileAnnotations={props.otherAnnotations}
-            onAddLinkPress={props.onAddLinkPress}
-            onDeletePress={props.onDeletePress}
-            onEditPress={props.onEditPress}
-            onMouseLeave={props.onMouseLeave}
+            annotations={props.annotations}
+            otherFileAnnotations={props.otherFileAnnotations}
+            toggleLink={props.toggleLink}
+            deleteAnnotation={props.deleteAnnotation}
+            editAnnotation={props.editAnnotation}
           />
         </span>
       )
