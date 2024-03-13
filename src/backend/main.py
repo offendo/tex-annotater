@@ -4,40 +4,72 @@ from flask_cors import CORS, cross_origin
 import os
 import sqlite3
 import boto3
+from .data import (
+    load_tex,
+    load_textbook_list,
+    load_all_annotations,
+    load_pdf,
+    load_save_files,
+    load_annotations,
+    save_annotations,
+)
 
 app = Flask(__name__)
 cors = CORS(app)
 app.config["CORS_HEADERS"] = "Content-Type"
 
-s3 = boto3.client(
-    "s3",
-    aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
-    aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
-)
 
-
-def download_s3(bucket, filename):
-    s3.download_file(bucket, "k.png", "")
-
-
-def load_tex(fname):
-    with open(fname, "r") as f:
-        return f.read()
-
-
-@app.get("/saves/")
+@app.post("/annotations")
 @cross_origin()
-def load_saves():
-    userid = request.args.get("userid")
-    fileid = request.args.get("fileid")
-    savename = request.args.get("savename")
+def post_annotations():
+    userid = request.args.get("fileid")
+    fileid = request.args.get("userid")
+    annotations = request.get_json()["annotations"]
+    save_annotations(fileid, userid, annotations)
+    return "Success!", 200
 
-    content = load_tex(
-        "/users/offendo/src/autoformalization/annotation/texs/0705.1690-alpha-Brjuno_arxiv.tex"
-    )
+
+@app.get("/annotations/all")
+@cross_origin()
+def get_all_annotations():
+    fileid = request.args.get("fileid")
+    annotations = load_all_annotations(fileid)
+
     return {
         "fileid": fileid,
-        "content": content,
-        "annotations": [],
-        "otherAnnotations": [],
+        "otherAnnotations": annotations,
+    }, 200
+
+
+@app.get("/annotations")
+@cross_origin()
+def get_annotations():
+    userid = request.args.get("userid")
+    fileid = request.args.get("fileid")
+    timestamp = request.args.get("timestamp")
+    annotations = load_annotations(fileid, userid, timestamp)
+
+    return {
+        "fileid": fileid,
+        "annotations": annotations,
+    }, 200
+
+
+@app.get("/saves")
+@cross_origin()
+def list_all_saves():
+    fileid = request.args.get("fileid")
+    userid = request.args.get("userid")
+    return {"saves": load_save_files(file_id=fileid, user_id=userid)}
+
+
+@app.get("/document")
+@cross_origin()
+def get_document():
+    fileid = request.args.get("fileid")
+
+    tex = load_tex("0705.1690-alpha-Brjuno_arxiv.tex")
+    return {
+        "fileid": fileid,
+        "tex": tex,
     }

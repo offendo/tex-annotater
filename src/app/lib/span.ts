@@ -13,7 +13,7 @@ export interface Link extends Span {
   tag: string
   fileid: string
   type?: LinkType
-  highlightColor: string
+  color: string
 }
 
 export interface TextSpan extends Span {
@@ -21,6 +21,6 @@ export interface TextSpan extends Span {
   fileid: string
   text: string
   name: string
-  highlightColor: string
+  color: string
   links: Link[]
 }

@@ -17,6 +17,8 @@ botocore==1.34.55
     # via s3transfer
 click==8.1.7
     # via flask
+fire==0.6.0
+    # via randomname
 flask==3.0.2
     # via flask-cors
     # via tex-annotater
@@ -32,14 +34,28 @@ jmespath==1.0.1
 markupsafe==2.1.5
     # via jinja2
     # via werkzeug
+numpy==1.26.4
+    # via pandas
+pandas==2.2.1
+    # via tex-annotater
 python-dateutil==2.9.0.post0
     # via botocore
+    # via pandas
 python-dotenv==1.0.1
+    # via tex-annotater
+pytz==2024.1
+    # via pandas
+randomname==0.2.1
     # via tex-annotater
 s3transfer==0.10.0
     # via boto3
 six==1.16.0
+    # via fire
     # via python-dateutil
+termcolor==2.4.0
+    # via fire
+tzdata==2024.1
+    # via pandas
 urllib3==2.0.7
     # via botocore
 werkzeug==3.0.1

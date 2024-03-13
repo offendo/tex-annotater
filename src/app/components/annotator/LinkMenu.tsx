@@ -105,7 +105,7 @@ export function LinkMenu(props: LinkMenuProps) {
             <hr />
 
             {/* Table content */}
-            <table style={{ overflowX: "scroll" }}>
+            <table >
                 <thead>
                     <tr>
                         <th> Select </th>

@@ -74,7 +74,7 @@ const Annotator = (props: AnnotatorProps) => {
         name: name,
         fileid: props.fileid,
         links: [],
-        highlightColor: nextColor
+        color: nextColor
       });
     if (splitIndex == -1) {
       props.onAddAnnotation([...props.annotations, newSpan]);
@@ -168,14 +168,13 @@ const Annotator = (props: AnnotatorProps) => {
 
     // Pass the selection to the menu
     setCurrentSelection(selection);
-    console.log('range: ', parseSelection(selection))
-    console.log('selection: ', selection);
 
     // Reveal the menu
     setSelectionClicked(true);
 
     // Move the menu to the right location
-    setCursorPos({ x: e.pageX, y: e.pageY });
+    const newPos = { x: e.pageX, y: e.pageY }
+    setCursorPos(newPos);
   };
 
   const autoLink = (anno: TextSpan) => {
@@ -255,25 +254,27 @@ const Annotator = (props: AnnotatorProps) => {
 
   // Return the formatted code
   return (
-    <div className="tex-container" tabIndex={-1} onKeyUp={handleSelectionKeyPress} >
-      <pre style={{ whiteSpace: "pre-wrap" }}>
-        <div style={props.style} onContextMenu={launchContextMenu} onMouseUp={launchContextMenu}>
-          {splits.map((split) => (
-            <Split
-              key={`${split.start}-${split.end}`}
-              colors={props.colors}
-              {...split}
-              onClick={handleSplitPress}
-              annotations={props.annotations}
-              otherFileAnnotations={props.otherAnnotations}
-              toggleLink={handleAddLinkPress}
-              deleteAnnotation={(anno, index) => { removeMark(anno); }}
-              editAnnotation={(anno, index) => {}}
-            />
-          )
-          )}
-        </div>
-      </pre>
+    <div>
+      <div className="tex-container" tabIndex={-1} onKeyUp={handleSelectionKeyPress} >
+        <pre style={{ whiteSpace: "pre-wrap" }}>
+          <div style={props.style} onContextMenu={launchContextMenu} onMouseUp={launchContextMenu}>
+            {splits.map((split) => (
+              <Split
+                key={`${split.start}-${split.end}`}
+                colors={props.colors}
+                {...split}
+                onClick={handleSplitPress}
+                annotations={props.annotations}
+                otherFileAnnotations={props.otherAnnotations}
+                toggleLink={handleAddLinkPress}
+                deleteAnnotation={(anno, index) => { removeMark(anno); }}
+                editAnnotation={(anno, index) => {}}
+              />
+            )
+            )}
+          </div>
+        </pre>
+      </div>
       {selectionClicked && (
         <LabelMenu
           top={cursorPos.y - 10}

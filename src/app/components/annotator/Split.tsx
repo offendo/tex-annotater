@@ -66,9 +66,10 @@ export function Mark(props: MarkProps): React.JSX.Element {
     // If it's linked to something, use the link's target color
     if (split.anno.links.length > 0) {
       if (split.anno.tag == 'name') {
-        return split.anno.highlightColor + '70';
+        return split.anno.color + '70';
       }
-      return split.anno.links[0].highlightColor + "70";
+      console.log('link color: ', split.anno.links[0])
+      return split.anno.links[0].color + "70";
     }
     // otherwise, set it to transparent
     else {

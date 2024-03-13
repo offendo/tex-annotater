@@ -1,6 +1,8 @@
 "use client"
 import React from "react";
 import Annotator from "./components/annotator/Annotator";
+import PdfViewer from "./components/PdfViewer";
+import TopBar from "./components/TopBar";
 import { ColorMap } from "./lib/colors"
 import { TextSpan } from "./lib/span"
 import { defaultColorMap } from "./lib/colors";
@@ -13,7 +15,9 @@ type AnnotationToolProps = {
 
 type AnnotationToolState = {
   fileid: string;
-  content: string;
+  userid: string;
+  tex: string;
+  pdf: string;
   annotations: TextSpan[];
   otherAnnotations: TextSpan[];
 }
@@ -23,31 +27,81 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
     super(props);
     this.state = {
       annotations: [],
-      content: "",
+      tex: "",
+      pdf: "",
       fileid: "",
+      userid: "",
       otherAnnotations: [],
     };
 
   }
 
   componentDidMount() {
-    this.loadAnnotations("test.tex", "nilay", "savename");
+    this.loadDocument("test.tex");
+    this.loadAllAnnotations("test.tex")
   }
 
-  saveAnnotations = (annotations: TextSpan[]) => {
+  updateAnnotations = (annotations: TextSpan[]) => {
     this.setState({ annotations: annotations })
   }
 
-  loadAnnotations = (fileid: string, userid: string, savename: string) => {
-    fetch(`/saves?fileid=${fileid}&userid=${userid}&savename=${savename}`)
+  saveAnnotations = (fileid: string, userid: string, annotations: TextSpan[], autosave: boolean = false) => {
+    const requestOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ annotations: annotations })
+    };
+    // We handle autosaves differently
+    const url = autosave ? `/annotations/autosave?fileid=${fileid}&userid=${userid}` : `/annotations?fileid=${fileid}&userid=${userid}`;
+    fetch(url, requestOptions)
+      .then((res) => res.text())
+      .then(res => {
+        console.log('Saved annotations: ', res)
+      })
+      .catch(error => console.log(error));
+    return annotations
+  }
+
+  loadAllAnnotations = (fileid: string) => {
+    fetch(`/annotations/all?fileid=${fileid}`)
       .then((res) => res.json())
       .then(res => {
         this.setState(
           {
-            content: res['content'],
             fileid: res['fileid'],
-            annotations: res['annotations'],
             otherAnnotations: res['otherAnnotations']
+          });
+        console.log(this.state)
+      })
+      .catch(error => console.log(error));
+  }
+
+  loadAnnotations = (fileid: string, userid: string, timestamp: string) => {
+    fetch(`/annotations?fileid=${fileid}&userid=${userid}&timestamp=${timestamp}`)
+      .then((res) => res.json())
+      .then(res => {
+        this.setState(
+          {
+            fileid: res['fileid'],
+            annotations: res['annotations']
+          }
+        );
+        console.log('new annotations: ', res['annotations'])
+      })
+      .catch(error => console.log(error));
+  }
+
+
+  loadDocument = (fileid: string) => {
+    fetch(`/document?fileid=${fileid}`)
+      .then((res) => res.json())
+      .then(res => {
+        console.log(res);
+        this.setState(
+          {
+            fileid: res['fileid'],
+            tex: res['tex'],
+            pdf: res['pdf'],
           });
         console.log(this.state)
       })
@@ -60,25 +114,56 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
     const otherAnnotations = this.state.otherAnnotations;
     const colors = this.props.colors;
     const labels = this.props.labels;
-    const content = this.state.content;
+    const tex = this.state.tex;
 
     return (
-      <div>
-        <Annotator
-          style={{
-            paddingBottom: "8px",
-            lineHeight: 3,
-            margin: "100px",
-          }}
-          fileid={fileid}
-          colors={colors}
-          labels={labels}
-          content={content}
-          annotations={annotations}
-          otherAnnotations={otherAnnotations}
-          onAddAnnotation={this.saveAnnotations}
-          getSpan={(span: TextSpan) => ({ ...span })}
+      <div >
+        <TopBar
+          loadDocument={this.loadDocument}
+          loadAnnotations={this.loadAnnotations}
+          saveAnnotations={() => this.saveAnnotations(this.state.fileid, this.state.userid, this.state.annotations, false)}
         />
+        <div
+          style={{
+            display: "flex",
+            alignContent: "center",
+            width: "98vw",
+            margin: "10px"
+          }}
+        >
+          <div
+            style={{
+              flexGrow: 1,
+              resize: "horizontal",
+              overflow: "scroll",
+              width: "49vw",
+              height: "90vh",
+            }}
+          >
+            <Annotator
+              style={{
+                paddingBottom: "8px",
+                lineHeight: 3,
+                margin: "10px",
+              }}
+              fileid={fileid}
+              colors={colors}
+              labels={labels}
+              content={tex}
+              annotations={annotations}
+              otherAnnotations={otherAnnotations}
+              onAddAnnotation={(annos) => this.updateAnnotations(annos)}
+              getSpan={(span: TextSpan) => ({ ...span })}
+            />
+          </div>
+          <div
+            style={{
+              flexGrow: 3,
+            }}
+          >
+            <PdfViewer filepath="https://arxiv.org/pdf/0705.1690.pdf" />
+          </div>
+        </div >
       </div>
     );
   }

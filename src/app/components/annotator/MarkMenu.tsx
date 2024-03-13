@@ -61,8 +61,10 @@ export function MarkMenu(props: MarkMenuProps) {
                 style={{
                     backgroundColor: "var(--secondary-background-color)",
                     border: "1px solid black",
-                    borderRadius: "5px",
-                    width: "100%"
+                    // borderRadius: "5px",
+                    width: "100%",
+                    maxHeight: "300px",
+                    overflow: "scroll",
                 }}
             >
                 <Grid container spacing={1}>
@@ -76,7 +78,7 @@ export function MarkMenu(props: MarkMenuProps) {
                         </CardActions>
                     </Grid>
 
-                    <Grid item xs={3}>
+                    <Grid item xs={3} >
                         <CardContent>
                             {/* Tag name */}
                             <span style={{ color: props.colors[annotation.tag] }}>
@@ -96,7 +98,7 @@ export function MarkMenu(props: MarkMenuProps) {
                             </span>
                         </CardContent>
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid item xs={12} >
                         {/* Link menu card*/}
                         <Collapse in={linksOpen} timeout="auto" unmountOnExit orientation="vertical" collapsedSize={0}>
                             <CardContent>
