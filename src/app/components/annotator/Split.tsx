@@ -3,26 +3,23 @@ import { MenuButton } from '@mui/base/MenuButton';
 import { Dropdown } from '@mui/base/Dropdown';
 import { MarkMenu } from './MarkMenu';
 import ColorMap from "@/app/lib/colors";
-import { TextSpan } from "@/app/lib/span";
-import { selectionIsEmpty, SplitTagProps } from "@/app/lib/utils";
-import { MARGINS } from "@/app/lib/consts";
+import { TextSpan, Link } from "@/app/lib/span";
+import { selectionIsEmpty, parseSelection } from "@/app/lib/utils";
 
 export interface SplitProps {
   content: string
-  tags?: SplitTagProps[]
-  allAnnotations?: TextSpan[]
-  otherAnnotations?: TextSpan[]
-  clickedAnnotations?: TextSpan[]
+  tags?: any[]
+  annotations?: TextSpan[]
+  otherFileAnnotations?: TextSpan[]
   hasLink?: boolean
   colors?: ColorMap
   start: number
   end: number
   onClick?: (arg: any, anno: TextSpan, location: any) => any
   onContextMenu?: (e: any, location: any) => (any)
-  onAddLinkPress: (e: any, annotation: TextSpan, index: number) => any;
-  onDeletePress: (e: any, annotation: TextSpan, index: number) => any;
-  onEditPress: (e: any, annotation: TextSpan, index: number) => any;
-  onMouseLeave: (e: any) => any
+  toggleLink: (annotation: TextSpan, link: Link) => any;
+  deleteAnnotation: (annotation: TextSpan, index: number) => any;
+  editAnnotation: (annotation: TextSpan, index: number) => any;
 }
 
 export interface MarkProps extends SplitProps {
@@ -31,15 +28,13 @@ export interface MarkProps extends SplitProps {
   mark?: boolean
   hasLink?: boolean
   colors: ColorMap
-  allAnnotations: TextSpan[]
-  otherAnnotations: TextSpan[]
-  clickedAnnotations: TextSpan[]
+  annotations: TextSpan[]
+  otherFileAnnotations: TextSpan[]
   onClick: (e: any, anno: TextSpan, location: any) => (any)
   onContextMenu: (e: any, location: any) => (any)
-  onAddLinkPress: (e: any, annotation: TextSpan, index: number) => any;
-  onDeletePress: (e: any, annotation: TextSpan, index: number) => any;
-  onEditPress: (e: any, annotation: TextSpan, index: number) => any;
-  onMouseLeave: (e: any) => any
+  toggleLink: (annotation: TextSpan, link: Link) => any;
+  deleteAnnotation: (annotation: TextSpan, index: number) => any;
+  editAnnotation: (annotation: TextSpan, index: number) => any;
 }
 
 export function isMarkProps(props: SplitProps): props is MarkProps {
@@ -70,26 +65,16 @@ export function Mark(props: MarkProps): React.JSX.Element {
     // If it's linked to something, use the link's target color
     if (split.anno.links.length > 0) {
       if (split.anno.tag == 'name') {
-        return split.anno.highlightColor + '70';
+        return split.anno.color + '70';
       }
-      return split.anno.links[0].highlightColor + "70";
+      console.log('link color: ', split.anno.links[0])
+      return split.anno.links[0].color + "70";
     }
     // otherwise, set it to transparent
     else {
       return "var(--background-color)" + "00";
     }
   }
-
-  const handleOpenChange = (e, split) => {
-    if (menuOpen) {
-      setMenuOpen(true);
-      return;
-    } else {
-      props.onClick(e, split.anno, { start: props.start, end: props.end })
-      setMenuOpen(false);
-    }
-  }
-
 
   // Nest the tag as many times as necessary
   let final: any = props.content;
@@ -112,36 +97,17 @@ export function Mark(props: MarkProps): React.JSX.Element {
             backgroundClip: "content-box",
           }}
         >
-
-          <Dropdown onOpenChange={(e) => handleOpenChange(e, split)} >
-            <MenuButton
-              slots={{ root: "span" }} // necessary to ensure formatting stays correct after highlighting
-              key={`${props.start}-${props.end}-${split.tag}-${split.height}`}
-              data-start={props.start}
-              data-end={props.end}
-              data-uid={split.tag}
-              disabled={!selectionIsEmpty(window.getSelection())}
-              onClick={(e: any) => {
-                const { width, height } = finalRef.current.getBoundingClientRect();
-                console.log('pos: ', [e.pageX, e.pageY]);
-                console.log('scaled pos: ', [e.pageX - MARGINS, e.pageY  - MARGINS]);
-                setPos({ left: e.pageX  - MARGINS, top: e.pageY - MARGINS })
-              }}
-            >
-              {final}
-            </MenuButton>
-            <MarkMenu
-              pos={pos}
-              colors={props.colors}
-              annotations={props.clickedAnnotations}
-              allAnnotations={props.allAnnotations}
-              otherAnnotations={props.otherAnnotations}
-              onAddLinkPress={props.onAddLinkPress}
-              onDeletePress={props.onDeletePress}
-              onEditPress={props.onEditPress}
-              onMouseLeave={props.onMouseLeave}
-            />
-          </Dropdown>
+          <MarkMenu
+            innerContent={final}
+            colors={props.colors}
+            start={props.start}
+            end={props.end}
+            annotations={props.annotations}
+            otherFileAnnotations={props.otherFileAnnotations}
+            toggleLink={props.toggleLink}
+            deleteAnnotation={props.deleteAnnotation}
+            editAnnotation={props.editAnnotation}
+          />
         </span>
       )
     }

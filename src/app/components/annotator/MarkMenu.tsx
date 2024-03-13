@@ -1,28 +1,44 @@
-import React, { useState } from "react";
-import { TextSpan } from "@/app/lib/span";
-import { Card, CardActions, CardContent, Grid, IconButton, Popover, Tooltip } from "@mui/material";
-import { Menu } from '@mui/base/Menu';
-import { MenuItem } from '@mui/base/MenuItem';
+import React, { useState, useRef } from "react";
+import { TextSpan, Link } from "@/app/lib/span";
+import { Card, CardActions, CardContent, Grid, IconButton, Tooltip } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import BoltIcon from '@mui/icons-material/Bolt';
 import Collapse from '@mui/material/Collapse';
 import LinkMenu from "./LinkMenu";
+import { selectionIsEmpty } from "@/app/lib/utils";
+
+import Popover from '@mui/material/Popover';
+import MenuItem from '@mui/material/MenuItem';
 
 
 export interface MarkMenuProps {
-    pos: any;
+    innerContent: any;
     colors: any;
+    start: number;
+    end: number;
     annotations: TextSpan[];
-    allAnnotations: TextSpan[];
-    otherAnnotations: TextSpan[];
-    onAddLinkPress: (e: any, annotation: TextSpan, index: number) => any;
-    onDeletePress: (e: any, annotation: TextSpan, index: number) => any;
-    onEditPress: (e: any, annotation: TextSpan, index: number) => any;
-    onMouseLeave: (e: any) => any
+    otherFileAnnotations: TextSpan[];
+    toggleLink: (annotation: TextSpan, link: Link) => any;
+    deleteAnnotation: (annotation: TextSpan, index: number) => any;
+    editAnnotation: (annotation: TextSpan, index: number) => any;
 }
 
 export function MarkMenu(props: MarkMenuProps) {
     const [selected, setSelected] = useState<number>(-1);
+    const [pos, setPos] = useState({ left: 0, top: 0 });
+    const [menuOpen, setMenuOpen] = useState<boolean>(false);
+    const [hoveredAnnotations, setHoveredAnnotations] = useState<TextSpan[]>([]);
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        const selection = window.getSelection();
+        if (selectionIsEmpty(selection)) {
+            setPos({ left: e.pageX, top: e.pageY });
+            const annotations = props.annotations.filter((s: TextSpan) => { return props.start >= s.start && props.end <= s.end });
+            setHoveredAnnotations(annotations);
+            setMenuOpen(!menuOpen);
+        }
+    };
+    const handleClose = () => { setMenuOpen(false); };
 
     const toggleSelected = (index: number) => {
         if (selected == index) {
@@ -34,15 +50,22 @@ export function MarkMenu(props: MarkMenuProps) {
 
 
     const Row = ({ annotation, index }: { annotation: TextSpan, index: number }) => {
-        const [open, setOpen] = useState<boolean>(false);
+        const [linksOpen, setLinksOpen] = useState<boolean>(false);
         const handleLinkButtonPress = (e) => {
-            setOpen(!open);
+            setLinksOpen(!linksOpen);
             e.stopPropagation();
         }
 
         return (
             <Card
-                style={{ backgroundColor: "inherit", border: "0px" }}
+                style={{
+                    backgroundColor: "var(--secondary-background-color)",
+                    border: "1px solid black",
+                    // borderRadius: "5px",
+                    width: "100%",
+                    maxHeight: "300px",
+                    overflow: "scroll",
+                }}
             >
                 <Grid container spacing={1}>
                     <Grid item xs={2}>
@@ -51,11 +74,11 @@ export function MarkMenu(props: MarkMenuProps) {
                             <IconButton onClick={(e) => { handleLinkButtonPress(e) }}> <BoltIcon /> </IconButton>
 
                             {/* Delete button */}
-                            <IconButton size="small" onClick={(e) => props.onDeletePress(e, annotation, index)}> <DeleteIcon /> </IconButton>
+                            <IconButton size="small" onClick={(e) => props.deleteAnnotation(annotation, index)}> <DeleteIcon /> </IconButton>
                         </CardActions>
                     </Grid>
 
-                    <Grid item xs={3}>
+                    <Grid item xs={3} >
                         <CardContent>
                             {/* Tag name */}
                             <span style={{ color: props.colors[annotation.tag] }}>
@@ -75,19 +98,18 @@ export function MarkMenu(props: MarkMenuProps) {
                             </span>
                         </CardContent>
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid item xs={12} >
                         {/* Link menu card*/}
-                        <Collapse in={open} timeout="auto" unmountOnExit orientation="vertical" collapsedSize={0}>
+                        <Collapse in={linksOpen} timeout="auto" unmountOnExit orientation="vertical" collapsedSize={0}>
                             <CardContent>
                                 <LinkMenu
                                     left={0}
                                     top={0}
                                     colors={props.colors}
                                     selectedAnnotation={annotation}
-                                    annotations={props.allAnnotations}
-                                    otherAnnotations={props.otherAnnotations}
-                                    onClosePress={() => {}}
-                                    onAddLinkPress={() => {}}
+                                    annotations={props.annotations}
+                                    otherFileAnnotations={props.otherFileAnnotations}
+                                    toggleLink={props.toggleLink}
                                     onDeletePress={() => {}}
                                 />
                             </CardContent>
@@ -100,29 +122,43 @@ export function MarkMenu(props: MarkMenuProps) {
 
 
     return (
-        <Menu
-            style={{
-                backgroundColor: "var(--secondary-background-color)",
-                display: "grid",
-                width: "500px",
-                maxWidth: "700px",
-                border: "1px solid black",
-                borderRadius: "5px",
-                position: "absolute",
-                left: props.pos.left,
-                top: props.pos.top,
-            }}
-        >
-            {props.annotations.map((annotation, index) => (
-                <MenuItem
-                    key={`${annotation.start}-${annotation.end}-${annotation.tag}-${index}`}
-                >
-                    <Row annotation={annotation} index={index} />
-
-                </MenuItem >
-            ))
-            }
-        </Menu >
+        <span data-start={props.start} data-end={props.end} >
+            <span
+                onClick={handleClick}
+                data-start={props.start}
+                data-end={props.end}
+            >
+                {props.innerContent}
+            </span>
+            <Popover
+                open={menuOpen}
+                onClose={handleClose}
+                anchorPosition={pos}
+                anchorReference="anchorPosition"
+                onKeyDown={(e) => { e.stopPropagation(); }}
+                disableScrollLock={true}
+                style={{
+                    position: "absolute",
+                }}
+            >
+                {hoveredAnnotations.map((annotation, index) => {
+                    return (
+                        <MenuItem
+                            style={{
+                                backgroundColor: "#00000000",
+                                width: "600px",
+                                padding: "0px",
+                                margin: "0px",
+                            }}
+                            key={`${annotation.start}-${annotation.end}-${annotation.tag}-${index}`}
+                        >
+                            <Row annotation={annotation} index={index} />
+                        </MenuItem >
+                    );
+                }
+                )}
+            </Popover >
+        </span >
     );
 }
 export default MarkMenu;

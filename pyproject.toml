@@ -10,6 +10,8 @@ dependencies = [
     "flask>=3.0.2",
     "python-dotenv>=1.0.1",
     "flask-cors>=4.0.0",
+    "pandas>=2.2.1",
+    "randomname>=0.2.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
@@ -20,7 +22,9 @@ build-backend = "hatchling.build"
 
 [tool.rye]
 managed = true
-dev-dependencies = []
+dev-dependencies = [
+    "ipython>=8.22.2",
+]
 
 [tool.rye.scripts]
 dev = {cmd = "flask --app src/backend/main.py run --debug"}
