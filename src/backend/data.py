@@ -163,8 +163,7 @@ def save_annotations(file_id, user_id, annotations):
             """
             INSERT INTO annotations (annoid, fileid, userid, start, end, text, tag, color, savename)
                 VALUES (:annoid, :fileid, :userid, :start, :end, :text, :tag, :color, :savename)
-            ON CONFLICT(fileid,userid,start,end,tag,savename) DO NOTHING
-            ON CONFLICT(annoid) DO NOTHING;
+            ON CONFLICT(fileid,userid,start,end,tag,savename) DO NOTHING;
             """,
             dict(
                 annoid=an['annoid'],
@@ -210,7 +209,8 @@ def init_annotation_db():
         """
         CREATE TABLE IF NOT EXISTS annotations
         (
-            annoid TEXT PRIMARY KEY,
+            rowid INTEGER PRIMARY KEY,
+            annoid TEXT,
             fileid TEXT,
             userid TEXT,
             start INTEGER,

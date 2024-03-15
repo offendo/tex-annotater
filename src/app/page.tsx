@@ -38,7 +38,7 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
       pdf: "",
       otherAnnotations: [],
       fileid: queryParameters.get('fileid') || "",
-      userid: queryParameters.get('userid') || "",
+      userid: queryParameters.get('userid') || "testuser",
       anchor: queryParameters.get('anchor') || "",
     };
   }
@@ -62,11 +62,12 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
   }
 
   updateAnnotations = (annotations: TextSpan[]) => {
+    console.log('updating annotations: ', annotations);
     this.setState({ annotations: annotations })
   }
 
   saveAnnotations = (fileid: string, userid: string, annotations: TextSpan[], autosave: boolean = false) => {
-    console.log(annotations);
+    console.log('saving ', annotations.length, ' annotations');
     const requestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
