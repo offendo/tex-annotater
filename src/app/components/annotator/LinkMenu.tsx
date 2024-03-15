@@ -45,6 +45,7 @@ export function LinkMenu(props: LinkMenuProps) {
     if (filterFileId != "") {
         allAnnos = allAnnos.filter((anno) => anno.fileid == filterFileId);
     }
+    console.log('all annos passed to link menu: ', allAnnos);
 
     /* Split by "linked" and "non-linked" */
     const [linkedAnnos, nonLinkedAnnos] = partition(allAnnos, (candidate) => {
@@ -75,6 +76,7 @@ export function LinkMenu(props: LinkMenuProps) {
 
     const makeRow = (annotation: any, index: number, selected: boolean = false) => {
         let icon = selected ? <CloseIcon /> : <CheckIcon />;
+        console.log('annotation in row: ', annotation)
         return (
             <tr
                 key={crypto.randomUUID()}

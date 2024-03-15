@@ -3,6 +3,7 @@ import { TextSpan, Link } from "@/app/lib/span";
 import { Card, CardActions, CardContent, Grid, IconButton, Tooltip } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import BoltIcon from '@mui/icons-material/Bolt';
+import AddLinkIcon from '@mui/icons-material/AddLink';
 import Collapse from '@mui/material/Collapse';
 import LinkMenu from "./LinkMenu";
 import { selectionIsEmpty } from "@/app/lib/utils";
@@ -32,9 +33,11 @@ export function MarkMenu(props: MarkMenuProps) {
     const [hoveredAnnotations, setHoveredAnnotations] = useState<TextSpan[]>([]);
 
     const handleJumpClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        console.log('handling jump click');
         if (props.anno.links.length > 0) {
             console.log("I am ", props.anno.annoid)
             console.log('jumping to: ', props.anno.links[0].target);
+            console.log('target: ', props.anno.links[0]);
             const file = props.anno.links[0].fileid;
             const target = props.anno.links[0].target;
             window.open(`?userid=&fileid=${file}&anchor=${target}`, "_blank");
@@ -84,7 +87,7 @@ export function MarkMenu(props: MarkMenuProps) {
                     <Grid item xs={2}>
                         <CardActions disableSpacing>
                             {/* Link button */}
-                            <IconButton onClick={(e) => { handleLinkButtonPress(e) }}> <BoltIcon /> </IconButton>
+                            <IconButton onClick={(e) => { handleLinkButtonPress(e) }}> <AddLinkIcon /> </IconButton>
 
                             {/* Delete button */}
                             <IconButton size="small" onClick={(e) => props.deleteAnnotation(annotation, index)}> <DeleteIcon /> </IconButton>
@@ -135,10 +138,9 @@ export function MarkMenu(props: MarkMenuProps) {
 
 
     return (
-        <span data-start={props.start} data-end={props.end} >
+        <span data-start={props.start} data-end={props.end} onDoubleClick={(e) => handleJumpClick(e)}>
             <span
                 onContextMenu={handleRightClick}
-                onDoubleClick={(e) => handleJumpClick(e)}
                 data-start={props.start}
                 data-end={props.end}
             >

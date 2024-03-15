@@ -62,7 +62,6 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
   }
 
   updateAnnotations = (annotations: TextSpan[]) => {
-    console.log('updating annotations: ', annotations);
     this.setState({ annotations: annotations })
   }
 

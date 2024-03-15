@@ -4,6 +4,7 @@ import sqlite3
 import boto3
 import pandas as pd
 import randomname
+from contextlib import closing
 
 session = boto3.client(
     "s3",
@@ -15,7 +16,7 @@ ANNOTATIONS_DB = os.environ["ANNOTATIONS_DB"]
 
 def list_s3_documents():
     docs = session.list_objects(Bucket="tex-annotation")["Contents"]
-    names = [d['Key'].split('/')[-1] for d in docs if d['Key'].startswith("texs/")]
+    names = [d["Key"].split("/")[-1] for d in docs if d["Key"].startswith("texs/")]
     return names
 
 
@@ -32,13 +33,10 @@ def load_tex(file_name):
 
 
 def query_db(query, params=()):
-    conn = sqlite3.Connection(ANNOTATIONS_DB)
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
-    results = cur.execute(query, params)
-    # df = pd.DataFrame.from_records([dict(r) for r in results])
-    records = [dict(r) for r in results]
-    conn.close()
+    with sqlite3.connect(ANNOTATIONS_DB) as conn:
+        conn.row_factory = sqlite3.Row
+        results = conn.execute(query, params)
+        records = [dict(r) for r in results]
     return records
 
 
@@ -72,11 +70,15 @@ def load_save_files(file_id, user_id=None):
 def load_all_annotations():
     """Loads all annotations"""
     query = """
-        SELECT a.fileid, a.start, a.end, a.tag, a.text, a.color, l.start AS link_start, l.end AS link_end, l.tag AS link_tag, l.source AS link_source, l.target AS link_target, l.fileid AS link_fileid, l.color AS link_color
+        SELECT
+            a.annoid, a.fileid, a.start, a.end, a.tag, a.text, a.color,
+            l.start AS link_start, l.end AS link_end,
+            l.tag AS link_tag, l.source AS link_source, l.target AS link_target,
+            l.fileid AS link_fileid, l.color AS link_color
         FROM annotations a
         LEFT JOIN links l
         ON a.annoid = link_source
-        WHERE a.timestamp = (SELECT MAX(timestamp) FROM annotations WHERE fileid = a.fileid)
+        WHERE a.timestamp = (SELECT MAX(timestamp) FROM annotations WHERE fileid = a.fileid);
     """
 
     # Query for annotations, but we don't care about user or file id
@@ -87,13 +89,29 @@ def load_all_annotations():
     annotations = pd.DataFrame.from_records(annotations)
 
     grouped = (
-        annotations.groupby(["fileid", "start", "end", "tag", "text", "color"])[
-            ["link_start", "link_end", "link_tag", "link_fileid", "link_source", "link_target"]
+        annotations.groupby(["annoid", "fileid", "start", "end", "tag", "text", "color"])[
+            [
+                "link_start",
+                "link_end",
+                "link_tag",
+                "link_fileid",
+                "link_source",
+                "link_target",
+            ]
         ]
         .apply(
             lambda s: pd.Series(
                 {
-                    "links": s[["link_start", "link_end", "link_tag", "link_fileid", "link_source", "link_target"]]
+                    "links": s[
+                        [
+                            "link_start",
+                            "link_end",
+                            "link_tag",
+                            "link_fileid",
+                            "link_source",
+                            "link_target",
+                        ]
+                    ]
                     .reset_index(drop=True)
                     .rename(columns=lambda x: x.strip("link_"))
                     .dropna()
@@ -138,7 +156,19 @@ def load_annotations(file_id, user_id, timestamp=None):
         return []
 
     annotations = pd.DataFrame.from_records(annotations)
-    grouped = annotations.groupby(["annoid", "fileid", "start", "end", "tag", "text", "color"])[["link_source", "link_target", "link_start", "link_color", "link_end", "link_tag", "link_fileid"]].apply(
+    grouped = annotations.groupby(
+        ["annoid", "fileid", "start", "end", "tag", "text", "color"]
+    )[
+        [
+            "link_source",
+            "link_target",
+            "link_start",
+            "link_color",
+            "link_end",
+            "link_tag",
+            "link_fileid",
+        ]
+    ].apply(
         lambda s: pd.Series(
             {
                 "links": s.reset_index(drop=True)
@@ -153,96 +183,90 @@ def load_annotations(file_id, user_id, timestamp=None):
 
 
 def save_annotations(file_id, user_id, annotations):
-    conn = sqlite3.Connection(ANNOTATIONS_DB)
-    cur = conn.cursor()
-    savename = randomname.get_name()
-    # Insert new entries
-    for an in annotations:
-        links = an["links"]
-        result = cur.execute(
-            """
-            INSERT INTO annotations (annoid, fileid, userid, start, end, text, tag, color, savename)
-                VALUES (:annoid, :fileid, :userid, :start, :end, :text, :tag, :color, :savename)
-            ON CONFLICT(fileid,userid,start,end,tag,savename) DO NOTHING;
-            """,
-            dict(
-                annoid=an['annoid'],
-                fileid=file_id,
-                userid=user_id,
-                start=an["start"],
-                end=an["end"],
-                text=an["text"],
-                tag=an["tag"],
-                color=an.get("color", "#d3d3d3"),
-                savename=savename,
-            ),
-        )
-        # annoid = result.fetchone()[0]  # type:ignore
-        for ln in links:
-            cur.execute(
+    with sqlite3.connect(ANNOTATIONS_DB) as conn:
+        savename = randomname.get_name()
+        # Insert new entries
+        for an in annotations:
+            links = an["links"]
+            conn.execute(
+                """
+                INSERT INTO annotations (annoid, fileid, userid, start, end, text, tag, color, savename)
+                    VALUES (:annoid, :fileid, :userid, :start, :end, :text, :tag, :color, :savename)
+                ON CONFLICT(fileid,userid,start,end,tag,savename) DO NOTHING;
+                """,
+                dict(
+                    annoid=an["annoid"],
+                    fileid=file_id,
+                    userid=user_id,
+                    start=an["start"],
+                    end=an["end"],
+                    text=an["text"],
+                    tag=an["tag"],
+                    color=an.get("color", "#d3d3d3"),
+                    savename=savename,
+                ),
+            )
+            conn.executemany(
                 """
                 INSERT INTO links (fileid, userid, start, end, tag, color, source, target)
                     VALUES (:fileid, :userid, :start, :end, :tag, :color, :source, :target)
                 ON CONFLICT(fileid,userid,start,end,tag,source,target) DO NOTHING;
                 """,
-                dict(
-                    fileid=file_id,
-                    userid=user_id,
-                    start=ln["start"],
-                    end=ln["end"],
-                    tag=ln["tag"],
-                    color=ln.get("color", "#d3d3d3"),
-                    source=ln['source'],
-                    target=ln['target'],
-                ),
+                [
+                    dict(
+                        fileid=file_id,
+                        userid=user_id,
+                        start=ln["start"],
+                        end=ln["end"],
+                        tag=ln["tag"],
+                        color=ln.get("color", "#d3d3d3"),
+                        source=ln["source"],
+                        target=ln["target"],
+                    )
+                    for ln in links
+                ],
             )
-
-    conn.commit()
-    conn.close()
     return True
 
 
 def init_annotation_db():
-    conn = sqlite3.Connection(ANNOTATIONS_DB)
-    cur = conn.cursor()
-    cur.execute(
+    with sqlite3.connect(ANNOTATIONS_DB) as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS annotations
+            (
+                rowid INTEGER PRIMARY KEY,
+                annoid TEXT,
+                fileid TEXT,
+                userid TEXT,
+                start INTEGER,
+                end INTEGER,
+                text TEXT,
+                tag TEXT,
+                color TEXT,
+                savename TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (fileid, userid, start, end, tag, savename)
+            );
         """
-        CREATE TABLE IF NOT EXISTS annotations
-        (
-            rowid INTEGER PRIMARY KEY,
-            annoid TEXT,
-            fileid TEXT,
-            userid TEXT,
-            start INTEGER,
-            end INTEGER,
-            text TEXT,
-            tag TEXT,
-            color TEXT,
-            savename TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE (fileid, userid, start, end, tag, savename)
-        );
-    """
-    )
-    cur.execute(
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS links
+            (
+                linkid INTEGER PRIMARY KEY,
+                fileid TEXT,
+                userid TEXT,
+                start INTEGER,
+                end INTEGER,
+                tag TEXT,
+                color TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                source TEXT,
+                target TEXT,
+                UNIQUE (fileid, userid, start, end, tag, source, target),
+                FOREIGN KEY(source) REFERENCES annotations(annoid)
+                FOREIGN KEY(target) REFERENCES annotations(annoid)
+            );
         """
-        CREATE TABLE IF NOT EXISTS links
-        (
-            linkid INTEGER PRIMARY KEY,
-            fileid TEXT,
-            userid TEXT,
-            start INTEGER,
-            end INTEGER,
-            tag TEXT,
-            color TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            source TEXT,
-            target TEXT,
-            UNIQUE (fileid, userid, start, end, tag, source, target),
-            FOREIGN KEY(source) REFERENCES annotations(annoid)
-            FOREIGN KEY(target) REFERENCES annotations(annoid)
-        );
-    """
-    )
-    conn.commit()
-    conn.close()
+        )
