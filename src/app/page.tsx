@@ -1,5 +1,6 @@
 "use client"
 import React from "react";
+import { useSearchParams } from "react-router-dom";
 import Annotator from "./components/annotator/Annotator";
 import PdfViewer from "./components/PdfViewer";
 import TopBar from "./components/TopBar";
@@ -7,6 +8,9 @@ import { ColorMap } from "./lib/colors"
 import { TextSpan } from "./lib/span"
 import { defaultColorMap } from "./lib/colors";
 import "./style.css";
+import { pdfjs } from "react-pdf";
+
+pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 type AnnotationToolProps = {
   labels: string[];
@@ -15,6 +19,7 @@ type AnnotationToolProps = {
 
 type AnnotationToolState = {
   fileid: string;
+  documents: string[];
   userid: string;
   tex: string;
   pdf: string;
@@ -25,20 +30,26 @@ type AnnotationToolState = {
 export class AnnotationTool extends React.Component<AnnotationToolProps, AnnotationToolState> {
   constructor(props: AnnotationToolProps) {
     super(props);
+    const queryParameters = new URLSearchParams(window.location.search)
     this.state = {
       annotations: [],
+      documents: [],
       tex: "",
       pdf: "",
-      fileid: "",
-      userid: "",
       otherAnnotations: [],
-    };
+      fileid: queryParameters.get('fileid') || "",
+      userid: queryParameters.get('userid') || "",
 
+    };
   }
 
   componentDidMount() {
-    this.loadDocument("test.tex");
-    this.loadAllAnnotations("test.tex")
+    this.loadAllAnnotations()
+    this.listAllDocuments()
+    if (this.state.fileid != "") {
+      this.loadDocument(this.state.fileid);
+      this.loadAnnotations(this.state.fileid, this.state.userid)
+    }
   }
 
   updateAnnotations = (annotations: TextSpan[]) => {
@@ -62,22 +73,20 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
     return annotations
   }
 
-  loadAllAnnotations = (fileid: string) => {
-    fetch(`/annotations/all?fileid=${fileid}`)
+  loadAllAnnotations = () => {
+    fetch(`/annotations/all`)
       .then((res) => res.json())
       .then(res => {
         this.setState(
           {
-            fileid: res['fileid'],
             otherAnnotations: res['otherAnnotations']
           });
-        console.log(this.state)
       })
       .catch(error => console.log(error));
   }
 
-  loadAnnotations = (fileid: string, userid: string, timestamp: string) => {
-    fetch(`/annotations?fileid=${fileid}&userid=${userid}&timestamp=${timestamp}`)
+  loadAnnotations = (fileid: string, userid: string, timestamp?: string) => {
+    fetch(`/annotations?fileid=${fileid}&userid=${userid}&timestamp=${timestamp ? timestamp : ""}`)
       .then((res) => res.json())
       .then(res => {
         this.setState(
@@ -86,35 +95,39 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
             annotations: res['annotations']
           }
         );
-        console.log('new annotations: ', res['annotations'])
       })
       .catch(error => console.log(error));
   }
 
+  listAllDocuments = () => {
+    fetch(`/document/all`)
+      .then((res) => res.json())
+      .then(res => {
+        this.setState(
+          {
+            documents: res['documents'],
+          });
+      })
+      .catch(error => console.log(error));
+  }
 
   loadDocument = (fileid: string) => {
     fetch(`/document?fileid=${fileid}`)
       .then((res) => res.json())
       .then(res => {
-        console.log(res);
         this.setState(
           {
             fileid: res['fileid'],
             tex: res['tex'],
             pdf: res['pdf'],
           });
-        console.log(this.state)
       })
       .catch(error => console.log(error));
   }
 
   render() {
-    const fileid = this.state.fileid;
-    const annotations = this.state.annotations;
-    const otherAnnotations = this.state.otherAnnotations;
     const colors = this.props.colors;
     const labels = this.props.labels;
-    const tex = this.state.tex;
 
     return (
       <div >
@@ -122,6 +135,9 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
           loadDocument={this.loadDocument}
           loadAnnotations={this.loadAnnotations}
           saveAnnotations={() => this.saveAnnotations(this.state.fileid, this.state.userid, this.state.annotations, false)}
+          allDocuments={this.state.documents}
+          userid={this.state.userid}
+          fileid={this.state.fileid}
         />
         <div
           style={{
@@ -146,12 +162,12 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
                 lineHeight: 3,
                 margin: "10px",
               }}
-              fileid={fileid}
+              fileid={this.state.fileid}
               colors={colors}
               labels={labels}
-              content={tex}
-              annotations={annotations}
-              otherAnnotations={otherAnnotations}
+              content={this.state.tex}
+              annotations={this.state.annotations}
+              otherAnnotations={this.state.otherAnnotations}
               onAddAnnotation={(annos) => this.updateAnnotations(annos)}
               getSpan={(span: TextSpan) => ({ ...span })}
             />
@@ -161,7 +177,7 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
               flexGrow: 3,
             }}
           >
-            <PdfViewer filepath="https://arxiv.org/pdf/0705.1690.pdf" />
+            <PdfViewer data={this.state.pdf} />
           </div>
         </div >
       </div>

@@ -5,7 +5,7 @@ import boto3
 import pandas as pd
 import randomname
 
-s3 = boto3.client(
+session = boto3.client(
     "s3",
     aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
     aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
@@ -13,14 +13,20 @@ s3 = boto3.client(
 ANNOTATIONS_DB = os.environ["ANNOTATIONS_DB"]
 
 
+def list_s3_documents():
+    docs = session.list_objects(Bucket="tex-annotation")["Contents"]
+    names = [d['Key'].split('/')[-1] for d in docs if d['Key'].startswith("texs/")]
+    return names
+
+
 def load_pdf(file_name):
-    obj = s3.get_object(Bucket="tex-annotation", Key=f"pdfs/{file_name}")
+    obj = session.get_object(Bucket="tex-annotation", Key=f"pdfs/{file_name}")
     data = obj["Body"].read()
     return data
 
 
 def load_tex(file_name):
-    obj = s3.get_object(Bucket="tex-annotation", Key=f"texs/{file_name}")
+    obj = session.get_object(Bucket="tex-annotation", Key=f"texs/{file_name}")
     data = obj["Body"].read()
     return data.decode()
 
@@ -63,7 +69,7 @@ def load_save_files(file_id, user_id=None):
     return query_db(query, params)
 
 
-def load_all_annotations(file_id):
+def load_all_annotations():
     """Loads all annotations"""
     query = """
         SELECT a.fileid, a.start, a.end, a.tag, a.text, a.color, l.start AS link_start, l.end AS link_end, l.tag AS link_tag, l.annotation AS link_annoid, l.fileid AS link_fileid, l.color AS link_color
@@ -71,11 +77,10 @@ def load_all_annotations(file_id):
         LEFT JOIN links l
         ON a.annoid = l.annotation
         WHERE a.timestamp = (SELECT MAX(timestamp) FROM annotations WHERE fileid = a.fileid)
-        AND   a.fileid != :fileid;
     """
 
     # Query for annotations, but we don't care about user or file id
-    annotations = query_db(query, dict(fileid=file_id))
+    annotations = query_db(query)
     if len(annotations) == 0:
         return []
 
@@ -114,7 +119,10 @@ def load_annotations(file_id, user_id, timestamp=None):
         timestamp = result.iloc[0]["MAX(timestamp)"]
 
     query = """
-        SELECT a.fileid, a.start, a.end, a.tag, a.text, a.color, l.start AS link_start, l.end AS link_end, l.tag AS link_tag, l.annotation AS link_annoid, l.fileid AS link_fileid, l.color AS link_color
+        SELECT
+          a.annoid, a.fileid, a.start, a.end, a.tag, a.text, a.color,
+          l.start AS link_start, l.end AS link_end, l.tag AS link_tag,
+          l.annotation AS link_annoid, l.fileid AS link_fileid, l.color AS link_color
         FROM annotations a
         LEFT JOIN links l
         ON a.annoid = l.annotation
@@ -130,9 +138,7 @@ def load_annotations(file_id, user_id, timestamp=None):
         return []
 
     annotations = pd.DataFrame.from_records(annotations)
-    grouped = annotations.groupby(["fileid", "start", "end", "tag", "text", "color"])[
-        ["link_start", "link_color", "link_end", "link_tag", "link_fileid"]
-    ].apply(
+    grouped = annotations.groupby(["annoid", "fileid", "start", "end", "tag", "text", "color"])[["link_annoid", "link_start", "link_color", "link_end", "link_tag", "link_fileid"]].apply(
         lambda s: pd.Series(
             {
                 "links": s.reset_index(drop=True)
@@ -202,7 +208,7 @@ def init_annotation_db():
         """
         CREATE TABLE IF NOT EXISTS annotations
         (
-            annoid INTEGER PRIMARY KEY,
+            annoid TEXT PRIMARY KEY,
             fileid TEXT,
             userid TEXT,
             start INTEGER,
@@ -228,7 +234,7 @@ def init_annotation_db():
             tag TEXT,
             color TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            annotation INTEGER,
+            annotation TEXT,
             UNIQUE (fileid, userid, start, end, tag, annotation),
             FOREIGN KEY(annotation) REFERENCES annotations(annoid)
         );

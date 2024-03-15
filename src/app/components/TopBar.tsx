@@ -13,17 +13,24 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import SearchIcon from '@mui/icons-material/Search';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import SaveIcon from '@mui/icons-material/Save';
+import TextField from '@mui/material/TextField';
+import Autocomplete from '@mui/material/Autocomplete';
 import FileOpenIcon from '@mui/icons-material/FileOpen';
 
 
 type SaveFileProps = {
     fileid: string
-    loadAnnotations: (fileid: string, userid: string, timestamp: string) => any
+    userid: string
+    loadAnnotations: (fileid: string, userid: string, timestamp?: string) => any
 }
 
 const SaveFileSelector = (props: SaveFileProps) => {
     const [selected, setSelected] = React.useState('');
     const [saves, setSaves] = React.useState<any[]>([]);
+
+    // if (props.fileid != "") {
+    //     props.loadAnnotations(props.fileid, props.userid);
+    // }
 
     const handleChange = (event: SelectChangeEvent) => {
         const s = JSON.parse(event.target.value);
@@ -43,7 +50,8 @@ const SaveFileSelector = (props: SaveFileProps) => {
 
     React.useEffect(() => {
         loadSaves(props.fileid);
-    }, [props]);
+        props.loadAnnotations(props.fileid, props.userid)
+    }, [props.fileid, props.userid]);
 
     return (
         <Box sx={{ minWidth: 200, marginLeft: "20px", marginRight: "20px", }}>
@@ -51,16 +59,14 @@ const SaveFileSelector = (props: SaveFileProps) => {
                 <InputLabel variant="filled" style={{ color: "#ffffff80" }} id="demo-simple-select-label">Load annotations</InputLabel>
                 <Select
                     style={{ color: "#ffffff80" }}
-                    labelId="demo-simple-select-label"
-                    id="demo-simple-select"
                     value={selected}
                     label="save"
                     onChange={handleChange}
                 >
                     {saves.map((item) => {
                         return (
-                            <MenuItem key={item['timestamp'] + item['userid'] + item['fileid']} value={JSON.stringify(item)} >
-                                {`${item['timestamp']} + ${item['userid']} + ${item['fileid']}`}
+                            <MenuItem key={crypto.randomUUID()} value={JSON.stringify(item)} >
+                                {`${item['timestamp']} (${item['userid']})`}
                             </MenuItem >
                         );
                     })}
@@ -73,12 +79,15 @@ const SaveFileSelector = (props: SaveFileProps) => {
 
 type TopBarProps = {
     saveAnnotations: () => any,
-    loadAnnotations: (fileid: string, userid: string, timestamp: string) => any,
+    userid: string
+    fileid: string
+    loadAnnotations: (fileid: string, userid: string, timestamp?: string) => any,
     loadDocument: (fileid: string) => any
+    allDocuments: string[]
 }
 
 export default function TopBar(props: TopBarProps) {
-    const [fileid, setFileid] = React.useState('');
+    const [fileid, setFileid] = React.useState(props.fileid);
 
     return (
         <Box sx={{ flexGrow: 1 }}>
@@ -116,13 +125,28 @@ export default function TopBar(props: TopBarProps) {
                     </Typography>
                     <div>
                         <span style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                            <SearchIcon />
-                            <InputBase
-                                placeholder="Select paper…"
-                                inputProps={{ 'aria-label': 'search' }}
-                                style={{ color: "white", paddingLeft: "10px" }}
-                            />
-                            <SaveFileSelector fileid={fileid} loadAnnotations={props.loadAnnotations} />
+                            <div>
+                                <Autocomplete
+                                    options={props.allDocuments}
+                                    sx={{ width: 300 }}
+                                    style={{ color: "#ffffff80" }}
+                                    value={fileid}
+                                    onChange={(e) => {
+                                        props.loadDocument(e.target.textContent);
+                                        setFileid(e.target.textContent);
+                                    }}
+                                    renderInput={(params: any) =>
+                                        <TextField
+                                            {...params}
+                                            variant="filled"
+                                            //InputProps={{ style: { color: '#ffffff80' } }}
+                                            InputLabelProps={{ style: { color: '#ffffff80' } }}
+                                            label="Load paper"
+                                        />
+                                    }
+                                />
+                            </div>
+                            <SaveFileSelector fileid={fileid} userid={props.userid} loadAnnotations={props.loadAnnotations} />
                         </span>
                     </div>
                 </Toolbar>

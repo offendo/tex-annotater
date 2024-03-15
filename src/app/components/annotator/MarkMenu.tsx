@@ -12,6 +12,7 @@ import MenuItem from '@mui/material/MenuItem';
 
 
 export interface MarkMenuProps {
+    anno: TextSpan;
     innerContent: any;
     colors: any;
     start: number;
@@ -21,6 +22,7 @@ export interface MarkMenuProps {
     toggleLink: (annotation: TextSpan, link: Link) => any;
     deleteAnnotation: (annotation: TextSpan, index: number) => any;
     editAnnotation: (annotation: TextSpan, index: number) => any;
+    openLinkMenuByDefault: boolean;
 }
 
 export function MarkMenu(props: MarkMenuProps) {
@@ -29,15 +31,25 @@ export function MarkMenu(props: MarkMenuProps) {
     const [menuOpen, setMenuOpen] = useState<boolean>(false);
     const [hoveredAnnotations, setHoveredAnnotations] = useState<TextSpan[]>([]);
 
-    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const handleJumpClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        if (props.anno.links.length > 0) {
+            console.log('jumping to: ', props.anno.links[0]);
+            const file = props.anno.links[0].fileid;
+            const annoid = props.anno.links[0].id;
+            window.open(`?userid=&fileid=${file}&anchor${annoid}`, "_blank");
+        }
+    }
+
+    const handleRightClick = (e: React.MouseEvent<HTMLButtonElement>) => {
         const selection = window.getSelection();
         if (selectionIsEmpty(selection)) {
             setPos({ left: e.pageX, top: e.pageY });
             const annotations = props.annotations.filter((s: TextSpan) => { return props.start >= s.start && props.end <= s.end });
             setHoveredAnnotations(annotations);
-            setMenuOpen(!menuOpen);
+            setMenuOpen(true);
         }
     };
+
     const handleClose = () => { setMenuOpen(false); };
 
     const toggleSelected = (index: number) => {
@@ -50,7 +62,7 @@ export function MarkMenu(props: MarkMenuProps) {
 
 
     const Row = ({ annotation, index }: { annotation: TextSpan, index: number }) => {
-        const [linksOpen, setLinksOpen] = useState<boolean>(false);
+        const [linksOpen, setLinksOpen] = useState<boolean>(props.openLinkMenuByDefault);
         const handleLinkButtonPress = (e) => {
             setLinksOpen(!linksOpen);
             e.stopPropagation();
@@ -124,7 +136,8 @@ export function MarkMenu(props: MarkMenuProps) {
     return (
         <span data-start={props.start} data-end={props.end} >
             <span
-                onClick={handleClick}
+                onContextMenu={handleRightClick}
+                onDoubleClick={(e) => handleJumpClick(e)}
                 data-start={props.start}
                 data-end={props.end}
             >
@@ -150,7 +163,7 @@ export function MarkMenu(props: MarkMenuProps) {
                                 padding: "0px",
                                 margin: "0px",
                             }}
-                            key={`${annotation.start}-${annotation.end}-${annotation.tag}-${index}`}
+                            key={crypto.randomUUID()}
                         >
                             <Row annotation={annotation} index={index} />
                         </MenuItem >

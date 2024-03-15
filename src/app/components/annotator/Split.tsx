@@ -67,7 +67,6 @@ export function Mark(props: MarkProps): React.JSX.Element {
       if (split.anno.tag == 'name') {
         return split.anno.color + '70';
       }
-      console.log('link color: ', split.anno.links[0])
       return split.anno.links[0].color + "70";
     }
     // otherwise, set it to transparent
@@ -98,6 +97,8 @@ export function Mark(props: MarkProps): React.JSX.Element {
           }}
         >
           <MarkMenu
+            anno={split.anno}
+            openLinkMenuByDefault={props.tags.length == 1}
             innerContent={final}
             colors={props.colors}
             start={props.start}
@@ -125,7 +126,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
           data-start={props.start}
           data-end={props.end}
           data-uid={split.tag}
-          key={`${props.start}-${props.end}-${split.tag}-${split.height}`}
+          key={crypto.randomUUID()}
         >
           {final}
         </span>

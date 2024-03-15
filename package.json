@@ -21,7 +21,9 @@
     "lodash.sortby": "^4.7.0",
     "next": "14.1.1",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-pdf": "^7.7.1",
+    "react-router-dom": "^6.22.3"
   },
   "devDependencies": {
     "@types/lodash.sortby": "^4.7.9",

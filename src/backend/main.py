@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
+import base64
+import re
 import os
 import sqlite3
 import boto3
@@ -12,18 +14,21 @@ from .data import (
     load_save_files,
     load_annotations,
     save_annotations,
+    list_s3_documents,
+    init_annotation_db,
 )
 
 app = Flask(__name__)
 cors = CORS(app)
 app.config["CORS_HEADERS"] = "Content-Type"
 
+init_annotation_db()
 
 @app.post("/annotations")
 @cross_origin()
 def post_annotations():
-    userid = request.args.get("fileid")
-    fileid = request.args.get("userid")
+    userid = request.args.get("userid")
+    fileid = request.args.get("fileid")
     annotations = request.get_json()["annotations"]
     save_annotations(fileid, userid, annotations)
     return "Success!", 200
@@ -32,11 +37,9 @@ def post_annotations():
 @app.get("/annotations/all")
 @cross_origin()
 def get_all_annotations():
-    fileid = request.args.get("fileid")
-    annotations = load_all_annotations(fileid)
+    annotations = load_all_annotations()
 
     return {
-        "fileid": fileid,
         "otherAnnotations": annotations,
     }, 200
 
@@ -47,7 +50,9 @@ def get_annotations():
     userid = request.args.get("userid")
     fileid = request.args.get("fileid")
     timestamp = request.args.get("timestamp")
-    annotations = load_annotations(fileid, userid, timestamp)
+    if userid is None or fileid is None or timestamp is None:
+        return "Bad request: need userid, fileid, and timestamp!", 400
+    annotations = load_annotations(fileid, userid, timestamp if len(timestamp) else None)
 
     return {
         "fileid": fileid,
@@ -63,13 +68,27 @@ def list_all_saves():
     return {"saves": load_save_files(file_id=fileid, user_id=userid)}
 
 
+@app.get("/document/all")
+@cross_origin()
+def list_all_documents():
+    return {"documents": list_s3_documents()}
+
+
 @app.get("/document")
 @cross_origin()
 def get_document():
     fileid = request.args.get("fileid")
+    if fileid is None:
+        return 400, "Request requires fileid"
+    tex = load_tex(fileid)
 
-    tex = load_tex("0705.1690-alpha-Brjuno_arxiv.tex")
+    arxiv_id = fileid.split("-")[0]
+    if re.match(r"\d+\.\d+", arxiv_id):
+        pdf = f"https://arxiv.org/pdf/{arxiv_id}.pdf"
+    else:
+        pdf = str(base64.b64encode(load_pdf(fileid.replace(".tex", ".pdf"))))[2:-1]
     return {
         "fileid": fileid,
         "tex": tex,
+        "pdf": pdf,
     }

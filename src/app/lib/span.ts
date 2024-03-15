@@ -14,6 +14,7 @@ export interface Link extends Span {
   fileid: string
   type?: LinkType
   color: string
+  id: string
 }
 
 export interface TextSpan extends Span {
@@ -23,4 +24,5 @@ export interface TextSpan extends Span {
   name: string
   color: string
   links: Link[]
+  id: string
 }

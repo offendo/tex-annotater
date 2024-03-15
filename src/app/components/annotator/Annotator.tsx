@@ -67,6 +67,7 @@ const Annotator = (props: AnnotatorProps) => {
     setCurrentColor(nextColor)
     const newSpan = getSpan(
       {
+        id: crypto.randomUUID(),
         start: start,
         end: end,
         text: props.content.slice(start, end),
@@ -132,8 +133,6 @@ const Annotator = (props: AnnotatorProps) => {
       if (selection == null || !selectionIsEmpty(selection)) {
         return;
       }
-      const annotations = props.annotations.filter((s: TextSpan) => { return loc.start >= s.start && loc.end <= s.end });
-      setHoveredAnnotations(annotations);
     }
   }
 

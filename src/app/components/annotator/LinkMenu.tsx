@@ -70,19 +70,28 @@ export function LinkMenu(props: LinkMenuProps) {
         if (match === null) {
             return text;
         }
-        return fuzzysort.highlight(match, (m, i) => <span style={{ width: "60%", fontWeight: "bold", color: "red" }}>{m}</span>);
+        return fuzzysort.highlight(match, (m, i) => <span key={crypto.randomUUID()} style={{ width: "60%", fontWeight: "bold", color: "red" }}>{m}</span>);
     }
 
     const makeRow = (annotation: any, index: number, selected: boolean = false) => {
         let icon = selected ? <CloseIcon /> : <CheckIcon />;
         return (
             <tr
-                key={`${index}-${annotation.tag}-${annotation.start}-${annotation.end}-${annotation.fileid}`}
+                key={crypto.randomUUID()}
                 className={selected ? "link-menu-item link-selected" : "link-menu-item"}
             >
                 <td> <IconButton size="small" onClick={(e) => props.toggleLink(props.selectedAnnotation, annotation as Link)}> {icon} </IconButton></td>
                 <td> <Button size="small" variant="text" onClick={(e) => toggleTag(annotation.tag)} style={{ color: props.colors[annotation.tag] }}> {`${annotation.tag}`} </Button> </td>
-                <td> <Button size="small" variant="text" onClick={(e) => toggleFileId(annotation.fileid)}> {`${annotation.fileid}`} </Button> </td>
+                <td>
+                    <Button
+                        style={{ maxHeight: "50px", whiteSpace: "nowrap" }}
+                        size="small"
+                        variant="text"
+                        onClick={(e) => toggleFileId(annotation.fileid)}
+                    >
+                        {`${annotation.fileid.slice(0, 10) + '...'}`}
+                    </Button>
+                </td>
                 <td onClick={(e) => toggleExpandedIndex(index)} className="expand-text" style={{ overflowX: "scroll", width: "80%" }}>
                     <pre style={{ whiteSpace: "pre-wrap" }}>
                         {selected
