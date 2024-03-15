@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 
 import { LabelMenu } from "./Menu";
 import { Split } from "./Split";
-import { Link, TextSpan } from "@/app/lib/span";
+import { Link, TextSpan, makeLink } from "@/app/lib/span";
 import {
   selectionIsEmpty,
   selectionIsBackwards,
@@ -41,7 +41,6 @@ const Annotator = (props: AnnotatorProps) => {
   const [markMenuClicked, setMarkMenuClicked] = useState(false);
   const [linkMenuClicked, setLinkMenuClicked] = useState(false);
 
-
   /* State */
   const [currentSelection, setCurrentSelection] = useState<Selection | null>(null);
   const [clickedAnnotation, setClickedAnnotation] = useState<TextSpan>({} as TextSpan);
@@ -67,7 +66,7 @@ const Annotator = (props: AnnotatorProps) => {
     setCurrentColor(nextColor)
     const newSpan = getSpan(
       {
-        id: crypto.randomUUID(),
+        annoid: crypto.randomUUID(),
         start: start,
         end: end,
         text: props.content.slice(start, end),
@@ -111,22 +110,24 @@ const Annotator = (props: AnnotatorProps) => {
     }
   }
 
-  const toggleLink = (anno: TextSpan, link: Link) => {
-    const splitIndex = anno.links.findIndex((s) => s.end == link.end && s.start == link.start && s.tag == link.tag && s.fileid == link.fileid);
+  const toggleLink = (source: TextSpan, target: TextSpan) => {
+    const link = makeLink(source, target)
+    console.log(source.annoid, ' links to ', link.target);
+    const splitIndex = source.links.findIndex((s) => s.end == link.end && s.start == link.start && s.tag == link.tag && s.fileid == link.fileid);
     if (splitIndex == -1) {
-      anno.links = [...anno.links, link];
+      source.links = [...source.links, link];
     } else {
-      anno.links = [
-        ...anno.links.slice(0, splitIndex),
-        ...anno.links.slice(splitIndex + 1),
+      source.links = [
+        ...source.links.slice(0, splitIndex),
+        ...source.links.slice(splitIndex + 1),
       ]
     }
-    updateMark(anno);
+    updateMark(source);
   }
 
   const handleSplitPress = (e: any, anno: TextSpan, loc: { start: number, end: number }) => {
     if (linkMenuClicked && anno != clickedAnnotation) {
-      toggleLink(clickedAnnotation, anno as Link);
+      toggleLink(clickedAnnotation, anno);
       // setLinkMenuClicked(false);
     } else {
       const selection = window.getSelection();
@@ -137,10 +138,10 @@ const Annotator = (props: AnnotatorProps) => {
   }
 
 
-  const handleAddLinkPress = (anno: TextSpan, link: Link) => {
+  const handleAddLinkPress = (source: TextSpan, target: TextSpan) => {
     // Launch the link menu button
-    setClickedAnnotation(anno);
-    toggleLink(anno, link)
+    setClickedAnnotation(source);
+    toggleLink(source, target)
     // setLinkMenuClicked(true);
   };
 

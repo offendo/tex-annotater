@@ -39,7 +39,7 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
       otherAnnotations: [],
       fileid: queryParameters.get('fileid') || "",
       userid: queryParameters.get('userid') || "",
-
+      anchor: queryParameters.get('anchor') || "",
     };
   }
 
@@ -50,6 +50,15 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
       this.loadDocument(this.state.fileid);
       this.loadAnnotations(this.state.fileid, this.state.userid)
     }
+    setTimeout(() => {
+      if (this.state.anchor.length > 0) {
+        console.log("scrolling to ", this.state.anchor, '...');
+        const element = document.getElementById(this.state.anchor);
+        element.scrollIntoView({ behavior: 'smooth' });
+        console.log("done!");
+      }
+    }, 1000);
+
   }
 
   updateAnnotations = (annotations: TextSpan[]) => {
@@ -57,6 +66,7 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
   }
 
   saveAnnotations = (fileid: string, userid: string, annotations: TextSpan[], autosave: boolean = false) => {
+    console.log(annotations);
     const requestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -95,6 +105,7 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
             annotations: res['annotations']
           }
         );
+        console.log('state: ', this.state)
       })
       .catch(error => console.log(error));
   }
@@ -187,6 +198,7 @@ export class AnnotationTool extends React.Component<AnnotationToolProps, Annotat
 
 
 export default function Home() {
+
   return (
     <div>
       <AnnotationTool

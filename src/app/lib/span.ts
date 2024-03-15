@@ -14,7 +14,8 @@ export interface Link extends Span {
   fileid: string
   type?: LinkType
   color: string
-  id: string
+  source: string
+  target: string
 }
 
 export interface TextSpan extends Span {
@@ -24,5 +25,17 @@ export interface TextSpan extends Span {
   name: string
   color: string
   links: Link[]
-  id: string
+  annoid: string
+}
+
+export const makeLink = (source: TextSpan, target: TextSpan) => {
+  return {
+    start: target.start,
+    end: target.end,
+    tag: target.tag,
+    fileid: target.fileid,
+    color: target.color,
+    source: source.annoid,
+    target: target.annoid,
+  } as Link;
 }

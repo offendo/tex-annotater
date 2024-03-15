@@ -19,7 +19,7 @@ export interface MarkMenuProps {
     end: number;
     annotations: TextSpan[];
     otherFileAnnotations: TextSpan[];
-    toggleLink: (annotation: TextSpan, link: Link) => any;
+    toggleLink: (source: TextSpan, target: TextSpan) => any;
     deleteAnnotation: (annotation: TextSpan, index: number) => any;
     editAnnotation: (annotation: TextSpan, index: number) => any;
     openLinkMenuByDefault: boolean;
@@ -33,10 +33,11 @@ export function MarkMenu(props: MarkMenuProps) {
 
     const handleJumpClick = (e: React.MouseEvent<HTMLButtonElement>) => {
         if (props.anno.links.length > 0) {
-            console.log('jumping to: ', props.anno.links[0]);
+            console.log("I am ", props.anno.annoid)
+            console.log('jumping to: ', props.anno.links[0].target);
             const file = props.anno.links[0].fileid;
-            const annoid = props.anno.links[0].id;
-            window.open(`?userid=&fileid=${file}&anchor${annoid}`, "_blank");
+            const target = props.anno.links[0].target;
+            window.open(`?userid=&fileid=${file}&anchor=${target}`, "_blank");
         }
     }
 

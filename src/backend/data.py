@@ -72,10 +72,10 @@ def load_save_files(file_id, user_id=None):
 def load_all_annotations():
     """Loads all annotations"""
     query = """
-        SELECT a.fileid, a.start, a.end, a.tag, a.text, a.color, l.start AS link_start, l.end AS link_end, l.tag AS link_tag, l.annotation AS link_annoid, l.fileid AS link_fileid, l.color AS link_color
+        SELECT a.fileid, a.start, a.end, a.tag, a.text, a.color, l.start AS link_start, l.end AS link_end, l.tag AS link_tag, l.source AS link_source, l.target AS link_target, l.fileid AS link_fileid, l.color AS link_color
         FROM annotations a
         LEFT JOIN links l
-        ON a.annoid = l.annotation
+        ON a.annoid = link_source
         WHERE a.timestamp = (SELECT MAX(timestamp) FROM annotations WHERE fileid = a.fileid)
     """
 
@@ -88,12 +88,12 @@ def load_all_annotations():
 
     grouped = (
         annotations.groupby(["fileid", "start", "end", "tag", "text", "color"])[
-            ["link_start", "link_end", "link_tag", "link_fileid"]
+            ["link_start", "link_end", "link_tag", "link_fileid", "link_source", "link_target"]
         ]
         .apply(
             lambda s: pd.Series(
                 {
-                    "links": s[["link_start", "link_end", "link_tag", "link_fileid"]]
+                    "links": s[["link_start", "link_end", "link_tag", "link_fileid", "link_source", "link_target"]]
                     .reset_index(drop=True)
                     .rename(columns=lambda x: x.strip("link_"))
                     .dropna()
@@ -122,10 +122,10 @@ def load_annotations(file_id, user_id, timestamp=None):
         SELECT
           a.annoid, a.fileid, a.start, a.end, a.tag, a.text, a.color,
           l.start AS link_start, l.end AS link_end, l.tag AS link_tag,
-          l.annotation AS link_annoid, l.fileid AS link_fileid, l.color AS link_color
+          l.source AS link_source, l.target AS link_target, l.fileid AS link_fileid, l.color AS link_color
         FROM annotations a
         LEFT JOIN links l
-        ON a.annoid = l.annotation
+        ON a.annoid = link_source
         WHERE a.fileid = :fileid
         AND a.userid = :userid
         AND a.timestamp = :timestamp;
@@ -138,7 +138,7 @@ def load_annotations(file_id, user_id, timestamp=None):
         return []
 
     annotations = pd.DataFrame.from_records(annotations)
-    grouped = annotations.groupby(["annoid", "fileid", "start", "end", "tag", "text", "color"])[["link_annoid", "link_start", "link_color", "link_end", "link_tag", "link_fileid"]].apply(
+    grouped = annotations.groupby(["annoid", "fileid", "start", "end", "tag", "text", "color"])[["link_source", "link_target", "link_start", "link_color", "link_end", "link_tag", "link_fileid"]].apply(
         lambda s: pd.Series(
             {
                 "links": s.reset_index(drop=True)
@@ -161,12 +161,13 @@ def save_annotations(file_id, user_id, annotations):
         links = an["links"]
         result = cur.execute(
             """
-            INSERT INTO annotations (fileid, userid, start, end, text, tag, color, savename)
-                VALUES (:fileid, :userid, :start, :end, :text, :tag, :color, :savename)
+            INSERT INTO annotations (annoid, fileid, userid, start, end, text, tag, color, savename)
+                VALUES (:annoid, :fileid, :userid, :start, :end, :text, :tag, :color, :savename)
             ON CONFLICT(fileid,userid,start,end,tag,savename) DO NOTHING
-            RETURNING (annoid);
+            ON CONFLICT(annoid) DO NOTHING;
             """,
             dict(
+                annoid=an['annoid'],
                 fileid=file_id,
                 userid=user_id,
                 start=an["start"],
@@ -177,13 +178,13 @@ def save_annotations(file_id, user_id, annotations):
                 savename=savename,
             ),
         )
-        annoid = result.fetchone()[0]  # type:ignore
+        # annoid = result.fetchone()[0]  # type:ignore
         for ln in links:
             cur.execute(
                 """
-                INSERT INTO links (fileid, userid, start, end, tag, color, annotation)
-                    VALUES (:fileid, :userid, :start, :end, :tag, :color, :annoid)
-                ON CONFLICT(fileid,userid,start,end,tag,annotation) DO NOTHING;
+                INSERT INTO links (fileid, userid, start, end, tag, color, source, target)
+                    VALUES (:fileid, :userid, :start, :end, :tag, :color, :source, :target)
+                ON CONFLICT(fileid,userid,start,end,tag,source,target) DO NOTHING;
                 """,
                 dict(
                     fileid=file_id,
@@ -192,7 +193,8 @@ def save_annotations(file_id, user_id, annotations):
                     end=ln["end"],
                     tag=ln["tag"],
                     color=ln.get("color", "#d3d3d3"),
-                    annoid=annoid,
+                    source=ln['source'],
+                    target=ln['target'],
                 ),
             )
 
@@ -234,9 +236,11 @@ def init_annotation_db():
             tag TEXT,
             color TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            annotation TEXT,
-            UNIQUE (fileid, userid, start, end, tag, annotation),
-            FOREIGN KEY(annotation) REFERENCES annotations(annoid)
+            source TEXT,
+            target TEXT,
+            UNIQUE (fileid, userid, start, end, tag, source, target),
+            FOREIGN KEY(source) REFERENCES annotations(annoid)
+            FOREIGN KEY(target) REFERENCES annotations(annoid)
         );
     """
     )

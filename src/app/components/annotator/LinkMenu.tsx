@@ -13,7 +13,7 @@ export interface LinkMenuProps {
     selectedAnnotation: TextSpan;
     annotations: TextSpan[];
     otherFileAnnotations: TextSpan[];
-    toggleLink: (annotation: TextSpan, link: Link) => any;
+    toggleLink: (source: TextSpan, target: TextSpan) => any;
     onDeletePress: (e: any, anno: any) => any
 }
 
@@ -80,7 +80,7 @@ export function LinkMenu(props: LinkMenuProps) {
                 key={crypto.randomUUID()}
                 className={selected ? "link-menu-item link-selected" : "link-menu-item"}
             >
-                <td> <IconButton size="small" onClick={(e) => props.toggleLink(props.selectedAnnotation, annotation as Link)}> {icon} </IconButton></td>
+                <td> <IconButton size="small" onClick={(e) => props.toggleLink(props.selectedAnnotation, annotation)}> {icon} </IconButton></td>
                 <td> <Button size="small" variant="text" onClick={(e) => toggleTag(annotation.tag)} style={{ color: props.colors[annotation.tag] }}> {`${annotation.tag}`} </Button> </td>
                 <td>
                     <Button

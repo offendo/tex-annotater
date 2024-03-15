@@ -4,7 +4,7 @@ import { Dropdown } from '@mui/base/Dropdown';
 import { MarkMenu } from './MarkMenu';
 import ColorMap from "@/app/lib/colors";
 import { TextSpan, Link } from "@/app/lib/span";
-import { selectionIsEmpty, parseSelection } from "@/app/lib/utils";
+import { selectionIsEmpty, parseSelection, SplitTagProps } from "@/app/lib/utils";
 
 export interface SplitProps {
   content: string
@@ -17,7 +17,7 @@ export interface SplitProps {
   end: number
   onClick?: (arg: any, anno: TextSpan, location: any) => any
   onContextMenu?: (e: any, location: any) => (any)
-  toggleLink: (annotation: TextSpan, link: Link) => any;
+  toggleLink: (source: TextSpan, target: TextSpan) => any;
   deleteAnnotation: (annotation: TextSpan, index: number) => any;
   editAnnotation: (annotation: TextSpan, index: number) => any;
 }
@@ -32,7 +32,7 @@ export interface MarkProps extends SplitProps {
   otherFileAnnotations: TextSpan[]
   onClick: (e: any, anno: TextSpan, location: any) => (any)
   onContextMenu: (e: any, location: any) => (any)
-  toggleLink: (annotation: TextSpan, link: Link) => any;
+  toggleLink: (source: TextSpan, target: TextSpan) => any;
   deleteAnnotation: (annotation: TextSpan, index: number) => any;
   editAnnotation: (annotation: TextSpan, index: number) => any;
 }
@@ -84,6 +84,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
       // on the last iteration, grab the bounding box
       final = (
         <span
+          id={split.anno.annoid}
           data-start={props.start}
           data-end={props.end}
           data-uid={split.tag}
