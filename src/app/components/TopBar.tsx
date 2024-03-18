@@ -148,7 +148,7 @@ export default function TopBar(props: TopBarProps) {
                                         <TextField
                                             {...params}
                                             variant="filled"
-                                            //InputProps={{ style: { color: '#ffffff80' } }}
+                                            InputProps={{ ...params.InputProps, style: { color: '#ffffff80' } }}
                                             InputLabelProps={{ style: { color: '#ffffff80' } }}
                                             label="Load paper"
                                         />
