@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import Annotater from "@/app/components/Annotater/Annotater";
-import PdfViewer from "@/app/components/PDFViewer";
+import PDFViewer from "@/app/components/PDFViewer";
 import TopBar from "@/app/components/TopBar";
 import { ColorMap } from "@/app/lib/colors"
 import { TextSpan } from "@/app/lib/span"
@@ -149,7 +149,7 @@ const AnnotationTool = () => {
           />
         </div>
         <div style={{ flexGrow: 3 }} >
-          <PdfViewer data={pdf} />
+          <PDFViewer data={pdf} />
         </div>
       </div >
     </div>
