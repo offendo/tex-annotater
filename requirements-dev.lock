@@ -30,6 +30,8 @@ flask==3.0.2
     # via tex-annotater
 flask-cors==4.0.0
     # via tex-annotater
+gunicorn==21.2.0
+    # via tex-annotater
 ipython==8.22.2
 itsdangerous==2.1.2
     # via flask
@@ -47,6 +49,8 @@ matplotlib-inline==0.1.6
     # via ipython
 numpy==1.26.4
     # via pandas
+packaging==24.0
+    # via gunicorn
 pandas==2.2.1
     # via tex-annotater
 parso==0.8.3

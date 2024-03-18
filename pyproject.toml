@@ -13,6 +13,7 @@ dependencies = [
     "pandas>=2.2.1",
     "randomname>=0.2.1",
     "py-bcrypt>=0.4",
+    "gunicorn>=21.2.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
@@ -29,7 +30,7 @@ dev-dependencies = [
 
 [tool.rye.scripts]
 dev = {cmd = "flask --app src/backend/main.py run --debug"}
-prod = {cmd = "flask --app src/backend/main.py run"}
+prod = {cmd = "gunicorn -w 4 'src.backend.main:app' --bind 127.0.0.1:5000 "}
 
 [tool.hatch.metadata]
 allow-direct-references = true
