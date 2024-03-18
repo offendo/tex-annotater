@@ -18,7 +18,6 @@ type AnnotatorProps = {
   colors: ColorMap;
   content: string;
   annotations: TextSpan[];
-  otherAnnotations: TextSpan[];
   onAddAnnotation: (value: TextSpan[]) => any;
   getSpan: (span: TextSpan) => TextSpan;
   style: any;
@@ -38,7 +37,6 @@ const getNextColor = function (start_color: string = "") {
 const Annotator = (props: AnnotatorProps) => {
   /*  Context Menu stuff */
   const [selectionClicked, setSelectionClicked] = useState(false);
-  const [markMenuClicked, setMarkMenuClicked] = useState(false);
   const [linkMenuClicked, setLinkMenuClicked] = useState(false);
 
   /* State */
@@ -263,7 +261,6 @@ const Annotator = (props: AnnotatorProps) => {
                 {...split}
                 onClick={handleSplitPress}
                 annotations={props.annotations}
-                otherFileAnnotations={props.otherAnnotations}
                 toggleLink={handleAddLinkPress}
                 deleteAnnotation={(anno, index) => { removeMark(anno); }}
                 editAnnotation={(anno, index) => {}}

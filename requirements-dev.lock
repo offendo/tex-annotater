@@ -59,6 +59,8 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
+py-bcrypt==0.4
+    # via tex-annotater
 pygments==2.17.2
     # via ipython
 python-dateutil==2.9.0.post0

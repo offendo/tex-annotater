@@ -38,6 +38,8 @@ numpy==1.26.4
     # via pandas
 pandas==2.2.1
     # via tex-annotater
+py-bcrypt==0.4
+    # via tex-annotater
 python-dateutil==2.9.0.post0
     # via botocore
     # via pandas

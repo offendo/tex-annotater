@@ -33,11 +33,7 @@ export function MarkMenu(props: MarkMenuProps) {
     const [hoveredAnnotations, setHoveredAnnotations] = useState<TextSpan[]>([]);
 
     const handleJumpClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-        console.log('handling jump click');
         if (props.anno.links.length > 0) {
-            console.log("I am ", props.anno.annoid)
-            console.log('jumping to: ', props.anno.links[0].target);
-            console.log('target: ', props.anno.links[0]);
             const file = props.anno.links[0].fileid;
             const target = props.anno.links[0].target;
             window.open(`?userid=&fileid=${file}&anchor=${target}`, "_blank");

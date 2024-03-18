@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, TextSpan } from "../../lib/span";
 import fuzzysort from "fuzzysort"
 import { FormControlLabel, Button, TextField, Switch } from "@mui/material";
 import { IconButton } from "@mui/material";
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import { partition } from "lodash";
 
 export interface LinkMenuProps {
     left: number;
@@ -12,14 +13,15 @@ export interface LinkMenuProps {
     colors: any;
     selectedAnnotation: TextSpan;
     annotations: TextSpan[];
-    otherFileAnnotations: TextSpan[];
     toggleLink: (source: TextSpan, target: TextSpan) => any;
     onDeletePress: (e: any, anno: any) => any
 }
 
+
 export function LinkMenu(props: LinkMenuProps) {
     const [expandedIndex, setExpandedIndex] = useState<number>(-1);
     const [showAllAnnotations, setShowAnnotations] = useState<boolean>(false);
+    const [otherFileAnnotations, setOtherFileAnnotations] = useState<TextSpan[]>([]);
     const [query, setQuery] = useState("");
     const [filterTag, setFilterTag] = useState("");
     const [filterFileId, setFilterFileId] = useState("");
@@ -29,15 +31,25 @@ export function LinkMenu(props: LinkMenuProps) {
     const toggleFileId = (fid: string) => fid == filterFileId ? setFilterFileId("") : setFilterFileId(fid);
     const toggleTag = (tag: string) => tag == filterTag ? setFilterTag("") : setFilterTag(tag);
 
-    /* Partition in array given a predicate isValid */
-    function partition<T>(array: T[], isValid: (x: T) => boolean) {
-        return array.reduce(([pass, fail], elem) => {
-            return isValid(elem) ? [[...pass, elem], fail] : [pass, [...fail, elem]];
-        }, [[], []] as T[][]);
+
+    async function loadAllAnnotations() {
+        try {
+            const response = await fetch('/api/annotations/all');
+            const res = await response.json();
+            setOtherFileAnnotations(res['otherAnnotations']);
+        } catch (e) {
+            console.error(e);
+        }
     }
 
+    useEffect(() => {
+        if (showAllAnnotations) {
+            loadAllAnnotations();
+        }
+    }, [showAllAnnotations]);
+
     /* Full list of all annotations. If we're showing all annotations, include the ones from other files. */
-    let allAnnos = [...props.annotations, ...(showAllAnnotations ? props.otherFileAnnotations : [])];
+    let allAnnos = [...props.annotations, ...(showAllAnnotations ? otherFileAnnotations : [])];
     allAnnos = allAnnos.filter((anno) => anno != props.selectedAnnotation);
     if (filterTag != "") {
         allAnnos = allAnnos.filter((anno) => anno.tag == filterTag);
@@ -45,7 +57,6 @@ export function LinkMenu(props: LinkMenuProps) {
     if (filterFileId != "") {
         allAnnos = allAnnos.filter((anno) => anno.fileid == filterFileId);
     }
-    console.log('all annos passed to link menu: ', allAnnos);
 
     /* Split by "linked" and "non-linked" */
     const [linkedAnnos, nonLinkedAnnos] = partition(allAnnos, (candidate) => {
@@ -76,7 +87,6 @@ export function LinkMenu(props: LinkMenuProps) {
 
     const makeRow = (annotation: any, index: number, selected: boolean = false) => {
         let icon = selected ? <CloseIcon /> : <CheckIcon />;
-        console.log('annotation in row: ', annotation)
         return (
             <tr
                 key={crypto.randomUUID()}

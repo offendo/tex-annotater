@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import uuid
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
 import base64
@@ -17,12 +18,19 @@ from .data import (
     list_s3_documents,
     init_annotation_db,
 )
+from .users import (
+    add_user,
+    authenticate_user,
+    init_users_db,
+)
 
 app = Flask(__name__)
 cors = CORS(app)
 app.config["CORS_HEADERS"] = "Content-Type"
 
 init_annotation_db()
+init_users_db()
+
 
 @app.post("/annotations")
 @cross_origin()
@@ -52,7 +60,9 @@ def get_annotations():
     timestamp = request.args.get("timestamp")
     if userid is None or fileid is None or timestamp is None:
         return "Bad request: need userid, fileid, and timestamp!", 400
-    annotations = load_annotations(fileid, userid, timestamp if len(timestamp) else None)
+    annotations = load_annotations(
+        fileid, userid, timestamp if len(timestamp) else None
+    )
 
     return {
         "fileid": fileid,
@@ -92,3 +102,29 @@ def get_document():
         "tex": tex,
         "pdf": pdf,
     }
+
+
+@app.post("/authenticate")
+@cross_origin()
+def login_user():
+    body = request.get_json()
+    userid = body["userid"]
+    passwd = body["password"]
+    authenticated = authenticate_user(userid, passwd)
+    if authenticated:
+        token = uuid.uuid4()
+    else:
+        token = ""
+    return {"authenticated": authenticated, "token": token, "userid": userid}, 200
+
+
+@app.post("/user")
+@cross_origin()
+def add_new_user():
+    body = request.get_json()
+    userid = body["userid"]
+    passwd = body["password"]
+    success = add_user(userid, passwd)
+    if not success:
+        return {"error": "Error: user already exists!"}, 400
+    return {"token": uuid.uuid4(), "userid": userid}, 200
