@@ -234,7 +234,7 @@ const Annotator = (props: AnnotatorProps) => {
     autoLink(newAnno);
   };
 
-  const handleSelectionKeyPress = (e) => {
+  const handleSelectionKeyPress = (e: any) => {
     switch (e.key) {
       case "Escape":
         setSelectionClicked(false);

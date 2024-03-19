@@ -11,9 +11,9 @@ export default function App() {
         <Router>
             <div>
                 <Routes>
-                    <Route path="/" element={<AnnotationTool />} />
-                    <Route path="/signin" element={<SignIn />} />
-                    <Route path="/signup" element={<SignUp />} />
+                    <Route  path="/" element={<AnnotationTool />} />
+                    <Route  path="/signin" element={<SignIn />} />
+                    <Route  path="/signup" element={<SignUp />} />
                 </Routes>
             </div>
         </Router>

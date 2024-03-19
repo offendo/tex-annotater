@@ -30,7 +30,7 @@ dev-dependencies = [
 
 [tool.rye.scripts]
 dev = {cmd = "flask --app src/backend/main.py run --debug"}
-prod = {cmd = "gunicorn -w 4 'src.backend.main:app' --bind 127.0.0.1:5000 "}
+prod = {cmd = "gunicorn -w 4 'src.backend.main:app' --bind 0.0.0.0:5000 "}
 
 [tool.hatch.metadata]
 allow-direct-references = true

@@ -8,7 +8,7 @@ import { selectionIsEmpty, parseSelection, SplitTagProps } from "@/app/lib/utils
 
 export interface SplitProps {
   content: string
-  tags?: any[]
+  tags?: SplitTagProps[]
   annotations?: TextSpan[]
   otherFileAnnotations?: TextSpan[]
   hasLink?: boolean
@@ -38,7 +38,7 @@ export interface MarkProps extends SplitProps {
 }
 
 export function isMarkProps(props: SplitProps): props is MarkProps {
-  return "tags" in props && props.tags.length > 0;
+  return "tags" in props;
 }
 
 export function Split(props: SplitProps): React.JSX.Element {
@@ -61,7 +61,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false);
   const [pos, setPos] = useState({ left: 0, top: 0 });
 
-  const getSplitColor = (split: any) => {
+  const getSplitColor = (split: SplitTagProps) => {
     // If it's linked to something, use the link's target color
     if (split.anno.links.length > 0) {
       if (split.anno.tag == 'name') {
@@ -79,7 +79,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
   let final: any = props.content;
   const finalRef = useRef<any>(null);
 
-  props.tags.forEach((split, idx) => {
+  props.tags.forEach((split: SplitTagProps, idx: number) => {
     if (idx == props.tags.length - 1) {
       // on the last iteration, grab the bounding box
       final = (
@@ -91,7 +91,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
           className="annotation"
           ref={finalRef}
           style={{
-            borderColor: props.colors[split.tag],
+            borderColor: (props.colors as any)[split.tag],
             paddingBottom: split.height * 4,
             backgroundColor: getSplitColor(split),
             backgroundClip: "content-box",
@@ -119,7 +119,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
           ref={finalRef}
           className="annotation"
           style={{
-            borderColor: props.colors[split.tag],
+            borderColor: (props.colors as any)[split.tag],
             paddingBottom: split.height * 4,
             backgroundColor: getSplitColor(split),
             backgroundClip: "content-box"

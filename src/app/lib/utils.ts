@@ -100,16 +100,23 @@ export const selectionIsEmpty = (selection: Selection | null): boolean => {
   if (selection.anchorNode === null) {
     return true;
   }
-  let position = selection.anchorNode.compareDocumentPosition(
-    selection.focusNode,
-  );
+  if (selection.focusNode === null) {
+    return true;
+  }
+  let position = selection.anchorNode.compareDocumentPosition(selection.focusNode) || 0;
 
-  return position === 0 && selection.focusOffset === selection.anchorOffset;
+  return position == 0 && selection.focusOffset == selection.anchorOffset;
 };
 
 export const selectionIsBackwards = (selection: Selection): boolean => {
   if (selectionIsEmpty(selection)) return false;
 
+  if (selection.anchorNode === null) {
+    return false;
+  }
+  if (selection.focusNode === null) {
+    return false;
+  }
   let position = selection.anchorNode.compareDocumentPosition(
     selection.focusNode,
   );

@@ -25,7 +25,7 @@ const SignUpForm = (props: SignUpFormProps) => {
     const { token, userid, setAuth } = useAuth();
     const navigate = useNavigate();
 
-    const handleAlertClose = (e) => {
+    const handleAlertClose = (e: any) => {
         setMessage("");
     }
 
