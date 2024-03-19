@@ -89,7 +89,7 @@ export default function TopBar(props: TopBarProps) {
     const [didSave, setDidSave] = React.useState(false);
     const [message, setMessage] = React.useState("");
 
-    const handleAlertClose = (e: any) => {
+    const handleAlertClose = (e) => {
         setMessage("")
         setDidSave(false);
     }
@@ -118,7 +118,7 @@ export default function TopBar(props: TopBarProps) {
                         color="inherit"
                         aria-label="open drawer"
                         sx={{ mr: 2 }}
-                        onClick={(e: any) => { const success = props.saveAnnotations(); setDidSave(success); setMessage(success ? "Successfully saved" : "Error: please see console"); }}
+                        onClick={(e) => { const success = props.saveAnnotations(); setDidSave(success); setMessage(success ? "Successfully saved" : "Error: please see console"); }}
                     >
                         <SaveIcon />
                     </IconButton>
@@ -140,7 +140,7 @@ export default function TopBar(props: TopBarProps) {
                                     sx={{ width: 300 }}
                                     style={{ color: "#ffffff80" }}
                                     value={fileid}
-                                    onChange={(e: any) => {
+                                    onChange={(e) => {
                                         props.loadDocument(e.target.textContent);
                                         setFileid(e.target.textContent);
                                     }}

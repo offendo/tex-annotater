@@ -15,7 +15,7 @@ export function PDFViewer(props: PDFViewerProps) {
 
     return (
         <div className="pdf-container">
-            {props.data.length > 0 ? <iframe width="100%" height="100%" src={formatData(props.data)} /> : ""}
+            {props.data.length > 0 ? <iframe width="100%" height="100%" src={formatData(props.data)} type="application/pdf" /> : ""}
         </div>
     );
 }

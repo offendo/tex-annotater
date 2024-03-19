@@ -63,7 +63,7 @@ export function MarkMenu(props: MarkMenuProps) {
 
     const Row = ({ annotation, index }: { annotation: TextSpan, index: number }) => {
         const [linksOpen, setLinksOpen] = useState<boolean>(props.openLinkMenuByDefault);
-        const handleLinkButtonPress = (e: any) => {
+        const handleLinkButtonPress = (e) => {
             setLinksOpen(!linksOpen);
             e.stopPropagation();
         }
@@ -83,10 +83,10 @@ export function MarkMenu(props: MarkMenuProps) {
                     <Grid item xs={2}>
                         <CardActions disableSpacing>
                             {/* Link button */}
-                            <IconButton onClick={handleLinkButtonPress}> <AddLinkIcon /> </IconButton>
+                            <IconButton onClick={(e) => { handleLinkButtonPress(e) }}> <AddLinkIcon /> </IconButton>
 
                             {/* Delete button */}
-                            <IconButton size="small" onClick={(e: any) => props.deleteAnnotation(annotation, index)}> <DeleteIcon /> </IconButton>
+                            <IconButton size="small" onClick={(e) => props.deleteAnnotation(annotation, index)}> <DeleteIcon /> </IconButton>
                         </CardActions>
                     </Grid>
 
@@ -103,7 +103,7 @@ export function MarkMenu(props: MarkMenuProps) {
                             {/* Content */}
                             <span className="expand-text" style={{ minWidth: "300px" }}>
                                 <Tooltip title="Click to expand">
-                                    <pre style={{ whiteSpace: "pre-wrap" }} onClick={(e: any) => { e.stopPropagation(); toggleSelected(index); }}>
+                                    <pre style={{ whiteSpace: "pre-wrap" }} onClick={(e) => { e.stopPropagation(); toggleSelected(index); }}>
                                         {selected == index ? `${annotation.text}` : `${annotation.text.slice(0, Math.min(25, annotation.text.length)).trim().replaceAll('\n', ' ')}...`}
                                     </pre>
                                 </Tooltip>
@@ -120,6 +120,7 @@ export function MarkMenu(props: MarkMenuProps) {
                                     colors={props.colors}
                                     selectedAnnotation={annotation}
                                     annotations={props.annotations}
+                                    otherFileAnnotations={props.otherFileAnnotations}
                                     toggleLink={props.toggleLink}
                                     onDeletePress={() => {}}
                                 />
@@ -133,7 +134,7 @@ export function MarkMenu(props: MarkMenuProps) {
 
 
     return (
-        <span data-start={props.start} data-end={props.end} onDoubleClick={handleJumpClick}>
+        <span data-start={props.start} data-end={props.end} onDoubleClick={(e) => handleJumpClick(e)}>
             <span
                 onContextMenu={handleRightClick}
                 data-start={props.start}
@@ -146,7 +147,7 @@ export function MarkMenu(props: MarkMenuProps) {
                 onClose={handleClose}
                 anchorPosition={pos}
                 anchorReference="anchorPosition"
-                onKeyDown={(e: any) => { e.stopPropagation(); }}
+                onKeyDown={(e) => { e.stopPropagation(); }}
                 disableScrollLock={true}
                 style={{
                     position: "absolute",
