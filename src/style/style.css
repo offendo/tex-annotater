@@ -97,7 +97,7 @@ ul {
   font-size: 8pt;
   width: 45%;
   border-radius: 5px;
-  margin: 2px;
+  margin: 0px;
   padding: 1px 1px;
   color: var(--text-color);
 }

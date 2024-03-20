@@ -32,7 +32,7 @@ export function MarkMenu(props: MarkMenuProps) {
     const [menuOpen, setMenuOpen] = useState<boolean>(false);
     const [hoveredAnnotations, setHoveredAnnotations] = useState<TextSpan[]>([]);
 
-    const handleJumpClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const handleJumpClick = (e: any) => {
         if (props.anno.links.length > 0) {
             const file = props.anno.links[0].fileid;
             const target = props.anno.links[0].target;
@@ -73,7 +73,7 @@ export function MarkMenu(props: MarkMenuProps) {
                 style={{
                     backgroundColor: "var(--secondary-background-color)",
                     border: "1px solid black",
-                    // borderRadius: "5px",
+                    borderRadius: "5px",
                     width: "100%",
                     maxHeight: "300px",
                     overflow: "scroll",
@@ -101,9 +101,9 @@ export function MarkMenu(props: MarkMenuProps) {
                     <Grid item xs={7}>
                         <CardContent>
                             {/* Content */}
-                            <span className="expand-text" style={{ minWidth: "300px" }}>
+                            <span className="expand-text" style={{ minWidth: "300px", alignContent: 'top' }}>
                                 <Tooltip title="Click to expand">
-                                    <pre style={{ whiteSpace: "pre-wrap" }} onClick={(e) => { e.stopPropagation(); toggleSelected(index); }}>
+                                    <pre style={{ margin: "0px", whiteSpace: "pre-wrap" }} onClick={(e) => { e.stopPropagation(); toggleSelected(index); }}>
                                         {selected == index ? `${annotation.text}` : `${annotation.text.slice(0, Math.min(25, annotation.text.length)).trim().replaceAll('\n', ' ')}...`}
                                     </pre>
                                 </Tooltip>
@@ -113,14 +113,13 @@ export function MarkMenu(props: MarkMenuProps) {
                     <Grid item xs={12} >
                         {/* Link menu card*/}
                         <Collapse in={linksOpen} timeout="auto" unmountOnExit orientation="vertical" collapsedSize={0}>
-                            <CardContent>
+                            <CardContent >
                                 <LinkMenu
                                     left={0}
                                     top={0}
                                     colors={props.colors}
                                     selectedAnnotation={annotation}
                                     annotations={props.annotations}
-                                    otherFileAnnotations={props.otherFileAnnotations}
                                     toggleLink={props.toggleLink}
                                     onDeletePress={() => {}}
                                 />
@@ -134,9 +133,14 @@ export function MarkMenu(props: MarkMenuProps) {
 
 
     return (
-        <span data-start={props.start} data-end={props.end} onDoubleClick={(e) => handleJumpClick(e)}>
+        <span data-start={props.start} data-end={props.end} >
             <span
                 onContextMenu={handleRightClick}
+                onClick={(e) => {
+                    if (e.altKey) {
+                        handleJumpClick(e)
+                    };
+                }}
                 data-start={props.start}
                 data-end={props.end}
             >

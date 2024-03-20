@@ -145,9 +145,9 @@ export const parseSelection = (selection: Selection | null) => {
   return [start, end];
 }
 
-// /* Partition in array given a predicate isValid */
-// function partition<T>(array: T[], isValid: (x: T) => boolean) {
-//     return array.reduce(([pass, fail], elem) => {
-//         return isValid(elem) ? [[...pass, elem], fail] : [pass, [...fail, elem]];
-//     }, [[], []] as T[][]);
-// }
+export const jumpToElement = (id: string) => {
+    const element = document.getElementById(id);
+    if (element != null) {
+        element.scrollIntoView({ behavior: 'smooth' });
+    }
+}

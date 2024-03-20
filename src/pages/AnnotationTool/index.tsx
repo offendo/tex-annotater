@@ -5,6 +5,7 @@ import PDFViewer from "./components/PDFViewer";
 import TopBar from "./components/TopBar";
 import { ColorMap } from "@/lib/colors"
 import { TextSpan } from "@/lib/span"
+import { jumpToElement } from "@/lib/utils"
 import { defaultColorMap } from "@/lib/colors";
 import "@/style/style.css";
 import { pdfjs } from "react-pdf";
@@ -46,11 +47,7 @@ const AnnotationTool = () => {
       let stop = false;
       setTimeout(() => {
         if (anchor.length > 0) {
-          const element = document.getElementById(anchor);
-          if (element != null) {
-            element.scrollIntoView({ behavior: 'smooth' });
-            stop = true;
-          }
+          jumpToElement(anchor);
           setAnchor("")
         }
       }, 1000);
@@ -83,7 +80,7 @@ const AnnotationTool = () => {
       const response = await fetch(url, requestOptions);
       const res = await response.text();
       console.log(res);
-      return response.status == 200;
+      return annotations;
     } catch (e) {
       console.error(e)
       return false;
@@ -98,6 +95,7 @@ const AnnotationTool = () => {
       setFileId(res['fileid']);
       setAnnotations(res['annotations']);
       console.log(`Loaded ${res['annotations'].length} annotations`);
+      return res['annotations'];
     } catch (e) {
       console.error(e);
     }
@@ -118,7 +116,7 @@ const AnnotationTool = () => {
   }
 
   return (
-    <div >
+    <div>
       <TopBar
         loadDocument={loadDocument}
         loadAnnotations={loadAnnotations}

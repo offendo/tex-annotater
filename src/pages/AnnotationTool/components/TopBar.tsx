@@ -3,21 +3,25 @@ import { Divider } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
+import TextField from '@mui/material/TextField';
+import Autocomplete from '@mui/material/Autocomplete';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
-import InputBase from '@mui/material/InputBase';
 import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import SearchIcon from '@mui/icons-material/Search';
-import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import SaveIcon from '@mui/icons-material/Save';
-import TextField from '@mui/material/TextField';
-import Autocomplete from '@mui/material/Autocomplete';
-import FileOpenIcon from '@mui/icons-material/FileOpen';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import MenuItem from '@mui/material/MenuItem';
+import Menu from '@mui/material/Menu';
+import { TextSpan } from "@/lib/span";
+import { ColorMap, defaultColorMap } from "@/lib/colors";
+import { jumpToElement } from "@/lib/utils";
+import { Grid } from "@mui/material";
+import sortBy from "lodash.sortby";
 
 
 type SaveFileProps = {
@@ -54,9 +58,8 @@ const SaveFileSelector = (props: SaveFileProps) => {
     return (
         <Box sx={{ minWidth: 200, marginLeft: "20px", marginRight: "20px", }}>
             <FormControl fullWidth variant="filled">
-                <InputLabel variant="filled" style={{ color: "#ffffff80" }} id="demo-simple-select-label">Load annotations</InputLabel>
+                <InputLabel variant="filled" id="demo-simple-select-label">Load annotations</InputLabel>
                 <Select
-                    style={{ color: "#ffffff80" }}
                     value={selected}
                     label="save"
                     onChange={handleChange}
@@ -78,7 +81,7 @@ const SaveFileSelector = (props: SaveFileProps) => {
 type TopBarProps = {
     userid: string
     fileid: string
-    saveAnnotations: () => any,
+    saveAnnotations: () => TextSpan[],
     loadAnnotations: (fileid: string, userid: string, timestamp?: string) => any,
     loadDocument: (fileid: string) => any
 }
@@ -89,7 +92,8 @@ export default function TopBar(props: TopBarProps) {
     const [didSave, setDidSave] = React.useState(false);
     const [message, setMessage] = React.useState("");
 
-    const handleAlertClose = (e) => {
+    // Functionality stuff
+    const handleAlertClose = (e: any) => {
         setMessage("")
         setDidSave(false);
     }
@@ -108,20 +112,110 @@ export default function TopBar(props: TopBarProps) {
         listAllDocuments();
     }, [])
 
+
+
+    // Annotation list stuff
+    const [annotations, setAnnotations] = React.useState<TextSpan[]>([]);
+    const [selected, setSelected] = React.useState(-1);
+    const [annotationMenuAnchorEl, setAnnotationMenuAnchorel] = React.useState<null | HTMLElement>(null);
+    const annotationMenuOpen = Boolean(annotationMenuAnchorEl);
+
+    const handleAnnotationMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnnotationMenuAnchorel(event.currentTarget);
+    };
+
+    const handleAnnotationMenuClose = () => {
+        setAnnotationMenuAnchorel(null);
+    };
+
+    /* Annotation list at the top of the bar */
+    const AnnotationListRow = ({ annotation, index, colors }: { annotation: TextSpan, index: number, colors: ColorMap }) => {
+
+        const toggleSelected = (index: number) => {
+            if (selected == index) {
+                setSelected(-1);
+            } else {
+                setSelected(index);
+            }
+        }
+
+
+        return (
+            <Grid container spacing={0} style={{ padding: "5px", margin: "2px", }}>
+                <Grid item xs={3} >
+                    {/* Tag name */}
+                    <span style={{ color: (colors as any)[annotation.tag] }}>
+                        {`${annotation.tag}`}
+                    </span>
+                </Grid>
+                <Grid item xs={7}>
+                    <span className={"expand-text"} style={{ minWidth: "300px" }} onClick={(e) => { e.stopPropagation(); toggleSelected(index) }}>
+                        <pre style={{ margin: "0px", whiteSpace: "pre-wrap" }} >
+                            {selected == index ? annotation.text : `${annotation.text.slice(0, Math.min(30, annotation.text.length)).trim().replaceAll('\n', ' ')}...`}
+                        </pre>
+                    </span>
+                </Grid>
+            </Grid>
+        );
+    }
+
+
+
+
     return (
         <Box sx={{ flexGrow: 1 }}>
-            <AppBar style={{ backgroundColor: "var(--solarized-base03)" }} position="static">
+            <AppBar style={{ backgroundColor: "var(--solarized-base2)", color: "var(--solarized-base03)" }} position="static">
                 <Toolbar>
                     <IconButton
                         size="large"
                         edge="start"
                         color="inherit"
-                        aria-label="open drawer"
+                        aria-label="save annotations"
                         sx={{ mr: 2 }}
-                        onClick={(e) => { const success = props.saveAnnotations(); setDidSave(success); setMessage(success ? "Successfully saved" : "Error: please see console"); }}
+                        onClick={(e) => {
+                            const annos = props.saveAnnotations();
+                            setDidSave(annos != null);
+                            setAnnotations(annos == null ? [] : annos);
+                            setMessage(annos ? "Successfully saved" : "Error: please see console");
+                        }}
                     >
                         <SaveIcon />
                     </IconButton>
+                    <span>
+                        <IconButton
+                            size="large"
+                            edge="start"
+                            color="inherit"
+                            aria-label="show annotations"
+                            sx={{ mr: 2 }}
+                            onClick={handleAnnotationMenuClick}
+                        >
+                            {annotationMenuOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                        </IconButton>
+                        <Menu
+                            id="basic-menu"
+                            anchorEl={annotationMenuAnchorEl}
+                            open={annotationMenuOpen}
+                            onClose={handleAnnotationMenuClose}
+                            MenuListProps={{
+                                'aria-labelledby': 'basic-button',
+                                style: { backgroundColor: "var(--background-color)", margin: "0px", padding: "0px" }
+                            }}
+                        >
+                            {
+                                annotations.map((anno, index) => {
+                                    return (
+                                        <MenuItem
+                                            key={crypto.randomUUID()}
+                                            style={{ backgroundColor: "#00000000", width: "600px", padding: "10px", margin: "0px" }}
+                                            onClick={(e) => { jumpToElement(anno.annoid); handleAnnotationMenuClose(); }}>
+                                            <AnnotationListRow annotation={anno} index={index} colors={defaultColorMap} />
+                                        </MenuItem>
+                                    )
+                                })
+                            }
+                        </Menu>
+                    </span>
                     <Divider style={{ color: "white", backgroundColor: "white" }} orientation='vertical' />
                     <Typography
                         variant="h6"
@@ -138,7 +232,6 @@ export default function TopBar(props: TopBarProps) {
                                 <Autocomplete
                                     options={documents}
                                     sx={{ width: 300 }}
-                                    style={{ color: "#ffffff80" }}
                                     value={fileid}
                                     onChange={(e) => {
                                         props.loadDocument(e.target.textContent);
@@ -148,14 +241,17 @@ export default function TopBar(props: TopBarProps) {
                                         <TextField
                                             {...params}
                                             variant="filled"
-                                            InputProps={{ ...params.InputProps, style: { color: '#ffffff80' } }}
-                                            InputLabelProps={{ style: { color: '#ffffff80' } }}
                                             label="Load paper"
                                         />
                                     }
                                 />
                             </div>
-                            <SaveFileSelector fileid={fileid} userid={props.userid} loadAnnotations={props.loadAnnotations} />
+                            <SaveFileSelector
+                                fileid={fileid} userid={props.userid}
+                                loadAnnotations={async (fid, uid, time) => {
+                                    const annotations = await props.loadAnnotations(fid, uid, time);
+                                    setAnnotations(sortBy(annotations, (anno: TextSpan) => anno.start));
+                                }} />
                         </span>
                     </div>
                 </Toolbar>

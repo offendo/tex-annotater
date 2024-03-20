@@ -1,7 +1,6 @@
 
 import * as React from "react";
 import * as ReactDOM from "react-dom/client";
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 
 import SignIn from "@/pages/SignIn"
 import SignUp from "@/pages/SignUp"
@@ -13,6 +12,7 @@ import {
 } from "react-router-dom";
 
 import "@/style/globals.css"
+import "@/style/style.css"
 
 const router = createBrowserRouter([
   {
@@ -30,14 +30,7 @@ const router = createBrowserRouter([
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+  <React.StrictMode >
     <RouterProvider router={router} />
   </React.StrictMode>
 );
-
-
-// ReactDOM.createRoot(document.getElementById('root')).render(
-//   <React.StrictMode>
-//     <App />
-//   </React.StrictMode>,
-// )

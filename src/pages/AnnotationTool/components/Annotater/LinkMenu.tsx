@@ -105,7 +105,7 @@ export function LinkMenu(props: LinkMenuProps) {
                     </Button>
                 </td>
                 <td onClick={(e) => toggleExpandedIndex(index)} className="expand-text" style={{ overflowX: "scroll", width: "80%" }}>
-                    <pre style={{ whiteSpace: "pre-wrap" }}>
+                    <pre style={{  margin: "0px", whiteSpace: "pre-wrap" }}>
                         {selected
                             ? (index == expandedIndex ? annotation.text : annotation.text.slice(0, 50) + '...')
                             : highlightResult(annotation, query, index)

@@ -61,6 +61,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false);
   const [pos, setPos] = useState({ left: 0, top: 0 });
 
+
   const getSplitColor = (split: any) => {
     // If it's linked to something, use the link's target color
     if (split.anno.links.length > 0) {
