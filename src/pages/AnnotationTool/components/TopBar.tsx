@@ -211,8 +211,8 @@ export default function TopBar(props: TopBarProps) {
                         color="inherit"
                         aria-label="save annotations"
                         sx={{ mr: 2 }}
-                        onClick={(e) => {
-                            const annos = props.saveAnnotations();
+                        onClick={async (e) => {
+                            const annos = await props.saveAnnotations();
                             setDidSave(annos != null);
                             setAnnotations(annos == null ? [] : annos);
                             setMessage(
