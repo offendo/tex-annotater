@@ -89,7 +89,9 @@ def load_all_annotations():
     annotations = pd.DataFrame.from_records(annotations)
 
     grouped = (
-        annotations.groupby(["annoid", "fileid", "start", "end", "tag", "text", "color"])[
+        annotations.groupby(
+            ["annoid", "fileid", "start", "end", "tag", "text", "color"]
+        )[
             [
                 "link_start",
                 "link_end",
