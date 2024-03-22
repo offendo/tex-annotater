@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from rapidfuzz import process, fuzz
 
-from data import list_all_textbooks
+from .data import list_all_textbooks
 
 patterns = [
     r"a \(\([a-z]* \)*\)is a",

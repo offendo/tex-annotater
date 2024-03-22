@@ -8,7 +8,7 @@ import os
 import sqlite3
 import boto3
 
-from backend.search import fuzzysearch
+from .search import fuzzysearch
 from .data import (
     load_tex,
     list_all_textbooks,
@@ -88,7 +88,7 @@ def list_all_documents():
     return {"documents": list_s3_documents()}
 
 
-@app.get("/document")
+@app.get("/tex")
 @cross_origin()
 def get_tex():
     fileid = request.args.get("fileid")
