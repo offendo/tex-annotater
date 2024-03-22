@@ -44,7 +44,7 @@ const SaveFileSelector = (props: SaveFileProps) => {
     };
 
     const loadSaves = (fileid: string) => {
-        fetch(`http://localhost:5000/saves?fileid=${fileid}`)
+        fetch(`/api/saves?fileid=${fileid}`, {mode: 'cors'})
             .then((res) => res.json())
             .then((res) => {
                 setSaves(res["saves"]);
@@ -110,7 +110,7 @@ export default function TopBar(props: TopBarProps) {
 
     async function listAllDocuments() {
         try {
-            const response = await fetch("http://localhost:5000/document/all");
+            const response = await fetch("/api/document/all", {mode: 'cors'});
             const res = await response.json();
             setDocuments(res["documents"]);
         } catch (e) {

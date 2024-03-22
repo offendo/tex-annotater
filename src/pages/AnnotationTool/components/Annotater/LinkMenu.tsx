@@ -35,7 +35,7 @@ export function LinkMenu(props: LinkMenuProps) {
 
     async function loadAllAnnotations() {
         try {
-            const response = await fetch('http://localhost:5000/annotations/all');
+            const response = await fetch('/api/annotations/all', {mode: 'cors'});
             const res = await response.json();
             setOtherFileAnnotations(res['otherAnnotations']);
         } catch (e) {

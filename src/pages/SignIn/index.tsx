@@ -33,10 +33,10 @@ const SignInForm = () => {
         };
         const requestOptions = {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', mode: 'cors' },
             body: JSON.stringify(body)
         };
-        const response = await fetch('http://localhost:5000/authenticate', requestOptions);
+        const response = await fetch('/api/authenticate', requestOptions);
         const res = await response.json();
         if (res['authenticated']) {
             setSuccess(res['authenticated'])

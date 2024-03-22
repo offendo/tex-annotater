@@ -7,12 +7,17 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
+    cors: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000/authenticate',
-        changeOrigin: false,
+        target: 'http://localhost:5000/',
+        changeOrigin: true,
+        rewrite: (path) => {
+          console.log(path, path.replace(/^\/api/, ''))
+          return path.replace(/^\/api/, '');
+        }
       }
-    },
+    }
   },
   resolve: {
     alias: {

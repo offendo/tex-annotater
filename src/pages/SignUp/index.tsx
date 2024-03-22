@@ -40,12 +40,12 @@ const SignUpForm = (props: SignUpFormProps) => {
         };
         const requestOptions = {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', mode: 'cors' },
             body: JSON.stringify(body)
         };
         if (body.password == body.confirmpassword) {
             setPasswordsMatch(true);
-            const response = await fetch('http://localhost:5000/user', requestOptions);
+            const response = await fetch('/api/user', requestOptions);
             const res = await response.json();
             setMessage(res?.error || "Success!");
             setCode(response.status)

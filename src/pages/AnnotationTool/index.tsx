@@ -73,14 +73,14 @@ const AnnotationTool = () => {
     autosave: boolean = false,
   ) {
     const requestOptions = {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ annotations: annotations }),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', mode: 'cors' },
+      body: JSON.stringify({ annotations: annotations })
     };
     // We handle autosaves differently
     const url = autosave
-      ? `http://localhost:5000/annotations/autosave?fileid=${fileid}&userid=${userid}`
-      : `http://localhost:5000/annotations?fileid=${fileid}&userid=${userid}`;
+      ? `/api/annotations/autosave?fileid=${fileid}&userid=${userid}`
+      : `/api/annotations?fileid=${fileid}&userid=${userid}`;
 
     // POST save and ensure it saved correctly;
     try {
@@ -101,17 +101,13 @@ const AnnotationTool = () => {
     timestamp?: string,
   ) {
     try {
-      console.log("Loading annotations...");
-      const response = await fetch(
-        `http://localhost:5000/annotations?fileid=${fileid}&userid=${userid}&timestamp=${
-          timestamp ? timestamp : ""
-        }`,
-      );
-      const res = await response.json();
-      setFileId(res["fileid"]);
-      setAnnotations(res["annotations"]);
-      console.log(`Loaded ${res["annotations"].length} annotations`);
-      return res["annotations"];
+      console.log("Loading annotations...")
+      const response = await fetch(`/api/annotations?fileid=${fileid}&userid=${userid}&timestamp=${timestamp ? timestamp : ""}`, {mode: 'cors'});
+      const res = await response.json()
+      setFileId(res['fileid']);
+      setAnnotations(res['annotations']);
+      console.log(`Loaded ${res['annotations'].length} annotations`);
+      return res['annotations'];
     } catch (e) {
       console.error(e);
     }
@@ -119,13 +115,13 @@ const AnnotationTool = () => {
 
   async function loadDocument(fileid: string) {
     try {
-      const tex_response = fetch(`http://localhost:5000/tex?fileid=${fileid}`);
-      const pdf_response = fetch(`http://localhost:5000/pdf?fileid=${fileid}`);
-      const tex_res = await (await tex_response).json();
-      setTex(tex_res["tex"]);
-      setFileId(tex_res["fileid"]);
-      const pdf_res = await (await pdf_response).json();
-      setPdf(pdf_res["pdf"]);
+      const tex_response = fetch(`/api/tex?fileid=${fileid}`, {mode: 'cors'});
+      const pdf_response = fetch(`/api/pdf?fileid=${fileid}`, {mode: 'cors'});
+      const tex_res = await (await tex_response).json()
+      setTex(tex_res['tex']);
+      setFileId(tex_res['fileid']);
+      const pdf_res = await (await pdf_response).json()
+      setPdf(pdf_res['pdf']);
     } catch (e) {
       console.error(e);
     }
