@@ -20,6 +20,7 @@
   --solarized-cyan: #2aa198;
   --solarized-green: #859900;
 
+  --transparant-dark: #93a1a180 ;
   --text-color: var(--solarized-base03);
   --background-color: var(--solarized-base3);
   --secondary-background-color: var(--solarized-base2);

@@ -68,6 +68,7 @@ def extract_definitions(patterns: list[str], books: list[str]):
 
     merged = pd.merge(df, count_df, left_on="file", right_on="file")
     merged["percent"] = merged["line"] / merged["total_lines"]
+    merged["file"] = merged["file"] + ".tex"
     return merged
 
 

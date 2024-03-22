@@ -139,6 +139,11 @@ ul {
   opacity: 1;
 }
 
+.link-auto-link {
+  border-radius: 5px;
+  background-color: var(--transparant-dark);
+}
+
 th {
   white-space: pre-line;
   width: fit-content;

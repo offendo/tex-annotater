@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import uuid
-from flask import Flask, request
+from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 import base64
 import re
@@ -151,7 +151,7 @@ def search_for_definition():
     query = request.args.get("query")
     topk = int(request.args.get("topk", 5))
     if query is None:
-        return "Error: no query provided", 400
+        return jsonify({"error": "Error: no query provided"}), 400
     index = index_books("../../textbooks", "../../textbooks/index.csv")
     results = fuzzysearch(query, index, top_k=topk)
-    return {"results": results}, 200
+    return jsonify({"results": results}), 200

@@ -5,7 +5,7 @@ import PDFViewer from "./components/PDFViewer";
 import TopBar from "./components/TopBar";
 import { ColorMap } from "@/lib/colors";
 import { TextSpan } from "@/lib/span";
-import { jumpToElement } from "@/lib/utils";
+import { jumpToElement, jumpToPercent } from "@/lib/utils";
 import { defaultColorMap } from "@/lib/colors";
 import "@/style/style.css";
 import { pdfjs } from "react-pdf";
@@ -51,7 +51,12 @@ const AnnotationTool = () => {
       let stop = false;
       setTimeout(() => {
         if (anchor.length > 0) {
-          jumpToElement(anchor);
+          const percent = parseFloat(anchor);
+          if (!isNaN(percent)) {
+            jumpToPercent(percent);
+          } else {
+            jumpToElement(anchor);
+          }
           setAnchor("");
         }
       }, 1000);
@@ -73,9 +78,9 @@ const AnnotationTool = () => {
     autosave: boolean = false,
   ) {
     const requestOptions = {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', mode: 'cors' },
-      body: JSON.stringify({ annotations: annotations })
+      method: "POST",
+      headers: { "Content-Type": "application/json", mode: "cors" },
+      body: JSON.stringify({ annotations: annotations }),
     };
     // We handle autosaves differently
     const url = autosave
@@ -101,13 +106,18 @@ const AnnotationTool = () => {
     timestamp?: string,
   ) {
     try {
-      console.log("Loading annotations...")
-      const response = await fetch(`/api/annotations?fileid=${fileid}&userid=${userid}&timestamp=${timestamp ? timestamp : ""}`, {mode: 'cors'});
-      const res = await response.json()
-      setFileId(res['fileid']);
-      setAnnotations(res['annotations']);
-      console.log(`Loaded ${res['annotations'].length} annotations`);
-      return res['annotations'];
+      console.log("Loading annotations...");
+      const response = await fetch(
+        `/api/annotations?fileid=${fileid}&userid=${userid}&timestamp=${
+          timestamp ? timestamp : ""
+        }`,
+        { mode: "cors" },
+      );
+      const res = await response.json();
+      setFileId(res["fileid"]);
+      setAnnotations(res["annotations"]);
+      console.log(`Loaded ${res["annotations"].length} annotations`);
+      return res["annotations"];
     } catch (e) {
       console.error(e);
     }
@@ -115,13 +125,13 @@ const AnnotationTool = () => {
 
   async function loadDocument(fileid: string) {
     try {
-      const tex_response = fetch(`/api/tex?fileid=${fileid}`, {mode: 'cors'});
-      const pdf_response = fetch(`/api/pdf?fileid=${fileid}`, {mode: 'cors'});
-      const tex_res = await (await tex_response).json()
-      setTex(tex_res['tex']);
-      setFileId(tex_res['fileid']);
-      const pdf_res = await (await pdf_response).json()
-      setPdf(pdf_res['pdf']);
+      const tex_response = fetch(`/api/tex?fileid=${fileid}`, { mode: "cors" });
+      const pdf_response = fetch(`/api/pdf?fileid=${fileid}`, { mode: "cors" });
+      const tex_res = await (await tex_response).json();
+      setTex(tex_res["tex"]);
+      setFileId(tex_res["fileid"]);
+      const pdf_res = await (await pdf_response).json();
+      setPdf(pdf_res["pdf"]);
     } catch (e) {
       console.error(e);
     }
