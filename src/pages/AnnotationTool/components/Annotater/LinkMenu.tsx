@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, TextSpan } from "../../lib/span";
+import { Link, TextSpan } from "@/lib/span";
 import fuzzysort from "fuzzysort"
 import { FormControlLabel, Button, TextField, Switch } from "@mui/material";
 import { IconButton } from "@mui/material";
@@ -22,6 +22,7 @@ export function LinkMenu(props: LinkMenuProps) {
     const [expandedIndex, setExpandedIndex] = useState<number>(-1);
     const [showAllAnnotations, setShowAnnotations] = useState<boolean>(false);
     const [otherFileAnnotations, setOtherFileAnnotations] = useState<TextSpan[]>([]);
+    const [autoLinkSuggestions, setAutoLinkSuggesstions] = useState<TextSpan[]>([]);
     const [query, setQuery] = useState("");
     const [filterTag, setFilterTag] = useState("");
     const [filterFileId, setFilterFileId] = useState("");
@@ -37,6 +38,16 @@ export function LinkMenu(props: LinkMenuProps) {
             const response = await fetch('http://localhost:5000/annotations/all');
             const res = await response.json();
             setOtherFileAnnotations(res['otherAnnotations']);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function queryAutoLinks(text: string) {
+        try {
+            const response = await fetch(`http://localhost:5000/definitions?query=${text}`);
+            const res = await response.json();
+            setAutoLinkSuggestions(res['results']);
         } catch (e) {
             console.error(e);
         }
@@ -105,7 +116,36 @@ export function LinkMenu(props: LinkMenuProps) {
                     </Button>
                 </td>
                 <td onClick={(e) => toggleExpandedIndex(index)} className="expand-text" style={{ overflowX: "scroll", width: "80%" }}>
-                    <pre style={{  margin: "0px", whiteSpace: "pre-wrap" }}>
+                    <pre style={{ margin: "0px", whiteSpace: "pre-wrap" }}>
+                        {selected
+                            ? (index == expandedIndex ? annotation.text : annotation.text.slice(0, 50) + '...')
+                            : highlightResult(annotation, query, index)
+                        }
+                    </pre>
+                </td>
+            </tr>
+        );
+    }
+    const makeAutoLinkRow = (annotation: any, index: number) => {
+        return (
+            <tr
+                key={crypto.randomUUID()}
+                className={selected ? "link-menu-item link-selected" : "link-menu-item"}
+            >
+                <td> <IconButton size="small" onClick={(e) => props.toggleLink(props.selectedAnnotation, annotation)}> {icon} </IconButton></td>
+                <td> <Button size="small" variant="text" onClick={(e) => toggleTag(annotation.tag)} style={{ color: props.colors[annotation.tag] }}> {`${annotation.tag}`} </Button> </td>
+                <td>
+                    <Button
+                        style={{ maxHeight: "50px", whiteSpace: "nowrap" }}
+                        size="small"
+                        variant="text"
+                        onClick={(e) => toggleFileId(annotation.fileid)}
+                    >
+                        {`${annotation.fileid.slice(0, 10) + '...'}`}
+                    </Button>
+                </td>
+                <td onClick={(e) => toggleExpandedIndex(index)} className="expand-text" style={{ overflowX: "scroll", width: "80%" }}>
+                    <pre style={{ margin: "0px", whiteSpace: "pre-wrap" }}>
                         {selected
                             ? (index == expandedIndex ? annotation.text : annotation.text.slice(0, 50) + '...')
                             : highlightResult(annotation, query, index)
@@ -143,4 +183,6 @@ export function LinkMenu(props: LinkMenuProps) {
         </div>
     );
 }
+
+                    // {autoLinkSuggestions.map((result, index) => makeAutoLinkRow(result, index))}
 export default LinkMenu;

@@ -8,6 +8,8 @@
 #   with-sources: false
 
 -e file:.
+beautifulsoup4==4.12.3
+    # via gdown
 blinker==1.7.0
     # via flask
 boto3==1.34.55
@@ -15,8 +17,14 @@ boto3==1.34.55
 botocore==1.34.55
     # via boto3
     # via s3transfer
+certifi==2024.2.2
+    # via requests
+charset-normalizer==3.3.2
+    # via requests
 click==8.1.7
     # via flask
+filelock==3.13.1
+    # via gdown
 fire==0.6.0
     # via randomname
 flask==3.0.2
@@ -24,8 +32,12 @@ flask==3.0.2
     # via tex-annotater
 flask-cors==4.0.0
     # via tex-annotater
+gdown==5.1.0
+    # via tex-annotater
 gunicorn==21.2.0
     # via tex-annotater
+idna==3.6
+    # via requests
 itsdangerous==2.1.2
     # via flask
 jinja2==3.1.3
@@ -44,6 +56,8 @@ pandas==2.2.1
     # via tex-annotater
 py-bcrypt==0.4
     # via tex-annotater
+pysocks==1.7.1
+    # via requests
 python-dateutil==2.9.0.post0
     # via botocore
     # via pandas
@@ -53,18 +67,26 @@ pytz==2024.1
     # via pandas
 randomname==0.2.1
     # via tex-annotater
+rapidfuzz==3.6.2
+    # via tex-annotater
+requests==2.31.0
+    # via gdown
 s3transfer==0.10.0
     # via boto3
 six==1.16.0
     # via fire
     # via python-dateutil
+soupsieve==2.5
+    # via beautifulsoup4
 termcolor==2.4.0
     # via fire
 tqdm==4.66.2
+    # via gdown
     # via tex-annotater
 tzdata==2024.1
     # via pandas
 urllib3==2.0.7
     # via botocore
+    # via requests
 werkzeug==3.0.1
     # via flask

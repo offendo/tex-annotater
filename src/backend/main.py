@@ -7,9 +7,11 @@ import re
 import os
 import sqlite3
 import boto3
+
+from backend.search import fuzzysearch
 from .data import (
     load_tex,
-    load_textbook_list,
+    list_all_textbooks,
     load_all_annotations,
     load_pdf,
     load_save_files,
@@ -23,6 +25,8 @@ from .users import (
     authenticate_user,
     init_users_db,
 )
+
+from .search import fuzzysearch, index_books
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -128,3 +132,15 @@ def add_new_user():
     if not success:
         return {"error": "Error: user already exists!"}, 400
     return {"token": uuid.uuid4(), "userid": userid}, 200
+
+
+@app.get("/definition")
+@cross_origin()
+def search_for_definition():
+    query = request.args.get("query")
+    topk = int(request.args.get("topk", 5))
+    if query is None:
+        return "Error: no query provided", 400
+    index = index_books("../../textbooks", "../../textbooks/index.csv")
+    results = fuzzysearch(query, index, top_k=topk)
+    return {"results": results}, 200

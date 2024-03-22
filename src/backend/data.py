@@ -40,7 +40,7 @@ def query_db(query, params=()):
     return records
 
 
-def load_textbook_list():
+def list_all_textbooks():
     """Load the textbooks from the excel sheet."""
     sheet_id = "1XCkPQo__bxACu2dWUgCuRoH4FUeNc2ODCI1dpBO-n3U"
     sheet_name = "Sheet1"

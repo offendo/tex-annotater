@@ -12,6 +12,8 @@ asttokens==2.4.1
     # via stack-data
 bcrypt==4.1.2
     # via paramiko
+beautifulsoup4==4.12.3
+    # via gdown
 blinker==1.7.0
     # via flask
 boto3==1.34.55
@@ -19,9 +21,13 @@ boto3==1.34.55
 botocore==1.34.55
     # via boto3
     # via s3transfer
+certifi==2024.2.2
+    # via requests
 cffi==1.16.0
     # via cryptography
     # via pynacl
+charset-normalizer==3.3.2
+    # via requests
 click==8.1.7
     # via flask
 cryptography==42.0.5
@@ -31,6 +37,8 @@ decorator==5.1.1
 epc==0.0.5
 executing==2.0.1
     # via stack-data
+filelock==3.13.1
+    # via gdown
 fire==0.6.0
     # via randomname
 flask==3.0.2
@@ -38,8 +46,12 @@ flask==3.0.2
     # via tex-annotater
 flask-cors==4.0.0
     # via tex-annotater
+gdown==5.1.0
+    # via tex-annotater
 gunicorn==21.2.0
     # via tex-annotater
+idna==3.6
+    # via requests
 ipython==8.22.2
 itsdangerous==2.1.2
     # via flask
@@ -84,6 +96,8 @@ pygments==2.17.2
 pynacl==1.5.0
     # via paramiko
 pyright==1.1.355
+pysocks==1.7.1
+    # via requests
 python-dateutil==2.9.0.post0
     # via botocore
     # via pandas
@@ -94,6 +108,9 @@ pytz==2024.1
 randomname==0.2.1
     # via tex-annotater
 rapidfuzz==3.6.2
+    # via tex-annotater
+requests==2.31.0
+    # via gdown
 s3transfer==0.10.0
     # via boto3
 setuptools==69.2.0
@@ -104,11 +121,14 @@ six==1.16.0
     # via asttokens
     # via fire
     # via python-dateutil
+soupsieve==2.5
+    # via beautifulsoup4
 stack-data==0.6.3
     # via ipython
 termcolor==2.4.0
     # via fire
 tqdm==4.66.2
+    # via gdown
     # via tex-annotater
 traitlets==5.14.2
     # via ipython
@@ -117,6 +137,7 @@ tzdata==2024.1
     # via pandas
 urllib3==2.0.7
     # via botocore
+    # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
 werkzeug==3.0.1

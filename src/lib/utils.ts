@@ -1,15 +1,14 @@
 import sortBy from "lodash.sortby";
-import { TextSpan } from "./span"
+import { TextSpan } from "./span";
 
 export type SplitTagProps = {
-  tag: string,
-  height: number,
-  start: number,
-  end: number,
-  fileid: string,
-  anno: TextSpan,
+  tag: string;
+  height: number;
+  start: number;
+  end: number;
+  fileid: string;
+  anno: TextSpan;
 };
-
 
 export const displaySplits = (content: string, annotations: TextSpan[]) => {
   let offsetStart = 0;
@@ -18,17 +17,21 @@ export const displaySplits = (content: string, annotations: TextSpan[]) => {
   let currentTags: SplitTagProps[] = [];
   let hasLink: boolean = false;
   let hasBackLink: boolean = false;
-  const allLinks = annotations.flatMap(anno => anno.links)
+  const allLinks = annotations.flatMap((anno) => anno.links);
 
-  let sortAnnotations: TextSpan[] = sortBy(annotations, (o: TextSpan) => o.start)
+  let sortAnnotations: TextSpan[] = sortBy(
+    annotations,
+    (o: TextSpan) => o.start,
+  );
   while (offsetEnd < content.length) {
-
     // Find all annotations for which the current offset is within the span
     let nextStart = content.length;
     let currentEnd = content.length;
     hasLink = false;
     let height = 0;
-    let heights = currentTags.map((tag) => { return tag.height });
+    let heights = currentTags.map((tag) => {
+      return tag.height;
+    });
 
     // find smallest unused height
     while (true) {
@@ -47,15 +50,26 @@ export const displaySplits = (content: string, annotations: TextSpan[]) => {
       }
       // ...or at the earliest of the current mark's end
       if (offsetStart >= start && offsetStart < end) {
-
         // Only add the tag if it's not already in the list
         // I know this is really slow and probably there's a better way to do it, but I'm tired
         // This is checks for inclusion, ignoring the height parameter
         let isIn = currentTags.some((ctag) => {
-          return (ctag.tag == tag && ctag.start == start && ctag.end == end && ctag.fileid == fileid);
-        })
+          return (
+            ctag.tag == tag &&
+            ctag.start == start &&
+            ctag.end == end &&
+            ctag.fileid == fileid
+          );
+        });
         if (!isIn) {
-          currentTags.push({ tag: tag, height: height, start: start, end: end, fileid: fileid, anno: anno } as SplitTagProps);
+          currentTags.push({
+            tag: tag,
+            height: height,
+            start: start,
+            end: end,
+            fileid: fileid,
+            anno: anno,
+          } as SplitTagProps);
           height += 1;
         }
         currentEnd = Math.min(end, currentEnd);
@@ -72,12 +86,18 @@ export const displaySplits = (content: string, annotations: TextSpan[]) => {
     for (let anno of sortAnnotations) {
       const { start, end, text, tag, fileid, links } = anno;
       if (start <= offsetStart && end >= offsetEnd) {
-        hasLink = hasLink || (anno.links.length > 0);
+        hasLink = hasLink || anno.links.length > 0;
       }
     }
 
     // Add the Mark with all the necessary tags
-    splits.push({ start: offsetStart, end: offsetEnd, content: content.slice(offsetStart, offsetEnd), tags: [...currentTags], hasLink: hasLink })
+    splits.push({
+      start: offsetStart,
+      end: offsetEnd,
+      content: content.slice(offsetStart, offsetEnd),
+      tags: [...currentTags],
+      hasLink: hasLink,
+    });
 
     // update the new start value to the most recent end
     offsetStart = offsetEnd;
@@ -90,8 +110,7 @@ export const displaySplits = (content: string, annotations: TextSpan[]) => {
     }
   }
   return splits;
-}
-
+};
 
 export const selectionIsEmpty = (selection: Selection | null): boolean => {
   if (selection == null) {
@@ -130,24 +149,46 @@ export const parseSelection = (selection: Selection | null) => {
   }
 
   // This if block is just for type checking
-  if (selection.anchorNode == null || selection.anchorNode.parentElement == null
-    || selection.focusNode == null || selection.focusNode.parentElement == null) {
+  if (
+    selection.anchorNode == null ||
+    selection.anchorNode.parentElement == null ||
+    selection.focusNode == null ||
+    selection.focusNode.parentElement == null
+  ) {
     return [0, 0];
   }
 
-  let start = parseInt(selection.anchorNode.parentElement.getAttribute("data-start") || "0", 10) + selection.anchorOffset;
-  let end = parseInt(selection.focusNode.parentElement.getAttribute("data-start") || "0", 10) + selection.focusOffset;
+  let start =
+    parseInt(
+      selection.anchorNode.parentElement.getAttribute("data-start") || "0",
+      10,
+    ) + selection.anchorOffset;
+  let end =
+    parseInt(
+      selection.focusNode.parentElement.getAttribute("data-start") || "0",
+      10,
+    ) + selection.focusOffset;
 
   if (selectionIsBackwards(selection)) {
     [start, end] = [end, start];
   }
 
   return [start, end];
-}
+};
 
 export const jumpToElement = (id: string) => {
-    const element = document.getElementById(id);
-    if (element != null) {
-        element.scrollIntoView({ behavior: 'smooth' });
-    }
-}
+  const element = document.getElementById(id);
+  if (element != null) {
+    element.scrollIntoView({ behavior: "smooth" });
+  }
+};
+
+export const jumpToPercent = (percent: number) => {
+  const scrollBox = document.getElementById("scroll-box");
+  if (scrollBox != null) {
+    scrollBox.scrollTo({
+      top: scrollBox.scrollHeight * percent,
+      behavior: "smooth",
+    });
+  }
+};
