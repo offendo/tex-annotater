@@ -90,12 +90,24 @@ def list_all_documents():
 
 @app.get("/document")
 @cross_origin()
-def get_document():
+def get_tex():
     fileid = request.args.get("fileid")
     if fileid is None:
         return 400, "Request requires fileid"
     tex = load_tex(fileid)
 
+    return {
+        "fileid": fileid,
+        "tex": tex,
+    }
+
+
+@app.get("/pdf")
+@cross_origin()
+def get_pdf():
+    fileid = request.args.get("fileid")
+    if fileid is None:
+        return 400, "Request requires fileid"
     arxiv_id = fileid.split("-")[0]
     if re.match(r"\d+\.\d+", arxiv_id):
         pdf = f"https://arxiv.org/pdf/{arxiv_id}.pdf"
@@ -103,7 +115,6 @@ def get_document():
         pdf = str(base64.b64encode(load_pdf(fileid.replace(".tex", ".pdf"))))[2:-1]
     return {
         "fileid": fileid,
-        "tex": tex,
         "pdf": pdf,
     }
 
