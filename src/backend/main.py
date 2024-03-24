@@ -152,6 +152,6 @@ def search_for_definition():
     topk = int(request.args.get("topk", 5))
     if query is None:
         return jsonify({"error": "Error: no query provided"}), 400
-    index = index_books("../../textbooks", "../../textbooks/index.csv")
+    index = index_books("/tmp/textbooks", "/tmp/textbooks/index.csv")
     results = fuzzysearch(query, index, top_k=topk)
     return jsonify({"results": results}), 200
