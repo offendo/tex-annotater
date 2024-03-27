@@ -67,7 +67,7 @@ def load_save_files(file_id, user_id=None):
     return query_db(query, params)
 
 
-def load_all_annotations():
+def load_all_annotations(fileid: str):
     """Loads all annotations"""
     query = """
         SELECT
@@ -78,11 +78,12 @@ def load_all_annotations():
         FROM annotations a
         LEFT JOIN links l
         ON a.annoid = link_source
-        WHERE a.timestamp = (SELECT MAX(timestamp) FROM annotations WHERE fileid = a.fileid);
+        WHERE a.timestamp = (SELECT MAX(timestamp) FROM annotations WHERE fileid = a.fileid)
+          AND a.fileid != :fileid;
     """
 
     # Query for annotations, but we don't care about user or file id
-    annotations = query_db(query)
+    annotations = query_db(query, params=dict(fileid=fileid))
     if len(annotations) == 0:
         return []
 

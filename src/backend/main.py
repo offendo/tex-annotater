@@ -49,7 +49,10 @@ def post_annotations():
 @app.get("/annotations/all")
 @cross_origin()
 def get_all_annotations():
-    annotations = load_all_annotations()
+    fileid = request.args.get("fileid")
+    if fileid is None:
+        return "Bad request: need fileid!", 400
+    annotations = load_all_annotations(fileid)
 
     return {
         "otherAnnotations": annotations,
@@ -149,9 +152,10 @@ def add_new_user():
 @cross_origin()
 def search_for_definition():
     query = request.args.get("query")
+    fileid = request.args.get("fileid", "") # default to empty string
     topk = int(request.args.get("topk", 5))
     if query is None:
         return jsonify({"error": "Error: no query provided"}), 400
     index = index_books("/tmp/textbooks", "/tmp/textbooks/index.csv")
-    results = fuzzysearch(query, index, top_k=topk)
+    results = fuzzysearch(query, index, topk=topk, fileid=fileid)
     return jsonify({"results": results}), 200

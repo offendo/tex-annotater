@@ -8,9 +8,13 @@ from tqdm import tqdm
 import gdown
 import numpy as np
 import pandas as pd
+import logging
 from rapidfuzz import process, fuzz
 
-from .data import list_all_textbooks
+from .data import list_all_textbooks, list_s3_documents, load_tex
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 patterns = [
     r"a \(\([a-z]* \)*\)is a",
@@ -27,10 +31,24 @@ def download_books(output_dir: str):
         outputfile = Path(output_dir, name).with_suffix(".tex")
         if outputfile.exists():
             continue
-        with open(Path(output_dir, name).with_suffix(".tex"), "wb") as f:
+        with open(outputfile, "wb") as f:
             tex_out = gdown.download(tex_url, f, quiet=True, fuzzy=True)
 
     return [str(Path(output_dir, name).with_suffix(".tex")) for name in df["name"]]
+
+
+def download_texs(output_dir: str):
+    names = list_s3_documents()
+    for name in names:
+        logger.debug('downloading ', name)
+        outputfile = Path(output_dir, name).with_suffix(".tex")
+        if outputfile.exists():
+            continue
+        tex = load_tex(name)
+        with open(outputfile, "w") as f:
+            f.write(tex)
+
+    return [str(Path(output_dir, name).with_suffix(".tex")) for name in names]
 
 
 def extract_definitions(patterns: list[str], books: list[str]):
@@ -73,19 +91,25 @@ def extract_definitions(patterns: list[str], books: list[str]):
 
 
 @lru_cache
-def index_books(textbook_dir: str, save_file: str):
-    Path(textbook_dir).mkdir(exist_ok=True, parents=True)
-    books = download_books(textbook_dir)
-    df = extract_definitions(patterns, books)
+def index_books(tex_dir: str, save_file: str):
+    Path(tex_dir).mkdir(exist_ok=True, parents=True)
+    books = download_books(tex_dir)
+    texs = download_texs(tex_dir)
+    df = extract_definitions(patterns, books + texs)
     df.to_csv(save_file, index=False)
     return df
 
 
-def fuzzysearch(query: str, index: pd.DataFrame, top_k: int = 5):
+def fuzzysearch(query: str, index: pd.DataFrame, topk: int = 5, fileid: str = ""):
+    if fileid:
+        new_index = index[index['file'] == fileid]
+        assert isinstance(new_index, pd.DataFrame)
+    else:
+        new_index = index
     results = process.extract(
         query,
-        index.to_dict(orient="records"),
+        new_index.to_dict(orient="records"),
         scorer=lambda a, b, **kwargs: fuzz.WRatio(a, b["text"], **kwargs),
-        limit=top_k,
+        limit=topk,
     )
     return [match for match, score, dist in results]
