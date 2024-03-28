@@ -6,6 +6,7 @@ import Toolbar from "@mui/material/Toolbar";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 import IconButton from "@mui/material/IconButton";
+import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
@@ -38,13 +39,17 @@ const SaveFileSelector = (props: SaveFileProps) => {
     const [saves, setSaves] = React.useState<any[]>([]);
 
     const handleChange = (event: SelectChangeEvent) => {
+        if (event.target.value == "empty") {
+            props.loadAnnotations("", "", "");
+            setSelected(event.target.value);
+        }
         const s = JSON.parse(event.target.value);
         setSelected(event.target.value);
         props.loadAnnotations(s["fileid"], s["userid"], s["timestamp"]);
     };
 
     const loadSaves = (fileid: string) => {
-        fetch(`/api/saves?fileid=${fileid}`, {mode: 'cors'})
+        fetch(`/api/saves?fileid=${fileid}`, { mode: "cors" })
             .then((res) => res.json())
             .then((res) => {
                 setSaves(res["saves"]);
@@ -68,6 +73,9 @@ const SaveFileSelector = (props: SaveFileProps) => {
                     Load annotations
                 </InputLabel>
                 <Select value={selected} label="save" onChange={handleChange}>
+                    <MenuItem key={"empty-annotations"} value={"empty"}>
+                        {"Clear annotations"}
+                    </MenuItem>
                     {saves.map((item) => {
                         return (
                             <MenuItem
@@ -110,7 +118,7 @@ export default function TopBar(props: TopBarProps) {
 
     async function listAllDocuments() {
         try {
-            const response = await fetch("/api/document/all", {mode: 'cors'});
+            const response = await fetch("/api/document/all", { mode: "cors" });
             const res = await response.json();
             setDocuments(res["documents"]);
         } catch (e) {
@@ -205,9 +213,20 @@ export default function TopBar(props: TopBarProps) {
                 position="static"
             >
                 <Toolbar>
-                    <IconButton
+                    <Typography
+                        variant="h6"
+                        noWrap
+                        component="div"
+                        sx={{
+                            flexGrow: 1,
+                            display: { xs: "none", sm: "block" },
+                        }}
+                        style={{ justifyContent: "center" }}
+                    >
+                        LaTeX Annotater
+                    </Typography>
+                    <Button
                         size="large"
-                        edge="start"
                         color="inherit"
                         aria-label="save annotations"
                         sx={{ mr: 2 }}
@@ -222,23 +241,23 @@ export default function TopBar(props: TopBarProps) {
                             );
                         }}
                     >
-                        <SaveIcon />
-                    </IconButton>
+                        <SaveIcon style={{ padding: "5px" }} />
+                        {"Save"}
+                    </Button>
                     <span>
-                        <IconButton
+                        <Button
                             size="large"
-                            edge="start"
                             color="inherit"
-                            aria-label="show annotations"
                             sx={{ mr: 2 }}
                             onClick={handleAnnotationMenuClick}
                         >
                             {annotationMenuOpen ? (
-                                <ExpandLessIcon />
+                                <ExpandLessIcon style={{ padding: "5px" }} />
                             ) : (
-                                <ExpandMoreIcon />
+                                <ExpandMoreIcon style={{ padding: "5px" }} />
                             )}
-                        </IconButton>
+                            {"Show annotations "}
+                        </Button>
                         <Menu
                             id="basic-menu"
                             anchorEl={annotationMenuAnchorEl}
@@ -282,18 +301,6 @@ export default function TopBar(props: TopBarProps) {
                         style={{ color: "white", backgroundColor: "white" }}
                         orientation="vertical"
                     />
-                    <Typography
-                        variant="h6"
-                        noWrap
-                        component="div"
-                        sx={{
-                            flexGrow: 1,
-                            display: { xs: "none", sm: "block" },
-                        }}
-                        style={{ justifyContent: "center" }}
-                    >
-                        LaTeX Annotater
-                    </Typography>
                     <div>
                         <span
                             style={{
@@ -326,17 +333,21 @@ export default function TopBar(props: TopBarProps) {
                                 fileid={fileid}
                                 userid={props.userid}
                                 loadAnnotations={(fid, uid, time) => {
-                                    props
-                                        .loadAnnotations(fid, uid, time)
-                                        .then((annos: TextSpan[]) =>
-                                            setAnnotations(
-                                                sortBy(
-                                                    annos,
-                                                    (anno: TextSpan) =>
-                                                        anno.start,
+                                    if (fid == "" && uid == "" && time == "") {
+                                        setAnnotations([]);
+                                    } else {
+                                        props
+                                            .loadAnnotations(fid, uid, time)
+                                            .then((annos: TextSpan[]) =>
+                                                setAnnotations(
+                                                    sortBy(
+                                                        annos,
+                                                        (anno: TextSpan) =>
+                                                            anno.start,
+                                                    ),
                                                 ),
-                                            ),
-                                        );
+                                            );
+                                    }
                                 }}
                             />
                         </span>
