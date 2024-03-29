@@ -1,5 +1,5 @@
 # Build step
-FROM node:18-alpine as build
+FROM node:iron-alpine as build
 
 WORKDIR /app
 COPY . /app

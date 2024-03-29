@@ -19,6 +19,6 @@ services:
       dockerfile: Dockerfile.backend
     volumes:
       - ${PWD}:/app/
-    command: "flask --app src/backend/main.py run --debug --port 5000 --host 0.0.0.0"
     ports:
       - 5000:5000
+    # command: "flask --app src/backend/main.py run --debug --port 5000 --host 0.0.0.0"
