@@ -97,7 +97,7 @@ const SaveFileSelector = (props: SaveFileProps) => {
 type TopBarProps = {
     userid: string;
     fileid: string;
-    saveAnnotations: () => TextSpan[];
+    saveAnnotations: () => Promise<TextSpan[] | null>;
     loadAnnotations: (
         fileid: string,
         userid: string,
@@ -253,6 +253,7 @@ export default function TopBar(props: TopBarProps) {
                             color="inherit"
                             sx={{ mr: 2 }}
                             onClick={handleAnnotationMenuClick}
+                            disabled={annotations.length == 0}
                         >
                             {annotationMenuOpen ? (
                                 <ExpandLessIcon style={{ padding: "5px" }} />

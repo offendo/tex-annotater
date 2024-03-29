@@ -108,9 +108,9 @@ const AnnotationTool = () => {
   ) {
     try {
       let res = {};
-      if (empty){
+      if (empty) {
         console.log("Clearing annotations...");
-        res = {annotations: [], fileid: fileid}
+        res = { annotations: [], fileid: fileid };
       } else {
         console.log("Loading annotations...");
         const response = await fetch(
@@ -141,6 +141,7 @@ const AnnotationTool = () => {
       setPdf(pdf_res["pdf"]);
     } catch (e) {
       console.error(e);
+      setQueryParameters({ fileid: "", timestamp: "" });
     }
   }
 
