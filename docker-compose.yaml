@@ -1,7 +1,7 @@
 services:
   # Frontend
   frontend:
-    image: localhost/frontend:latest
+    image: frontend:latest
     build:
       context: .
       dockerfile: Dockerfile.frontend
@@ -13,10 +13,12 @@ services:
 
   # Backend
   backend:
-    image: localhost/backend:latest
+    image: backend:latest
     build:
       context: .
       dockerfile: Dockerfile.backend
+    volumes:
+      - ${PWD}:/app/
     command: "flask --app src/backend/main.py run --debug --port 5000 --host 0.0.0.0"
     ports:
       - 5000:5000
