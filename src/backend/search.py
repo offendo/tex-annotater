@@ -44,9 +44,13 @@ def download_texs(output_dir: str):
         outputfile = Path(output_dir, name).with_suffix(".tex")
         if outputfile.exists():
             continue
-        tex = load_tex(name)
-        with open(outputfile, "w") as f:
-            f.write(tex)
+        try:
+            tex = load_tex(name)
+            with open(outputfile, "w") as f:
+                f.write(tex)
+        except:
+            print("failed to get", name)
+            continue
 
     return [str(Path(output_dir, name).with_suffix(".tex")) for name in names]
 
