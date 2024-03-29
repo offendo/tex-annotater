@@ -31,6 +31,7 @@ type SaveFileProps = {
         fileid: string,
         userid: string,
         timestamp?: string,
+        empty?: boolean,
     ) => any;
 };
 
@@ -40,8 +41,9 @@ const SaveFileSelector = (props: SaveFileProps) => {
 
     const handleChange = (event: SelectChangeEvent) => {
         if (event.target.value == "empty") {
-            props.loadAnnotations("", "", "");
+            props.loadAnnotations("", "", "", true);
             setSelected(event.target.value);
+            return;
         }
         const s = JSON.parse(event.target.value);
         setSelected(event.target.value);
@@ -100,6 +102,7 @@ type TopBarProps = {
         fileid: string,
         userid: string,
         timestamp?: string,
+        empty?: boolean,
     ) => any;
     loadDocument: (fileid: string) => any;
 };
@@ -332,22 +335,11 @@ export default function TopBar(props: TopBarProps) {
                             <SaveFileSelector
                                 fileid={fileid}
                                 userid={props.userid}
-                                loadAnnotations={(fid, uid, time) => {
-                                    if (fid == "" && uid == "" && time == "") {
-                                        setAnnotations([]);
-                                    } else {
-                                        props
-                                            .loadAnnotations(fid, uid, time)
-                                            .then((annos: TextSpan[]) =>
-                                                setAnnotations(
-                                                    sortBy(
-                                                        annos,
-                                                        (anno: TextSpan) =>
-                                                            anno.start,
-                                                    ),
-                                                ),
-                                            );
-                                    }
+                                loadAnnotations={(fid, uid, time, empty) => {
+                                  props.loadAnnotations(fid, uid, time, empty)
+                                      .then((annos: TextSpan[]) =>
+                                          setAnnotations( sortBy( annos, (anno: TextSpan) => anno.start,),),
+                                      );
                                 }}
                             />
                         </span>

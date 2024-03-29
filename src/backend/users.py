@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 import os
 import sqlite3
-import scrypt
+from passlib.hash import bcrypt
 
 ANNOTATIONS_DB = os.environ["ANNOTATIONS_DB"]
 
+hasher = bcrypt.using(13)
 
 def get_hashed_password(plain_text_password):
-    # Hash a password for the first time
-    #   (Using scrypt, the salt is saved into the hash itself)
-    return scrypt.hashpw(plain_text_password, scrypt.gensalt())
+    hashed_password = hasher.hash(plain_text_password)
+    return hashed_password
 
 
 def check_password(plain_text_password, hashed_password):
-    # Check hashed password. Using scrypt, the salt is saved into the hash itself
-    return scrypt.checkpw(plain_text_password, hashed_password)
+    # Check hashed password. Using passlib, the salt is saved into the hash itself
+    return hasher.verify(plain_text_password, hashed_password)
 
 
 def query_db(query, params=()):

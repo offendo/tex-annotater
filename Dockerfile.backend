@@ -1,0 +1,14 @@
+FROM python:3.12
+
+SHELL ["bash", "-c"]
+WORKDIR /app
+
+COPY pyproject.toml requirements.lock requirements-dev.lock README.md /app/
+
+RUN pip install -U uv && uv pip install --system -r ./requirements.lock
+
+COPY . .
+
+EXPOSE 5000
+ENV PYTHONPATH=$PYTHONPATH:/app/:/app/src/
+CMD ["gunicorn","-w4","src.backend.main:app","--bind=0.0.0.0:5000"]

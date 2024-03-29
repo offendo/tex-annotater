@@ -104,16 +104,23 @@ const AnnotationTool = () => {
     fileid: string,
     userid: string,
     timestamp?: string,
+    empty?: boolean,
   ) {
     try {
-      console.log("Loading annotations...");
-      const response = await fetch(
-        `/api/annotations?fileid=${fileid}&userid=${userid}&timestamp=${
-          timestamp ? timestamp : ""
-        }`,
-        { mode: "cors" },
-      );
-      const res = await response.json();
+      let res = {};
+      if (empty){
+        console.log("Clearing annotations...");
+        res = {annotations: [], fileid: fileid}
+      } else {
+        console.log("Loading annotations...");
+        const response = await fetch(
+          `/api/annotations?fileid=${fileid}&userid=${userid}&timestamp=${
+            timestamp ? timestamp : ""
+          }`,
+          { mode: "cors" },
+        );
+        res = await response.json();
+      }
       setFileId(res["fileid"]);
       setAnnotations(res["annotations"]);
       console.log(`Loaded ${res["annotations"].length} annotations`);

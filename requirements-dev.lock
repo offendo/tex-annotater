@@ -79,6 +79,8 @@ pandas==2.2.1
 paramiko==3.4.0
 parso==0.8.3
     # via jedi
+passlib==1.7.4
+    # via tex-annotater
 pexpect==4.9.0
     # via ipython
 prompt-toolkit==3.0.43
@@ -111,8 +113,6 @@ requests==2.31.0
     # via gdown
 s3transfer==0.10.0
     # via boto3
-scrypt==0.8.24
-    # via tex-annotater
 setuptools==69.2.0
     # via nodeenv
 sexpdata==1.0.2

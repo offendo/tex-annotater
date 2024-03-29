@@ -1,0 +1,7 @@
+.venv/
+.git/
+**/__pycache__/
+node_modules/
+Dockerfile
+Dockerfile.backend
+annotations.db

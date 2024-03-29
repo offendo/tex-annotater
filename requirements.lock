@@ -54,6 +54,8 @@ packaging==24.0
     # via gunicorn
 pandas==2.2.1
     # via tex-annotater
+passlib==1.7.4
+    # via tex-annotater
 pysocks==1.7.1
     # via requests
 python-dateutil==2.9.0.post0
@@ -71,8 +73,6 @@ requests==2.31.0
     # via gdown
 s3transfer==0.10.0
     # via boto3
-scrypt==0.8.24
-    # via tex-annotater
 six==1.16.0
     # via fire
     # via python-dateutil

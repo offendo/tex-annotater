@@ -1,0 +1,22 @@
+services:
+  # Frontend
+  frontend:
+    image: localhost/frontend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    volumes:
+      - ./dist/:/var/site/
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 3000:80
+
+  # Backend
+  backend:
+    image: localhost/backend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: "flask --app src/backend/main.py run --debug --port 5000 --host 0.0.0.0"
+    ports:
+      - 5000:5000
