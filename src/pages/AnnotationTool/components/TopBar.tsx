@@ -39,7 +39,7 @@ const SaveFileSelector = (props: SaveFileProps) => {
     const [selected, setSelected] = React.useState("");
     const [saves, setSaves] = React.useState<any[]>([]);
 
-    const handleChange = (event: SelectChangeEvent) => {
+    const handleChange = (event: any) => {
         if (event.target.value == "empty") {
             props.loadAnnotations("", "", "", true);
             setSelected(event.target.value);
@@ -72,9 +72,14 @@ const SaveFileSelector = (props: SaveFileProps) => {
         <Box sx={{ minWidth: 200, marginLeft: "20px", marginRight: "20px" }}>
             <FormControl fullWidth variant="filled">
                 <InputLabel variant="filled" id="demo-simple-select-label">
-                    Load annotations
+                    {"Load annotations"}
                 </InputLabel>
-                <Select value={selected} label="save" onChange={handleChange}>
+                <Select
+                    value={selected}
+                    sx={{ width: 300 }}
+                    label="save"
+                    onChange={handleChange}
+                >
                     <MenuItem key={"empty-annotations"} value={"empty"}>
                         {"Clear annotations"}
                     </MenuItem>
@@ -84,7 +89,7 @@ const SaveFileSelector = (props: SaveFileProps) => {
                                 key={crypto.randomUUID()}
                                 value={JSON.stringify(item)}
                             >
-                                {`${item["timestamp"]} (${item["userid"]})`}
+                                {item.savename == 'autosave' ? `[${item.userid}] autosave` : `[${item.userid}] ${item.timestamp}:  ${item.savename}`}
                             </MenuItem>
                         );
                     })}
@@ -276,7 +281,7 @@ export default function TopBar(props: TopBarProps) {
                                 },
                             }}
                         >
-                            {annotations.map((anno, index) => {
+                          {annotations.map((anno, index) => {
                                 return (
                                     <MenuItem
                                         key={crypto.randomUUID()}
@@ -337,10 +342,17 @@ export default function TopBar(props: TopBarProps) {
                                 fileid={fileid}
                                 userid={props.userid}
                                 loadAnnotations={(fid, uid, time, empty) => {
-                                  props.loadAnnotations(fid, uid, time, empty)
-                                      .then((annos: TextSpan[]) =>
-                                          setAnnotations( sortBy( annos, (anno: TextSpan) => anno.start,),),
-                                      );
+                                    props
+                                        .loadAnnotations(fid, uid, time, empty)
+                                        .then((annos: TextSpan[]) =>
+                                            setAnnotations(
+                                                sortBy(
+                                                    annos,
+                                                    (anno: TextSpan) =>
+                                                        anno.start,
+                                                ),
+                                            ),
+                                        );
                                 }}
                             />
                         </span>

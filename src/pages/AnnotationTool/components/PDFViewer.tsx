@@ -10,6 +10,9 @@ export function PDFViewer(props: PDFViewerProps) {
         if (data.match('https://.*')) {
             return data;
         }
+	//else if (data.match('.*\.pdf')){
+	//    return 'file://' + data;
+	//}
         return "data:application/pdf;base64," + data;
     }
 

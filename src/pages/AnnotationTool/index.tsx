@@ -34,6 +34,9 @@ const AnnotationTool = () => {
   const { token, userid, setAuth } = useAuth();
   const navigate = useNavigate();
 
+  // Load state
+  const saveid = queryParameters.get("saveid") || "";
+
   useEffect(() => {
     if (!token || token.length == 0) {
       navigate("/signin");
@@ -41,7 +44,8 @@ const AnnotationTool = () => {
 
     if (fileid != "") {
       loadDocument(fileid);
-      loadAnnotations(fileid, userid);
+      console.log('loading annotations with saveid: ', saveid)
+      loadAnnotations(fileid, userid, saveid);
     }
 
     // Wait 1 second before trying to scroll, gives the DOM time to load in.
@@ -51,8 +55,8 @@ const AnnotationTool = () => {
       let stop = false;
       setTimeout(() => {
         if (anchor.length > 0) {
-          const percent = parseFloat(anchor);
-          if (!isNaN(percent)) {
+          if (!isNaN(anchor)) {
+            const percent = parseFloat(anchor);
             jumpToPercent(percent);
           } else {
             jumpToElement(anchor);
@@ -68,7 +72,7 @@ const AnnotationTool = () => {
 
   const updateAnnotations = (annotations: TextSpan[]) => {
     setAnnotations(annotations);
-    // saveAnnotations(fileid, userid, annotations, true);
+    saveAnnotations(fileid, userid, annotations, true);
   };
 
   async function saveAnnotations(
@@ -83,16 +87,14 @@ const AnnotationTool = () => {
       body: JSON.stringify({ annotations: annotations }),
     };
     // We handle autosaves differently
-    const url = autosave
-      ? `/api/annotations/autosave?fileid=${fileid}&userid=${userid}`
-      : `/api/annotations?fileid=${fileid}&userid=${userid}`;
+    const url = `/api/annotations?fileid=${fileid}&userid=${userid}&autosave=${autosave}`;
 
     // POST save and ensure it saved correctly;
     try {
-      console.log("Saving annotations...");
+      console.log(`Saving annotations at ${url}`);
       const response = await fetch(url, requestOptions);
       const res = await response.text();
-      console.log(res);
+      console.log(res)
       return annotations;
     } catch (e) {
       console.error(e);
@@ -107,23 +109,21 @@ const AnnotationTool = () => {
     empty?: boolean,
   ) {
     try {
-      let res = {};
+      let res: any = {};
       if (empty) {
         console.log("Clearing annotations...");
         res = { annotations: [], fileid: fileid };
       } else {
-        console.log("Loading annotations...");
-        const response = await fetch(
-          `/api/annotations?fileid=${fileid}&userid=${userid}&timestamp=${
-            timestamp ? timestamp : ""
-          }`,
-          { mode: "cors" },
-        );
+	const url = `/api/annotations?fileid=${fileid}&userid=${userid}&timestamp=${timestamp ? timestamp : ""}`
+        console.log("Fetching: ", url)
+        const response = await fetch(url, { mode: "cors" });
         res = await response.json();
+	console.log('length: ', res.annotations.length)
       }
       setFileId(res["fileid"]);
       setAnnotations(res["annotations"]);
       console.log(`Loaded ${res["annotations"].length} annotations`);
+      console.log(res['annotations']);
       return res["annotations"];
     } catch (e) {
       console.error(e);
@@ -139,6 +139,7 @@ const AnnotationTool = () => {
       setFileId(tex_res["fileid"]);
       const pdf_res = await (await pdf_response).json();
       setPdf(pdf_res["pdf"]);
+      setQueryParameters({ fileid: fileid});
     } catch (e) {
       console.error(e);
       setQueryParameters({ fileid: "", timestamp: "" });
@@ -181,6 +182,7 @@ const AnnotationTool = () => {
               margin: "10px",
             }}
             fileid={fileid}
+            saveid={saveid}
             colors={colors}
             labels={labels}
             content={tex}
