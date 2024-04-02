@@ -138,10 +138,10 @@ const AnnotationTool = () => {
             setFileId(tex_res["fileid"]);
             const pdf_res = await (await pdf_response).json();
             setPdf(pdf_res["pdf"]);
-            setQueryParameters({ fileid: fileid, saveid: saveid, anchor: anchor });
+            setQueryParameters({ fileid: fileid, saveid: saveid});
         } catch (e) {
             console.error(e);
-            setQueryParameters({ fileid: "", saveid: saveid, anchor: anchor });
+            setQueryParameters({ fileid: "", saveid: saveid});
         }
     }
 
