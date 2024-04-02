@@ -46,8 +46,7 @@ def list_s3_documents():
     names = [d["Key"].split("/")[-1] for d in docs if d["Key"].startswith("texs/")]
     return names
 
-
-# @filecache(maxsize=5)
+  
 def load_pdf(file_name):
     # obj = session.get_object(Bucket="tex-annotation", Key=f"pdfs/{file_name}")
     # data = obj["Body"].read()
