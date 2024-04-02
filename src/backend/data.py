@@ -47,11 +47,13 @@ def list_s3_documents():
     return names
 
 
-@filecache(maxsize=5)
+# @filecache(maxsize=5)
 def load_pdf(file_name):
-    obj = session.get_object(Bucket="tex-annotation", Key=f"pdfs/{file_name}")
-    data = obj["Body"].read()
-    return data
+    # obj = session.get_object(Bucket="tex-annotation", Key=f"pdfs/{file_name}")
+    # data = obj["Body"].read()
+    url = f'https://tex-annotation.s3.amazonaws.com/pdfs/{file_name}'
+    # return data
+    return url
 
 
 def load_tex(file_name):

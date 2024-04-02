@@ -132,7 +132,8 @@ def get_pdf():
     if re.match(r"\d+\.\d+", arxiv_id):
         pdf = f"https://arxiv.org/pdf/{arxiv_id}.pdf"
     else:
-        pdf = str(base64.b64encode(load_pdf(fileid.replace(".tex", ".pdf"))))[2:-1]
+        # pdf = str(base64.b64encode(load_pdf(fileid.replace(".tex", ".pdf"))))[2:-1]
+        pdf = load_pdf(fileid.replace(".tex", ".pdf"))
     return {
         "fileid": fileid,
         "pdf": pdf,

@@ -70,6 +70,7 @@ const SaveFileSelector = (props: SaveFileProps) => {
         loadSaves(props.fileid);
         const saveid = queryParameters.get('saveid') || "";
         props.loadAnnotations(props.fileid, props.userid, saveid);
+        setQueryParameters({...queryParameters, saveid: saveid})
     }, [props.fileid, props.userid]);
 
     return (
