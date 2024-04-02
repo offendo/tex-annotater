@@ -29,17 +29,16 @@ def filecache(maxsize=None):
                     print('Cache full!')
                     # get the filename of the earliest timestamp
                     pop_value = sorted(list(times.items()), key=lambda x: x[1])[0][0]
-                    cache.pop(pop_value)
-                    times.pop(pop_value)
+                    del cache[pop_value]
+                    del times[pop_value]
                 else:
                     print('Cache miss!')
                 new_val = original_func(file_name, *args, **kwargs)
                 cache[file_name] = new_val
                 times[file_name] = time.time()
-                return file_name
+                return new_val
         return new_func
     return decorator
-
 
 
 def list_s3_documents():
@@ -68,6 +67,10 @@ def query_db(query, params=()):
         records = [dict(r) for r in results]
     return records
 
+def get_savename_from_annoid(annoid: str):
+    query = "SELECT timestamp, fileid, userid, savename FROM annotations WHERE annoid = :annoid;"
+    params = dict(annoid=annoid)
+    return query_db(query, params)[0]
 
 def list_all_textbooks():
     """Load the textbooks from the excel sheet."""
@@ -216,6 +219,12 @@ def save_annotations(file_id, user_id, annotations, autosave: bool = False):
     with sqlite3.connect(ANNOTATIONS_DB) as conn:
         savename = randomname.get_name()
         # Insert new entries
+        if autosave:
+            conn.execute(
+                """
+                DELETE FROM annotations WHERE savename = 'autosave';
+                """
+            )
         for an in annotations:
             links = an["links"]
             conn.execute(

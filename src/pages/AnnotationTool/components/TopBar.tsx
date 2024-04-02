@@ -1,11 +1,11 @@
 import * as React from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Divider } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
-import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Snackbar from "@mui/material/Snackbar";
@@ -39,7 +39,9 @@ const SaveFileSelector = (props: SaveFileProps) => {
     const [selected, setSelected] = React.useState("");
     const [saves, setSaves] = React.useState<any[]>([]);
 
-    const handleChange = (event: any) => {
+    const [queryParameters, setQueryParameters] = useSearchParams();
+
+    const handleChange = (event: SelectChangeEvent) => {
         if (event.target.value == "empty") {
             props.loadAnnotations("", "", "", true);
             setSelected(event.target.value);
@@ -48,8 +50,9 @@ const SaveFileSelector = (props: SaveFileProps) => {
         const s = JSON.parse(event.target.value);
         setSelected(event.target.value);
         props.loadAnnotations(s["fileid"], s["userid"], s["timestamp"]);
+        setQueryParameters({fileid: s['fileid'], saveid: s['timestamp']})
     };
-
+  
     const loadSaves = (fileid: string) => {
         fetch(`/api/saves?fileid=${fileid}`, { mode: "cors" })
             .then((res) => res.json())
@@ -65,7 +68,8 @@ const SaveFileSelector = (props: SaveFileProps) => {
 
     React.useEffect(() => {
         loadSaves(props.fileid);
-        props.loadAnnotations(props.fileid, props.userid);
+        const saveid = queryParameters.get('saveid') || "";
+        props.loadAnnotations(props.fileid, props.userid, saveid);
     }, [props.fileid, props.userid]);
 
     return (
