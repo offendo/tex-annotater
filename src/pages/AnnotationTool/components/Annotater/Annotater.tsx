@@ -14,6 +14,7 @@ import sortBy from "lodash.sortby";
 
 type AnnotatorProps = {
   fileid: string;
+  saveid: string;
   labels: string[];
   colors: ColorMap;
   content: string;
@@ -109,7 +110,8 @@ const Annotator = (props: AnnotatorProps) => {
   }
 
   const toggleLink = (source: TextSpan, target: TextSpan) => {
-    const link = makeLink(source, target)
+    const link = makeLink(source, target);
+    console.log('Toggling link: ', link);
     const splitIndex = source.links.findIndex((s) => s.end == link.end && s.start == link.start && s.tag == link.tag && s.fileid == link.fileid);
     if (splitIndex == -1) {
       source.links = [...source.links, link];
@@ -260,6 +262,7 @@ const Annotator = (props: AnnotatorProps) => {
                 colors={props.colors}
                 {...split}
                 onClick={handleSplitPress}
+                saveid={props.saveid}
                 annotations={props.annotations}
                 toggleLink={handleAddLinkPress}
                 deleteAnnotation={(anno, index) => { removeMark(anno); }}

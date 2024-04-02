@@ -1,11 +1,11 @@
 import * as React from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Divider } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
-import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Snackbar from "@mui/material/Snackbar";
@@ -39,6 +39,8 @@ const SaveFileSelector = (props: SaveFileProps) => {
     const [selected, setSelected] = React.useState("");
     const [saves, setSaves] = React.useState<any[]>([]);
 
+    const [queryParameters, setQueryParameters] = useSearchParams();
+
     const handleChange = (event: SelectChangeEvent) => {
         if (event.target.value == "empty") {
             props.loadAnnotations("", "", "", true);
@@ -48,8 +50,9 @@ const SaveFileSelector = (props: SaveFileProps) => {
         const s = JSON.parse(event.target.value);
         setSelected(event.target.value);
         props.loadAnnotations(s["fileid"], s["userid"], s["timestamp"]);
+        setQueryParameters({fileid: s['fileid'], saveid: s['timestamp']})
     };
-
+  
     const loadSaves = (fileid: string) => {
         fetch(`/api/saves?fileid=${fileid}`, { mode: "cors" })
             .then((res) => res.json())
@@ -65,16 +68,22 @@ const SaveFileSelector = (props: SaveFileProps) => {
 
     React.useEffect(() => {
         loadSaves(props.fileid);
-        props.loadAnnotations(props.fileid, props.userid);
+        const saveid = queryParameters.get('saveid') || "";
+        props.loadAnnotations(props.fileid, props.userid, saveid);
     }, [props.fileid, props.userid]);
 
     return (
         <Box sx={{ minWidth: 200, marginLeft: "20px", marginRight: "20px" }}>
             <FormControl fullWidth variant="filled">
                 <InputLabel variant="filled" id="demo-simple-select-label">
-                    Load annotations
+                    {"Load annotations"}
                 </InputLabel>
-                <Select value={selected} label="save" onChange={handleChange}>
+                <Select
+                    value={selected}
+                    sx={{ width: 300 }}
+                    label="save"
+                    onChange={handleChange}
+                >
                     <MenuItem key={"empty-annotations"} value={"empty"}>
                         {"Clear annotations"}
                     </MenuItem>
@@ -84,7 +93,7 @@ const SaveFileSelector = (props: SaveFileProps) => {
                                 key={crypto.randomUUID()}
                                 value={JSON.stringify(item)}
                             >
-                                {`${item["timestamp"]} (${item["userid"]})`}
+                                {item.savename == 'autosave' ? `[${item.userid}] autosave` : `[${item.userid}] ${item.timestamp}:  ${item.savename}`}
                             </MenuItem>
                         );
                     })}
@@ -276,7 +285,7 @@ export default function TopBar(props: TopBarProps) {
                                 },
                             }}
                         >
-                            {annotations.map((anno, index) => {
+                          {annotations.map((anno, index) => {
                                 return (
                                     <MenuItem
                                         key={crypto.randomUUID()}
@@ -337,10 +346,17 @@ export default function TopBar(props: TopBarProps) {
                                 fileid={fileid}
                                 userid={props.userid}
                                 loadAnnotations={(fid, uid, time, empty) => {
-                                  props.loadAnnotations(fid, uid, time, empty)
-                                      .then((annos: TextSpan[]) =>
-                                          setAnnotations( sortBy( annos, (anno: TextSpan) => anno.start,),),
-                                      );
+                                    props
+                                        .loadAnnotations(fid, uid, time, empty)
+                                        .then((annos: TextSpan[]) =>
+                                            setAnnotations(
+                                                sortBy(
+                                                    annos,
+                                                    (anno: TextSpan) =>
+                                                        anno.start,
+                                                ),
+                                            ),
+                                        );
                                 }}
                             />
                         </span>

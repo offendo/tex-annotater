@@ -2,9 +2,9 @@ import React, { useRef, useState } from "react";
 import { MenuButton } from '@mui/base/MenuButton';
 import { Dropdown } from '@mui/base/Dropdown';
 import { MarkMenu } from './MarkMenu';
-import ColorMap from "@/app/lib/colors";
-import { TextSpan, Link } from "@/app/lib/span";
-import { selectionIsEmpty, parseSelection, SplitTagProps } from "@/app/lib/utils";
+import ColorMap from "@/lib/colors";
+import { TextSpan, Link } from "@/lib/span";
+import { selectionIsEmpty, parseSelection, SplitTagProps } from "@/lib/utils";
 
 export interface SplitProps {
   content: string
@@ -15,6 +15,7 @@ export interface SplitProps {
   colors?: ColorMap
   start: number
   end: number
+  saveid?: string;
   onClick?: (arg: any, anno: TextSpan, location: any) => any
   onContextMenu?: (e: any, location: any) => (any)
   toggleLink: (source: TextSpan, target: TextSpan) => any;
@@ -29,6 +30,7 @@ export interface MarkProps extends SplitProps {
   hasLink?: boolean
   colors: ColorMap
   annotations: TextSpan[]
+  saveid: string;
   otherFileAnnotations: TextSpan[]
   onClick: (e: any, anno: TextSpan, location: any) => (any)
   onContextMenu: (e: any, location: any) => (any)
@@ -105,6 +107,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
             colors={props.colors}
             start={props.start}
             end={props.end}
+            saveid={props.saveid}
             annotations={props.annotations}
             otherFileAnnotations={props.otherFileAnnotations}
             toggleLink={props.toggleLink}

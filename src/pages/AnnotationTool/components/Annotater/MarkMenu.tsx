@@ -1,16 +1,22 @@
 import React, { useState, useRef } from "react";
 import { TextSpan, Link } from "@/lib/span";
-import { Card, CardActions, CardContent, Grid, IconButton, Tooltip } from "@mui/material";
-import DeleteIcon from '@mui/icons-material/Delete';
-import BoltIcon from '@mui/icons-material/Bolt';
-import AddLinkIcon from '@mui/icons-material/AddLink';
-import Collapse from '@mui/material/Collapse';
+import {
+    Card,
+    CardActions,
+    CardContent,
+    Grid,
+    IconButton,
+    Tooltip,
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import BoltIcon from "@mui/icons-material/Bolt";
+import AddLinkIcon from "@mui/icons-material/AddLink";
+import Collapse from "@mui/material/Collapse";
 import LinkMenu from "./LinkMenu";
 import { selectionIsEmpty } from "@/lib/utils";
 
-import Popover from '@mui/material/Popover';
-import MenuItem from '@mui/material/MenuItem';
-
+import Popover from "@mui/material/Popover";
+import MenuItem from "@mui/material/MenuItem";
 
 export interface MarkMenuProps {
     anno: TextSpan;
@@ -19,6 +25,7 @@ export interface MarkMenuProps {
     start: number;
     end: number;
     annotations: TextSpan[];
+    saveid: string;
     otherFileAnnotations: TextSpan[];
     toggleLink: (source: TextSpan, target: TextSpan) => any;
     deleteAnnotation: (annotation: TextSpan, index: number) => any;
@@ -30,27 +37,40 @@ export function MarkMenu(props: MarkMenuProps) {
     const [selected, setSelected] = useState<number>(-1);
     const [pos, setPos] = useState({ left: 0, top: 0 });
     const [menuOpen, setMenuOpen] = useState<boolean>(false);
-    const [hoveredAnnotations, setHoveredAnnotations] = useState<TextSpan[]>([]);
+    const [hoveredAnnotations, setHoveredAnnotations] = useState<TextSpan[]>(
+        [],
+    );
 
     const handleJumpClick = (e: any) => {
         if (props.anno.links.length > 0) {
             const file = props.anno.links[0].fileid;
             const target = props.anno.links[0].target;
-            window.open(`?userid=&fileid=${file}&anchor=${target}`, "_blank");
+            fetch(`/api/savename?annoid=${target}`).then(res => res.json()).then((result: any) => {
+                const timestamp = result['timestamp'];
+                console.log(result)
+                window.open(
+                    `?userid=&fileid=${file}&anchor=${target}&saveid=${timestamp}`,
+                    "_blank",
+                );
+            });
         }
-    }
+    };
 
     const handleRightClick = (e: React.MouseEvent<HTMLButtonElement>) => {
         const selection = window.getSelection();
         if (selectionIsEmpty(selection)) {
             setPos({ left: e.pageX, top: e.pageY });
-            const annotations = props.annotations.filter((s: TextSpan) => { return props.start >= s.start && props.end <= s.end });
+            const annotations = props.annotations.filter((s: TextSpan) => {
+                return props.start >= s.start && props.end <= s.end;
+            });
             setHoveredAnnotations(annotations);
             setMenuOpen(true);
         }
     };
 
-    const handleClose = () => { setMenuOpen(false); };
+    const handleClose = () => {
+        setMenuOpen(false);
+    };
 
     const toggleSelected = (index: number) => {
         if (selected == index) {
@@ -58,15 +78,22 @@ export function MarkMenu(props: MarkMenuProps) {
         } else {
             setSelected(index);
         }
-    }
+    };
 
-
-    const Row = ({ annotation, index }: { annotation: TextSpan, index: number }) => {
-        const [linksOpen, setLinksOpen] = useState<boolean>(props.openLinkMenuByDefault);
+    const Row = ({
+        annotation,
+        index,
+    }: {
+        annotation: TextSpan;
+        index: number;
+    }) => {
+        const [linksOpen, setLinksOpen] = useState<boolean>(
+            props.openLinkMenuByDefault,
+        );
         const handleLinkButtonPress = (e) => {
             setLinksOpen(!linksOpen);
             e.stopPropagation();
-        }
+        };
 
         return (
             <Card
@@ -83,17 +110,34 @@ export function MarkMenu(props: MarkMenuProps) {
                     <Grid item xs={2}>
                         <CardActions disableSpacing>
                             {/* Link button */}
-                            <IconButton onClick={(e) => { handleLinkButtonPress(e) }}> <AddLinkIcon /> </IconButton>
+                            <IconButton
+                                onClick={(e) => {
+                                    handleLinkButtonPress(e);
+                                }}
+                            >
+                                {" "}
+                                <AddLinkIcon />{" "}
+                            </IconButton>
 
                             {/* Delete button */}
-                            <IconButton size="small" onClick={(e) => props.deleteAnnotation(annotation, index)}> <DeleteIcon /> </IconButton>
+                            <IconButton
+                                size="small"
+                                onClick={(e) =>
+                                    props.deleteAnnotation(annotation, index)
+                                }
+                            >
+                                {" "}
+                                <DeleteIcon />{" "}
+                            </IconButton>
                         </CardActions>
                     </Grid>
 
-                    <Grid item xs={3} >
+                    <Grid item xs={3}>
                         <CardContent>
                             {/* Tag name */}
-                            <span style={{ color: props.colors[annotation.tag] }}>
+                            <span
+                                style={{ color: props.colors[annotation.tag] }}
+                            >
                                 {`${annotation.tag}`}
                             </span>
                         </CardContent>
@@ -101,19 +145,52 @@ export function MarkMenu(props: MarkMenuProps) {
                     <Grid item xs={7}>
                         <CardContent>
                             {/* Content */}
-                            <span className="expand-text" style={{ minWidth: "300px", alignContent: 'top' }}>
+                            <span
+                                className="expand-text"
+                                style={{
+                                    minWidth: "300px",
+                                    alignContent: "top",
+                                }}
+                            >
                                 <Tooltip title="Click to expand">
-                                    <pre style={{ margin: "0px", whiteSpace: "pre-wrap" }} onClick={(e) => { e.stopPropagation(); toggleSelected(index); }}>
-                                        {selected == index ? `${annotation.text}` : `${annotation.text.slice(0, Math.min(25, annotation.text.length)).trim().replaceAll('\n', ' ')}...`}
+                                    <pre
+                                        style={{
+                                            margin: "0px",
+                                            whiteSpace: "pre-wrap",
+                                        }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleSelected(index);
+                                        }}
+                                    >
+                                        {selected == index
+                                            ? `${annotation.text}`
+                                            : `${annotation.text
+                                                  .slice(
+                                                      0,
+                                                      Math.min(
+                                                          25,
+                                                          annotation.text
+                                                              .length,
+                                                      ),
+                                                  )
+                                                  .trim()
+                                                  .replaceAll("\n", " ")}...`}
                                     </pre>
                                 </Tooltip>
                             </span>
                         </CardContent>
                     </Grid>
-                    <Grid item xs={12} >
+                    <Grid item xs={12}>
                         {/* Link menu card*/}
-                        <Collapse in={linksOpen} timeout="auto" unmountOnExit orientation="vertical" collapsedSize={0}>
-                            <CardContent >
+                        <Collapse
+                            in={linksOpen}
+                            timeout="auto"
+                            unmountOnExit
+                            orientation="vertical"
+                            collapsedSize={0}
+                        >
+                            <CardContent>
                                 <LinkMenu
                                     left={0}
                                     top={0}
@@ -129,17 +206,16 @@ export function MarkMenu(props: MarkMenuProps) {
                 </Grid>
             </Card>
         );
-    }
-
+    };
 
     return (
-        <span data-start={props.start} data-end={props.end} >
+        <span data-start={props.start} data-end={props.end}>
             <span
                 onContextMenu={handleRightClick}
                 onClick={(e) => {
                     if (e.altKey) {
-                        handleJumpClick(e)
-                    };
+                        handleJumpClick(e);
+                    }
                 }}
                 data-start={props.start}
                 data-end={props.end}
@@ -151,7 +227,9 @@ export function MarkMenu(props: MarkMenuProps) {
                 onClose={handleClose}
                 anchorPosition={pos}
                 anchorReference="anchorPosition"
-                onKeyDown={(e) => { e.stopPropagation(); }}
+                onKeyDown={(e) => {
+                    e.stopPropagation();
+                }}
                 disableScrollLock={true}
                 style={{
                     position: "absolute",
@@ -169,12 +247,11 @@ export function MarkMenu(props: MarkMenuProps) {
                             key={crypto.randomUUID()}
                         >
                             <Row annotation={annotation} index={index} />
-                        </MenuItem >
+                        </MenuItem>
                     );
-                }
-                )}
-            </Popover >
-        </span >
+                })}
+            </Popover>
+        </span>
     );
 }
 export default MarkMenu;

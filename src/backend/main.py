@@ -17,6 +17,7 @@ from .data import (
     load_save_files,
     load_annotations,
     save_annotations,
+    get_savename_from_annoid,
     list_s3_documents,
     init_annotation_db,
 )
@@ -41,8 +42,10 @@ init_users_db()
 def post_annotations():
     userid = request.args.get("userid")
     fileid = request.args.get("fileid")
+    autosave = request.args.get("autosave")
+    autosave = True if autosave == "true" else False
     annotations = request.get_json()["annotations"]
-    save_annotations(fileid, userid, annotations)
+    save_annotations(fileid, userid, annotations, autosave=autosave)
     return "Success!", 200
 
 
@@ -74,8 +77,8 @@ def get_annotations():
     return {
         "fileid": fileid,
         "annotations": annotations,
+        "timestamp": timestamp,
     }, 200
-
 
 @app.get("/saves")
 @cross_origin()
@@ -104,6 +107,20 @@ def get_tex():
         "tex": tex,
     }
 
+@app.get("/savename")
+@cross_origin()
+def get_savename():
+    annoid = request.args.get("annoid")
+    if annoid is None:
+        return "Bad request: need annoid!", 400
+    result = get_savename_from_annoid(annoid)
+
+    return {
+        "fileid": result['fileid'],
+        "userid": result['userid'],
+        "savename": result['savename'],
+        "timestamp": result['timestamp'],
+    }, 200
 
 @app.get("/pdf")
 @cross_origin()

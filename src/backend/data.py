@@ -4,7 +4,9 @@ import sqlite3
 import boto3
 import pandas as pd
 import randomname
-from contextlib import closing
+import shelve
+import time
+from pathlib import Path
 
 session = boto3.client(
     "s3",
@@ -13,6 +15,31 @@ session = boto3.client(
 )
 ANNOTATIONS_DB = os.environ["ANNOTATIONS_DB"]
 
+CACHE_FILE = "/tmp/pdf_cache"
+
+def filecache(maxsize=None):
+    def decorator(original_func):
+        def new_func(file_name, *args, **kwargs):
+            with shelve.open(CACHE_FILE) as cache, shelve.open(CACHE_FILE+'.lru') as times:
+                if file_name in cache:
+                    print('Cache hit!')
+                    times[file_name] = time.time()
+                    return cache[file_name]
+                elif len(cache) == maxsize:
+                    print('Cache full!')
+                    # get the filename of the earliest timestamp
+                    pop_value = sorted(list(times.items()), key=lambda x: x[1])[0][0]
+                    del cache[pop_value]
+                    del times[pop_value]
+                else:
+                    print('Cache miss!')
+                new_val = original_func(file_name, *args, **kwargs)
+                cache[file_name] = new_val
+                times[file_name] = time.time()
+                return new_val
+        return new_func
+    return decorator
+
 
 def list_s3_documents():
     docs = session.list_objects(Bucket="tex-annotation")["Contents"]
@@ -20,6 +47,7 @@ def list_s3_documents():
     return names
 
 
+@filecache(maxsize=5)
 def load_pdf(file_name):
     obj = session.get_object(Bucket="tex-annotation", Key=f"pdfs/{file_name}")
     data = obj["Body"].read()
@@ -39,6 +67,10 @@ def query_db(query, params=()):
         records = [dict(r) for r in results]
     return records
 
+def get_savename_from_annoid(annoid: str):
+    query = "SELECT timestamp, fileid, userid, savename FROM annotations WHERE annoid = :annoid;"
+    params = dict(annoid=annoid)
+    return query_db(query, params)[0]
 
 def list_all_textbooks():
     """Load the textbooks from the excel sheet."""
@@ -59,11 +91,10 @@ def load_save_files(file_id, user_id=None):
         params["userid"] = user_id
 
     query = (
-        "SELECT DISTINCT userid, fileid, timestamp FROM annotations WHERE "
+        "SELECT DISTINCT userid, fileid, timestamp, savename FROM annotations WHERE "
         + " AND ".join(conditions)
         + " ORDER BY timestamp DESC;"
     )
-    columns = ["timestamp", "savename", "userid"]
     return query_db(query, params)
 
 
@@ -148,7 +179,6 @@ def load_annotations(file_id, user_id, timestamp=None):
         LEFT JOIN links l
         ON a.annoid = link_source
         WHERE a.fileid = :fileid
-        AND a.userid = :userid
         AND a.timestamp = :timestamp;
     """
     params = dict(fileid=file_id, userid=user_id, timestamp=timestamp)
@@ -185,10 +215,16 @@ def load_annotations(file_id, user_id, timestamp=None):
     return grouped.reset_index().to_dict(orient="records")
 
 
-def save_annotations(file_id, user_id, annotations):
+def save_annotations(file_id, user_id, annotations, autosave: bool = False):
     with sqlite3.connect(ANNOTATIONS_DB) as conn:
         savename = randomname.get_name()
         # Insert new entries
+        if autosave:
+            conn.execute(
+                """
+                DELETE FROM annotations WHERE savename = 'autosave';
+                """
+            )
         for an in annotations:
             links = an["links"]
             conn.execute(
@@ -206,7 +242,7 @@ def save_annotations(file_id, user_id, annotations):
                     text=an["text"],
                     tag=an["tag"],
                     color=an.get("color", "#d3d3d3"),
-                    savename=savename,
+                    savename="autosave" if autosave else savename,
                 ),
             )
             conn.executemany(
@@ -217,7 +253,7 @@ def save_annotations(file_id, user_id, annotations):
                 """,
                 [
                     dict(
-                        fileid=file_id,
+                        fileid=ln['fileid'],
                         userid=user_id,
                         start=ln["start"],
                         end=ln["end"],
