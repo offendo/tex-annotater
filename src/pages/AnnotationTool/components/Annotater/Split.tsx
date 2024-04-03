@@ -43,6 +43,13 @@ export function isMarkProps(props: SplitProps): props is MarkProps {
   return "tags" in props && props.tags.length > 0;
 }
 
+const addLineAnchors = (content: string) => {
+  // const lines = content.split(/\n/);
+  // const withAnchors = lines.map((line: string, index: number) => { return <React.Fragment id={`line-${index}`}> {`${line}\n`} </React.Fragment> })
+  // return withAnchors;
+  return content
+}
+
 export function Split(props: SplitProps): React.JSX.Element {
   if (isMarkProps(props)) {
     return <Mark {...props} />
@@ -53,16 +60,13 @@ export function Split(props: SplitProps): React.JSX.Element {
       data-end={props.end}
       className="split"
     >
-      {props.content}
+      {addLineAnchors(props.content)}
     </span>
   );
 
 };
 
 export function Mark(props: MarkProps): React.JSX.Element {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [pos, setPos] = useState({ left: 0, top: 0 });
-
 
   const getSplitColor = (split: any) => {
     // If it's linked to something, use the link's target color

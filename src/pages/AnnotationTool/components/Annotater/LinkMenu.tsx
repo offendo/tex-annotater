@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, TextSpan } from "@/lib/span";
-import { jumpToPercent } from "@/lib/utils";
+import { getViewerWidthInChars, jumpToPercent } from "@/lib/utils";
 import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 import fuzzysort from "fuzzysort";
@@ -73,8 +73,9 @@ export function LinkMenu(props: LinkMenuProps) {
 
   async function queryAutoLinks(text: string, fileid: string, topk: number = 5) {
     try {
+      const width = getViewerWidthInChars();
       const response = await fetch(
-        `/api/definition?query=${text}&fileid=${fileid}&topk=${topk}`,
+        `/api/definition?query=${text}&fileid=${fileid}&topk=${topk}&width=${width}`,
         {
           mode: "cors",
         },
@@ -319,7 +320,7 @@ export function LinkMenu(props: LinkMenuProps) {
       <Divider> </Divider>
 
       {/* Table content */}
-      <table>
+      <table cellSpacing={0}>
         <thead>
           <tr>
             <th> Select </th>

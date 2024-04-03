@@ -52,12 +52,12 @@ const AnnotationTool = () => {
         // Retry x5
         let tries = 0;
         var repeater = setInterval(() => {
-            if (tries < 5) {
+            if (tries < 3) {
                 if (anchor.length > 0) {
                     if (!isNaN(anchor)) {
                         const percent = parseFloat(anchor);
-                        console.log(`jumping to ${percent}%`)
-                        jumpToPercent(percent);
+                        console.log(`jumping to ${percent}%, fudged by -0.0003 = ${percent - 0.0003}`)
+                        jumpToPercent(percent - 0.0003); // fudge the jump percent slightly
                     } else {
                         console.log(`jumping to ${anchor}`)
                         jumpToElement(anchor);

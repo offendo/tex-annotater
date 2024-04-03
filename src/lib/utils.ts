@@ -13,7 +13,7 @@ export type SplitTagProps = {
 export const displaySplits = (content: string, annotations: TextSpan[]) => {
   let offsetStart = 0;
   let offsetEnd = 0;
-  const splits: any[] = [];
+  const splits: {start: number, end: number, content: string, tags: SplitTagProps[], hasLink: boolean}[] = [];
   let currentTags: SplitTagProps[] = [];
   let hasLink: boolean = false;
   let hasBackLink: boolean = false;
@@ -192,3 +192,26 @@ export const jumpToPercent = (percent: number) => {
     });
   }
 };
+
+
+const singleCharacterWidth = (parent = document.body) => {
+
+  const span = document.createElement("span");
+  span.style.width = "1ch";
+  span.style.position = "fixed";
+
+  parent.appendChild(span);
+  const width = span.getBoundingClientRect().width;
+  parent.removeChild(span);
+
+  return width;
+};
+
+export const getViewerWidthInChars = () => {
+  const viewer = document.getElementById("viewer");
+  if (viewer == null) {
+    return 0;
+  }
+  const ch = singleCharacterWidth();
+  return Math.floor(viewer.scrollWidth / ch);
+}

@@ -172,8 +172,9 @@ def search_for_definition():
     query = request.args.get("query")
     fileid = request.args.get("fileid", "") # default to empty string
     topk = int(request.args.get("topk", 5))
-    if query is None:
-        return jsonify({"error": "Error: no query provided"}), 400
-    index = index_books("/tmp/textbooks", "/tmp/textbooks/index.csv")
+    width = int(request.args.get("width", -1))
+    if query is None or width == -1:
+        return jsonify({"error": "Error: query and width are required"}), 400
+    index = index_books("/tmp/textbooks", width)
     results = fuzzysearch(query, index, topk=topk, fileid=fileid)
     return jsonify({"results": results}), 200

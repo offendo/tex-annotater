@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 patterns = [
-    r"a \(\([a-z]* \)*\)is a",
+    r"an? \(\([a-z]* \)*\)is an?\s*",
     r"is called \([^ ]* \)*if",
     r"is called \([^ ]* \)*when",
     r"we call \([^ ]* \)*if",
@@ -49,42 +49,66 @@ def download_texs(output_dir: str):
             with open(outputfile, "w") as f:
                 f.write(tex)
         except:
-            print("failed to get", name)
+            logger.error(f"failed to get {name}")
             continue
 
     return [str(Path(output_dir, name).with_suffix(".tex")) for name in names]
 
 
-def extract_definitions(patterns: list[str], books: list[str]):
+def extract_definitions(patterns: list[str], books: list[str], width: int):
     """search"""
-    p = Popen(
-        ["wc", "-l", *[b for b in books]],
-        stdout=PIPE,
-        stderr=STDOUT,
-    )
+
     line_counts = []
-    for count in p.communicate()[0].decode().strip().split("\n"):
+    searched = []
+    for book in books:
+        fold = Popen(
+            ["fold", "-s", "-w", str(width), book],
+            stdout=PIPE,
+        )
+        wc = Popen(
+            ["wc", "-l"],
+            stdin=fold.stdout,
+            stdout=PIPE,
+            stderr=STDOUT,
+        )
+        count = wc.communicate()[0].decode().strip()
         match = re.match(r"^\s*(\d+)\s*(.*)$", count)
         if match is None:
             continue
         wc, file = match.groups()
-        line_counts.append((str(Path(file).stem), int(wc)))
+        line_counts.append((str(Path(book).stem), int(wc)))
+
+        fold = Popen(
+            ["fold", "-s", "-w", str(width), book],
+            stdout=PIPE,
+        )
+        p = Popen(
+            ["grep", "-oin", r"\|".join(patterns)],
+            stdin=fold.stdout,
+            stdout=PIPE,
+            stderr=STDOUT,
+        )
+        for match in p.communicate()[0].decode().strip().split('\n'):
+            groups = re.match(r"(\d+):(.*)", match)
+            if groups is None:
+                continue
+            linenum, rest = groups.groups()
+            searched.append((str(Path(book).stem), int(linenum), rest))
 
     count_df = pd.DataFrame.from_records(line_counts, columns=["file", "total_lines"])
 
-    p = Popen(
-        ["grep", "-oin", r"\|".join(patterns), *[b for b in books]],
-        stdout=PIPE,
-        stderr=STDOUT,
-    )
-
-    searched = []
-    for match in p.communicate()[0].decode().strip().split("\n"):
-        groups = re.match(r"(.*).tex:(\d+):(.*)", match)
-        if groups is None:
-            continue
-        name, linenum, rest = groups.groups()
-        searched.append((str(Path(name).stem), int(linenum), rest))
+    # p = Popen(
+    #     ["grep", "-oin", r"\|".join(patterns), *[b for b in books]],
+    #     stdout=PIPE,
+    #     stderr=STDOUT,
+    # )
+    # searched = []
+    # for match in p.communicate()[0].decode().strip().split("\n"):
+    #     groups = re.match(r"(.*).tex:(\d+):(.*)", match)
+    #     if groups is None:
+    #         continue
+    #     name, linenum, rest = groups.groups()
+    #     searched.append((str(Path(name).stem), int(linenum), rest))
 
     df = pd.DataFrame.from_records(searched, columns=["file", "line", "text"])
 
@@ -94,12 +118,15 @@ def extract_definitions(patterns: list[str], books: list[str]):
     return merged
 
 
-@lru_cache
-def index_books(tex_dir: str, save_file: str):
+@lru_cache(maxsize=30)
+def index_books(tex_dir: str, column_width: int):
+    save_file = Path(tex_dir, f'index.{column_width}.csv')
+    if save_file.exists():
+        return pd.read_csv(save_file)
     Path(tex_dir).mkdir(exist_ok=True, parents=True)
     books = download_books(tex_dir)
     texs = download_texs(tex_dir)
-    df = extract_definitions(patterns, books + texs)
+    df = extract_definitions(patterns, books + texs, column_width)
     df.to_csv(save_file, index=False)
     return df
 

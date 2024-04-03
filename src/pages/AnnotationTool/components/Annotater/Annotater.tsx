@@ -8,6 +8,7 @@ import {
   selectionIsBackwards,
   displaySplits,
   parseSelection,
+  getViewerWidthInChars,
 } from "@/lib/utils";
 import {ColorMap, colors} from "@/lib/colors"
 import sortBy from "lodash.sortby";
@@ -240,8 +241,6 @@ const Annotator = (props: AnnotatorProps) => {
     switch (e.key) {
       case "Escape":
         setSelectionClicked(false);
-        // setMarkMenuClicked(false);
-        // setLinkMenuClicked(false);
         const selection = window.getSelection();
         if (selection != null) { selection.empty(); }
         break;
@@ -254,7 +253,7 @@ const Annotator = (props: AnnotatorProps) => {
   return (
     <div>
       <div className="tex-container" tabIndex={-1} onKeyUp={handleSelectionKeyPress} >
-        <pre style={{ whiteSpace: "pre-wrap" }}>
+        <pre id="viewer" style={{ whiteSpace: "pre-wrap" }}>
           <div style={props.style} onContextMenu={launchContextMenu} onMouseUp={launchContextMenu}>
             {splits.map((split) => (
               <Split

@@ -17,6 +17,7 @@ import { selectionIsEmpty } from "@/lib/utils";
 
 import Popover from "@mui/material/Popover";
 import MenuItem from "@mui/material/MenuItem";
+import { Resizable } from "re-resizable";
 
 export interface MarkMenuProps {
     anno: TextSpan;
@@ -166,16 +167,16 @@ export function MarkMenu(props: MarkMenuProps) {
                                         {selected == index
                                             ? `${annotation.text}`
                                             : `${annotation.text
-                                                  .slice(
-                                                      0,
-                                                      Math.min(
-                                                          25,
-                                                          annotation.text
-                                                              .length,
-                                                      ),
-                                                  )
-                                                  .trim()
-                                                  .replaceAll("\n", " ")}...`}
+                                                .slice(
+                                                    0,
+                                                    Math.min(
+                                                        25,
+                                                        annotation.text
+                                                            .length,
+                                                    ),
+                                                )
+                                                .trim()
+                                                .replaceAll("\n", " ")}...`}
                                     </pre>
                                 </Tooltip>
                             </span>

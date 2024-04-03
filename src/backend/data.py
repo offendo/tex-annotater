@@ -6,6 +6,7 @@ import pandas as pd
 import randomname
 import shelve
 import time
+import logging
 from pathlib import Path
 
 session = boto3.client(
@@ -17,22 +18,25 @@ ANNOTATIONS_DB = os.environ["ANNOTATIONS_DB"]
 
 CACHE_FILE = "/tmp/pdf_cache"
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
+
 def filecache(maxsize=None):
     def decorator(original_func):
         def new_func(file_name, *args, **kwargs):
             with shelve.open(CACHE_FILE) as cache, shelve.open(CACHE_FILE+'.lru') as times:
                 if file_name in cache:
-                    print('Cache hit!')
+                    logger.debug('Cache hit!')
                     times[file_name] = time.time()
                     return cache[file_name]
                 elif len(cache) == maxsize:
-                    print('Cache full!')
+                    logger.debug('Cache full!')
                     # get the filename of the earliest timestamp
                     pop_value = sorted(list(times.items()), key=lambda x: x[1])[0][0]
                     del cache[pop_value]
                     del times[pop_value]
                 else:
-                    print('Cache miss!')
+                    logger.debug('Cache miss!')
                 new_val = original_func(file_name, *args, **kwargs)
                 cache[file_name] = new_val
                 times[file_name] = time.time()
