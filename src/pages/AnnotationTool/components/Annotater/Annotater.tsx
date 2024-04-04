@@ -10,7 +10,7 @@ import {
   parseSelection,
   getViewerWidthInChars,
 } from "@/lib/utils";
-import {ColorMap, colors} from "@/lib/colors"
+import { ColorMap, colors } from "@/lib/colors"
 import sortBy from "lodash.sortby";
 
 type AnnotatorProps = {
@@ -112,7 +112,6 @@ const Annotator = (props: AnnotatorProps) => {
 
   const toggleLink = (source: TextSpan, target: TextSpan) => {
     const link = makeLink(source, target);
-    console.log('Toggling link: ', link);
     const splitIndex = source.links.findIndex((s) => s.end == link.end && s.start == link.start && s.tag == link.tag && s.fileid == link.fileid);
     if (splitIndex == -1) {
       source.links = [...source.links, link];
@@ -128,7 +127,6 @@ const Annotator = (props: AnnotatorProps) => {
   const handleSplitPress = (e: any, anno: TextSpan, loc: { start: number, end: number }) => {
     if (linkMenuClicked && anno != clickedAnnotation) {
       toggleLink(clickedAnnotation, anno);
-      // setLinkMenuClicked(false);
     } else {
       const selection = window.getSelection();
       if (selection == null || !selectionIsEmpty(selection)) {
@@ -181,7 +179,7 @@ const Annotator = (props: AnnotatorProps) => {
     //-------------------------------------------------------------------
     // If it's a name which is inside a definition or theorem, link it
     //-------------------------------------------------------------------
-    if (anno.tag == 'name') {
+    if (anno.tag == 'name' || anno.tag == 'property') {
       let target: TextSpan | null = null;
       const isInside = (anno: TextSpan, defOrThm: TextSpan) => {
         return anno.start >= defOrThm.start && anno.end <= defOrThm.end;

@@ -89,6 +89,16 @@ export const colors = {
     // greenMinus3: "#343d00",
     // greenMinus4: "#1c2200"
 }
-export const defaultColorMap = { definition: colors.red, theorem: colors.blue, proof: colors.green, reference: colors.yellow, example: colors.magenta, name: colors.cyan } as ColorMap;
+
+export const defaultColorMap = {
+    definition: colors.red,
+    theorem: colors.blue,
+    proof: colors.green,
+    reference: colors.yellow,
+    example: colors.magenta,
+    name: colors.cyan,
+    property: colors.orange,
+} as ColorMap;
+
 export default ColorMap;
 
