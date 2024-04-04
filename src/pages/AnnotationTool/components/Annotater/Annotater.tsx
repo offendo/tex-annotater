@@ -185,7 +185,7 @@ const Annotator = (props: AnnotatorProps) => {
         return anno.start >= defOrThm.start && anno.end <= defOrThm.end;
       }
       for (const anno_b of props.annotations) {
-        if ((anno_b.tag == "definition" || anno_b.tag == "theorem") && isInside(anno, anno_b)) {
+        if ((anno_b.tag == "definition" || anno_b.tag == "theorem" || anno_b.tag == "reference") && isInside(anno, anno_b)) {
           // we want the most-inner definition
           if (target == null || (target.end - target.start) > (anno_b.end - anno_b.start)) {
             target = anno_b;
