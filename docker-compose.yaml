@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile.frontend
     volumes:
       - ./dist/:/var/site/
-      - ./tmp/:/tmp/
+      - /tmp/:/tmp/
       - ./nginx.conf:/etc/nginx/nginx.conf
     ports:
       - 3000:80
