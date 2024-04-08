@@ -102,6 +102,7 @@ export function MarkMenu(props: MarkMenuProps) {
                     width: "600px",
                     height: "fit-content",
                 }}
+                maxHeight={500}
                 style={{
                     backgroundColor: "var(--secondary-background-color)",
                     border: "1px solid black",
@@ -109,7 +110,6 @@ export function MarkMenu(props: MarkMenuProps) {
                     maxHeight: "500px",
                     overflowY: "scroll",
                 }}
-                // disable the giant black fade click
                 onMouseDown={(e) => { e.stopPropagation(); }}
             >
                 <Grid container spacing={1}>
