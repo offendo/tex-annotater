@@ -37,6 +37,7 @@ dev-dependencies = [
     "paramiko>=3.4.0",
     "rapidfuzz>=3.6.2",
     "pyright>=1.1.355",
+    "black>=24.3.0",
 ]
 
 [tool.rye.scripts]

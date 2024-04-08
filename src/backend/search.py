@@ -12,12 +12,13 @@ import logging
 from rapidfuzz import process, fuzz
 
 from .data import list_all_textbooks, list_s3_documents, load_tex
+from .wrapper import TextWrapperWithMap
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 patterns = [
-    r"an? \(\([a-z]* \)*\)is an?\s*",
+    r"an? \([^ ]* \)*is an?\s*",
     r"is called \([^ ]* \)*if",
     r"is called \([^ ]* \)*when",
     r"we call \([^ ]* \)*if",
@@ -40,7 +41,7 @@ def download_books(output_dir: str):
 def download_texs(output_dir: str):
     names = list_s3_documents()
     for name in names:
-        logger.debug('downloading ', name)
+        logger.debug("downloading ", name)
         outputfile = Path(output_dir, name).with_suffix(".tex")
         if outputfile.exists():
             continue
@@ -55,85 +56,104 @@ def download_texs(output_dir: str):
     return [str(Path(output_dir, name).with_suffix(".tex")) for name in names]
 
 
-def extract_definitions(patterns: list[str], books: list[str], width: int):
+def build_definition_index(patterns: list[str], books: list[str]):
     """search"""
 
-    line_counts = []
     searched = []
     for book in books:
-        fold = Popen(
-            ["fold", "-s", "-w", str(width), book],
-            stdout=PIPE,
-        )
-        wc = Popen(
-            ["wc", "-l"],
-            stdin=fold.stdout,
-            stdout=PIPE,
-            stderr=STDOUT,
-        )
-        count = wc.communicate()[0].decode().strip()
-        match = re.match(r"^\s*(\d+)\s*(.*)$", count)
-        if match is None:
-            continue
-        wc, file = match.groups()
-        line_counts.append((str(Path(book).stem), int(wc)))
-
-        fold = Popen(
-            ["fold", "-s", "-w", str(width), book],
-            stdout=PIPE,
-        )
+        # Create definition index
         p = Popen(
-            ["grep", "-oin", r"\|".join(patterns)],
-            stdin=fold.stdout,
+            ["grep", "-oin", '"' + r"\|".join(patterns) + '"', book],
             stdout=PIPE,
             stderr=STDOUT,
         )
-        for match in p.communicate()[0].decode().strip().split('\n'):
+        for match in p.communicate()[0].decode().strip().split("\n"):
             groups = re.match(r"(\d+):(.*)", match)
             if groups is None:
                 continue
             linenum, rest = groups.groups()
             searched.append((str(Path(book).stem), int(linenum), rest))
 
-    count_df = pd.DataFrame.from_records(line_counts, columns=["file", "total_lines"])
-
-    # p = Popen(
-    #     ["grep", "-oin", r"\|".join(patterns), *[b for b in books]],
-    #     stdout=PIPE,
-    #     stderr=STDOUT,
-    # )
-    # searched = []
-    # for match in p.communicate()[0].decode().strip().split("\n"):
-    #     groups = re.match(r"(.*).tex:(\d+):(.*)", match)
-    #     if groups is None:
-    #         continue
-    #     name, linenum, rest = groups.groups()
-    #     searched.append((str(Path(name).stem), int(linenum), rest))
-
     df = pd.DataFrame.from_records(searched, columns=["file", "line", "text"])
+    return df
 
-    merged = pd.merge(df, count_df, left_on="file", right_on="file")
-    merged["percent"] = merged["line"] / merged["total_lines"]
-    merged["file"] = merged["file"] + ".tex"
-    return merged
+
+@lru_cache(maxsize=100)
+def reindex(book: str, width: int):
+    """ Reindex a book's old lines to post-folding lines
+
+    Parameters
+    ----------
+    book : string
+    width : int
+
+    Returns
+    -------
+    tuple :
+        Tuple containing `old2new` (mapping between old/new line numbers) and `lines` (total line count of post-folding)
+    """
+    # Get total lines for book
+    fold = Popen(
+        ["fold", "-s", "-w", str(width), book],
+        stdout=PIPE,
+    )
+    wc = Popen(
+        ["wc", "-l"],
+        stdin=fold.stdout,
+        stdout=PIPE,
+        stderr=STDOUT,
+    )
+    count = wc.communicate()[0].decode().strip()
+    match = re.match(r"^\s*(\d+)\s*(.*)$", count)
+    if match is None:
+        raise Exception(f"Failed to count lines in file {book}")
+
+    lines, file = match.groups()
+
+    # Get mapping between old/new line numbers
+    nl = Popen(
+        ["nl", "-w2", "-s':::'", book],
+        stdout=PIPE,
+    )
+    fold = Popen(
+        ["fold", "-s", "-w", str(width)],
+        stdin=nl.stdout,
+        stdout=PIPE,
+    )
+    p = Popen(
+        ["grep", "-oin", r"^\d\+:::"],
+        stdin=fold.stdout,
+        stdout=PIPE,
+        stderr=STDOUT,
+    )
+    awk = Popen(
+        ["awk", "-F':'" "'{print $2 \" \" $1}'"],
+        stdin=p.stdout,
+        stdout=PIPE,
+        stderr=STDOUT,
+    )
+    old2new = dict(
+        line.split() for line in awk.communicate()[0].decode().strip().split("\n")
+    )
+    return (old2new, lines)
 
 
 @lru_cache(maxsize=30)
-def index_books(tex_dir: str, column_width: int):
-    save_file = Path(tex_dir, f'index.{column_width}.csv')
+def index_books(tex_dir: str):
+    save_file = Path(tex_dir, f"index.csv")
     if save_file.exists():
         return pd.read_csv(save_file)
     Path(tex_dir).mkdir(exist_ok=True, parents=True)
     books = download_books(tex_dir)
     texs = download_texs(tex_dir)
-    df = extract_definitions(patterns, books + texs, column_width)
+    df = build_definition_index(patterns, books + texs)
     df.to_csv(save_file, index=False)
     return df
 
 
 def fuzzysearch(query: str, index: pd.DataFrame, topk: int = 5, fileid: str = ""):
     if fileid:
-        new_index = index[index['file'] == fileid]
+        new_index = index[index["file"] == fileid]
         assert isinstance(new_index, pd.DataFrame)
     else:
         new_index = index

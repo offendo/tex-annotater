@@ -47,20 +47,17 @@ def filecache(maxsize=None):
 
 def list_s3_documents():
     docs = session.list_objects(Bucket="tex-annotation")["Contents"]
-    names = [d["Key"].split("/")[-1] for d in docs if d["Key"].startswith("texs/")]
+    names = [d["Key"] for d in docs if d["Key"].startswith("texs/")]
     return names
 
   
-def load_pdf(file_name):
-    # obj = session.get_object(Bucket="tex-annotation", Key=f"pdfs/{file_name}")
-    # data = obj["Body"].read()
-    url = f'https://tex-annotation.s3.amazonaws.com/pdfs/{file_name}'
-    # return data
+def load_pdf(pdf_key):
+    url = f'https://tex-annotation.s3.amazonaws.com/pdfs/{pdf_key}'
     return url
 
 
-def load_tex(file_name):
-    obj = session.get_object(Bucket="tex-annotation", Key=f"texs/{file_name}")
+def load_tex(obj_key):
+    obj = session.get_object(Bucket="tex-annotation", Key=obj_key)
     data = obj["Body"].read()
     return data.decode()
 

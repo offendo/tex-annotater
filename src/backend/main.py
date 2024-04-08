@@ -27,7 +27,7 @@ from .users import (
     init_users_db,
 )
 
-from .search import fuzzysearch, index_books
+from .search import fuzzysearch, index_books, reindex
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -175,6 +175,19 @@ def search_for_definition():
     width = int(request.args.get("width", -1))
     if query is None or width == -1:
         return jsonify({"error": "Error: query and width are required"}), 400
+
+    # Get the index
     index = index_books("/tmp/textbooks", width)
+
+    # Do the fuzzysearch
     results = fuzzysearch(query, index, topk=topk, fileid=fileid)
-    return jsonify({"results": results}), 200
+
+    # Remap the line numbers to the post-folding line numbers
+    new_results = []
+    for match in results:
+        old2new, lines = reindex(match['file'], width)
+        match['line'] = old2new[match['line']]
+        match['percent'] = int(match['line']) / int(lines)
+        new_results.append(match)
+
+    return jsonify({"results": new_results}), 200
