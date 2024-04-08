@@ -75,7 +75,7 @@ export function LinkMenu(props: LinkMenuProps) {
     try {
       const width = getViewerWidthInChars();
       const response = await fetch(
-        `/api/definition?query=${text}&fileid=${fileid}&topk=${topk}&width=${width}`,
+        `/api/definition?query=${encodeURIComponent(text)}&fileid=${fileid}&topk=${topk}&width=${width}`,
         {
           mode: "cors",
         },
