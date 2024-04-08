@@ -60,7 +60,22 @@ def download_texs(output_dir: str):
 
 
 def build_definition_index(patterns: list[str], books: list[str]):
-    """search"""
+    """Grep
+
+    Greps through all the `books` using `patterns` and saves the result as a csv
+
+    Parameters
+    ----------
+    patterns : list[str]
+        A list of patterns to pass to grep, to be or'd together
+    books : list[str]
+        A list of paths to books to search through
+
+    Returns
+    -------
+    pd.DataFrame :
+        DataFrame with columns `[file, line, text]`
+    """
 
     searched = []
     for book in books:

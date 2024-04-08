@@ -92,8 +92,10 @@ export function MarkMenu(props: MarkMenuProps) {
     }) => {
         const [linksOpen, setLinksOpen] = useState<boolean>(props.openLinkMenuByDefault || index == selectedRow);
         const handleLinkButtonPress = (e: any) => {
-            selectedRow == index ? setSelectedRow(-1) : setSelectedRow(index);
             setLinksOpen(!linksOpen);
+            if (!props.openLinkMenuByDefault) {
+                selectedRow == index ? setSelectedRow(-1) : setSelectedRow(index);
+            }
             e.stopPropagation();
         };
 

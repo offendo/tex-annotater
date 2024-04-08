@@ -15,7 +15,7 @@ import { IconButton } from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import { partition } from "lodash";
+import { partition, sortBy } from "lodash";
 
 type LinkMenuProps = {
   left: number;
@@ -111,6 +111,12 @@ export function LinkMenu(props: LinkMenuProps) {
   if (filterFileId != "") {
     allAnnos = allAnnos.filter((anno) => anno.fileid == filterFileId);
   }
+
+  allAnnos = sortBy(allAnnos, (anno) => {
+    const mp1 =  anno.start + (anno.start - anno.end) / 2;
+    const mp2 =  props.selectedAnnotation.start + (props.selectedAnnotation.start - props.selectedAnnotation.end) / 2;
+    return Math.abs(mp1 - mp2);
+  })
 
   /* Split by "linked" and "non-linked" */
   const [linkedAnnos, nonLinkedAnnos] = partition(allAnnos, (candidate) => {
