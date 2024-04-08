@@ -120,7 +120,7 @@ def reindex(book: str, width: int):
         stdout=PIPE,
         stderr=STDOUT,
     )
-    cmd = ["grep", "-oin", r"^\d\+:::"]
+    cmd = ["grep", "-oin", r"^[0-9]\+:::"]
 
     fold_out = fold.communicate()[0]
     grep_out = subprocess.check_output(
