@@ -81,6 +81,7 @@ def get_annotations():
         "timestamp": timestamp,
     }, 200
 
+
 @app.get("/saves")
 @cross_origin()
 def list_all_saves():
@@ -108,6 +109,7 @@ def get_tex():
         "tex": tex,
     }
 
+
 @app.get("/savename")
 @cross_origin()
 def get_savename():
@@ -117,11 +119,12 @@ def get_savename():
     result = get_savename_from_annoid(annoid)
 
     return {
-        "fileid": result['fileid'],
-        "userid": result['userid'],
-        "savename": result['savename'],
-        "timestamp": result['timestamp'],
+        "fileid": result["fileid"],
+        "userid": result["userid"],
+        "savename": result["savename"],
+        "timestamp": result["timestamp"],
     }, 200
+
 
 @app.get("/pdf")
 @cross_origin()
@@ -129,7 +132,7 @@ def get_pdf():
     fileid = request.args.get("fileid")
     if fileid is None:
         return 400, "Request requires fileid"
-    arxiv_id = fileid.split("-")[0].replace('texs/', '')
+    arxiv_id = fileid.split("-")[0].replace("texs/", "")
     if re.match(r"\d+\.\d+", arxiv_id):
         pdf = f"https://arxiv.org/pdf/{arxiv_id}.pdf"
     else:
@@ -170,7 +173,7 @@ def add_new_user():
 @cross_origin()
 def search_for_definition():
     query = request.args.get("query")
-    fileid = request.args.get("fileid", "") # default to empty string
+    fileid = request.args.get("fileid", "")  # default to empty string
     topk = int(request.args.get("topk", 5))
     width = int(request.args.get("width", -1))
     if query is None or width == -1:
@@ -185,11 +188,10 @@ def search_for_definition():
     # Remap the line numbers to the post-folding line numbers
     new_results = []
     for match in results:
-        print('Reindexing: ', match['file'], " with width ", width)
-        old2new, lines = reindex(match['file'], width)
-        match['line'] = old2new[match['line']]
-        match['percent'] = int(match['line']) / int(lines)
-        match['file'] = str(Path(match['file']).name)
+        old2new, lines = reindex(match["file"], width)
+        match["line"] = old2new[match["line"]]
+        match["percent"] = int(match["line"]) / int(lines)
+        match["file"] = str(Path(match["file"]).name)
         new_results.append(match)
 
     return jsonify({"results": new_results}), 200
