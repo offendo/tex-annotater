@@ -2,6 +2,7 @@
 import uuid
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
+from pathlib import Path
 import base64
 import re
 import os
@@ -128,11 +129,10 @@ def get_pdf():
     fileid = request.args.get("fileid")
     if fileid is None:
         return 400, "Request requires fileid"
-    arxiv_id = fileid.split("-")[0]
+    arxiv_id = fileid.split("-")[0].replace('texs/', '')
     if re.match(r"\d+\.\d+", arxiv_id):
         pdf = f"https://arxiv.org/pdf/{arxiv_id}.pdf"
     else:
-        # pdf = str(base64.b64encode(load_pdf(fileid.replace(".tex", ".pdf"))))[2:-1]
         pdf = load_pdf(fileid.replace(".tex", ".pdf"))
     return {
         "fileid": fileid,
@@ -177,7 +177,7 @@ def search_for_definition():
         return jsonify({"error": "Error: query and width are required"}), 400
 
     # Get the index
-    index = index_books("/tmp/textbooks", width)
+    index = index_books("/tmp/textbooks")
 
     # Do the fuzzysearch
     results = fuzzysearch(query, index, topk=topk, fileid=fileid)
@@ -185,9 +185,11 @@ def search_for_definition():
     # Remap the line numbers to the post-folding line numbers
     new_results = []
     for match in results:
+        print('Reindexing: ', match['file'], " with width ", width)
         old2new, lines = reindex(match['file'], width)
         match['line'] = old2new[match['line']]
         match['percent'] = int(match['line']) / int(lines)
+        match['file'] = str(Path(match['file']).stem)
         new_results.append(match)
 
     return jsonify({"results": new_results}), 200

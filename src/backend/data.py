@@ -21,43 +21,50 @@ CACHE_FILE = "/tmp/pdf_cache"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
+
 def filecache(maxsize=None):
     def decorator(original_func):
         def new_func(file_name, *args, **kwargs):
-            with shelve.open(CACHE_FILE) as cache, shelve.open(CACHE_FILE+'.lru') as times:
+            with shelve.open(CACHE_FILE) as cache, shelve.open(
+                CACHE_FILE + ".lru"
+            ) as times:
                 if file_name in cache:
-                    logger.debug('Cache hit!')
+                    logger.debug("Cache hit!")
                     times[file_name] = time.time()
                     return cache[file_name]
                 elif len(cache) == maxsize:
-                    logger.debug('Cache full!')
+                    logger.debug("Cache full!")
                     # get the filename of the earliest timestamp
                     pop_value = sorted(list(times.items()), key=lambda x: x[1])[0][0]
                     del cache[pop_value]
                     del times[pop_value]
                 else:
-                    logger.debug('Cache miss!')
+                    logger.debug("Cache miss!")
                 new_val = original_func(file_name, *args, **kwargs)
                 cache[file_name] = new_val
                 times[file_name] = time.time()
                 return new_val
+
         return new_func
+
     return decorator
 
 
 def list_s3_documents():
     docs = session.list_objects(Bucket="tex-annotation")["Contents"]
-    names = [d["Key"] for d in docs if d["Key"].startswith("texs/")]
+    names = [
+        d["Key"].replace("texs/", "") for d in docs if d["Key"].startswith("texs/")
+    ]
     return names
 
-  
+
 def load_pdf(pdf_key):
-    url = f'https://tex-annotation.s3.amazonaws.com/pdfs/{pdf_key}'
+    url = f"https://tex-annotation.s3.amazonaws.com/pdfs/{pdf_key}"
     return url
 
 
 def load_tex(obj_key):
-    obj = session.get_object(Bucket="tex-annotation", Key=obj_key)
+    obj = session.get_object(Bucket="tex-annotation", Key=f"texs/{obj_key}")
     data = obj["Body"].read()
     return data.decode()
 
@@ -69,10 +76,12 @@ def query_db(query, params=()):
         records = [dict(r) for r in results]
     return records
 
+
 def get_savename_from_annoid(annoid: str):
     query = "SELECT timestamp, fileid, userid, savename FROM annotations WHERE annoid = :annoid;"
     params = dict(annoid=annoid)
     return query_db(query, params)[0]
+
 
 def list_all_textbooks():
     """Load the textbooks from the excel sheet."""
@@ -255,7 +264,7 @@ def save_annotations(file_id, user_id, annotations, autosave: bool = False):
                 """,
                 [
                     dict(
-                        fileid=ln['fileid'],
+                        fileid=ln["fileid"],
                         userid=user_id,
                         start=ln["start"],
                         end=ln["end"],
