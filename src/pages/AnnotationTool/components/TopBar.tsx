@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Divider } from "@mui/material";
+import { Divider, Tooltip } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
@@ -20,7 +20,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import { TextSpan } from "@/lib/span";
 import { ColorMap, defaultColorMap } from "@/lib/colors";
-import { jumpToElement } from "@/lib/utils";
+import { jumpToElement, shortenText } from "@/lib/utils";
 import { Grid } from "@mui/material";
 import sortBy from "lodash.sortby";
 
@@ -50,9 +50,9 @@ const SaveFileSelector = (props: SaveFileProps) => {
         const s = JSON.parse(event.target.value);
         setSelected(event.target.value);
         props.loadAnnotations(s["fileid"], s["userid"], s["timestamp"]);
-        setQueryParameters({fileid: s['fileid'], saveid: s['timestamp']})
+        setQueryParameters({ fileid: s['fileid'], saveid: s['timestamp'] })
     };
-  
+
     const loadSaves = (fileid: string) => {
         fetch(`/api/saves?fileid=${fileid}`, { mode: "cors" })
             .then((res) => res.json())
@@ -70,7 +70,7 @@ const SaveFileSelector = (props: SaveFileProps) => {
         loadSaves(props.fileid);
         const saveid = queryParameters.get('saveid') || "";
         props.loadAnnotations(props.fileid, props.userid, saveid);
-        setQueryParameters({...queryParameters, saveid: saveid})
+        setQueryParameters({ ...queryParameters, saveid: saveid })
     }, [props.fileid, props.userid]);
 
     return (
@@ -194,22 +194,12 @@ export default function TopBar(props: TopBarProps) {
                     <span
                         className={"expand-text"}
                         style={{ minWidth: "300px" }}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            toggleSelected(index);
-                        }}
                     >
-                        <pre style={{ margin: "0px", whiteSpace: "pre-wrap" }}>
-                            {selected == index
-                                ? annotation.text
-                                : `${annotation.text
-                                      .slice(
-                                          0,
-                                          Math.min(30, annotation.text.length),
-                                      )
-                                      .trim()
-                                      .replaceAll("\n", " ")}...`}
-                        </pre>
+                        <Tooltip title={annotation.text} >
+                            <pre style={{ margin: "0px", whiteSpace: "pre-wrap" }}>
+                                {shortenText(annotation.text, 30, true)}
+                            </pre>
+                        </Tooltip>
                     </span>
                 </Grid>
             </Grid>
@@ -286,7 +276,7 @@ export default function TopBar(props: TopBarProps) {
                                 },
                             }}
                         >
-                          {annotations.map((anno, index) => {
+                            {annotations.map((anno, index) => {
                                 return (
                                     <MenuItem
                                         key={crypto.randomUUID()}
