@@ -189,7 +189,7 @@ def search_for_definition():
         old2new, lines = reindex(match['file'], width)
         match['line'] = old2new[match['line']]
         match['percent'] = int(match['line']) / int(lines)
-        match['file'] = str(Path(match['file']).stem)
+        match['file'] = str(Path(match['file']).name)
         new_results.append(match)
 
     return jsonify({"results": new_results}), 200

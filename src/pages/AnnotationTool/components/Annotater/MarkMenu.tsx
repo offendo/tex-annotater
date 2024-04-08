@@ -100,17 +100,17 @@ export function MarkMenu(props: MarkMenuProps) {
             <Resizable
                 defaultSize={{
                     width: "600px",
-                    height: "300px",
+                    height: "fit-content",
                 }}
                 style={{
                     backgroundColor: "var(--secondary-background-color)",
                     border: "1px solid black",
                     borderRadius: "5px",
-                    height: "300px",
+                    maxHeight: "500px",
                     overflowY: "scroll",
                 }}
-            // disable the giant black fade click
-            // onMouseDown={(e) => { e.stopPropagation(); }}
+                // disable the giant black fade click
+                onMouseDown={(e) => { e.stopPropagation(); }}
             >
                 <Grid container spacing={1}>
                     <Grid item xs={2} style={{ margin: "auto", paddingLeft: "5px" }}>
