@@ -36,6 +36,7 @@ export interface MarkMenuProps {
 
 export function MarkMenu(props: MarkMenuProps) {
     const [selected, setSelected] = useState<number>(-1);
+    const [selectedRow, setSelectedRow] = useState<number>(-1);
     const [pos, setPos] = useState({ left: 0, top: 0 });
     const [menuOpen, setMenuOpen] = useState<boolean>(false);
     const [hoveredAnnotations, setHoveredAnnotations] = useState<TextSpan[]>(
@@ -71,6 +72,7 @@ export function MarkMenu(props: MarkMenuProps) {
 
     const handleClose = () => {
         setMenuOpen(false);
+        setSelectedRow(-1);
     };
 
     const toggleSelected = (index: number) => {
@@ -88,10 +90,9 @@ export function MarkMenu(props: MarkMenuProps) {
         annotation: TextSpan;
         index: number;
     }) => {
-        const [linksOpen, setLinksOpen] = useState<boolean>(
-            props.openLinkMenuByDefault,
-        );
-        const handleLinkButtonPress = (e) => {
+        const [linksOpen, setLinksOpen] = useState<boolean>(props.openLinkMenuByDefault || index == selectedRow);
+        const handleLinkButtonPress = (e: any) => {
+            selectedRow == index ? setSelectedRow(-1) : setSelectedRow(index);
             setLinksOpen(!linksOpen);
             e.stopPropagation();
         };
@@ -230,16 +231,17 @@ export function MarkMenu(props: MarkMenuProps) {
             >
                 {hoveredAnnotations.map((annotation, index) => {
                     return (
-                        <MenuItem
-                            style={{
-                                backgroundColor: "#00000000",
-                                padding: "0px",
-                                margin: "0px",
-                            }}
-                            key={crypto.randomUUID()}
-                        >
-                            <Row annotation={annotation} index={index} />
-                        </MenuItem>
+                        (selectedRow == index || selectedRow == -1) ?
+                            <MenuItem
+                                style={{
+                                    backgroundColor: "#00000000",
+                                    padding: "0px",
+                                    margin: "0px",
+                                }}
+                                key={crypto.randomUUID()}
+                            >
+                                <Row annotation={annotation} index={index} />
+                            </MenuItem> : ""
                     );
                 })}
             </Popover>
