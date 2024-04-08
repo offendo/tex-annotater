@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, TextSpan } from "@/lib/span";
-import { getViewerWidthInChars, jumpToPercent } from "@/lib/utils";
+import { getViewerWidthInChars, jumpToPercent, shortenText } from "@/lib/utils";
 import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 import fuzzysort from "fuzzysort";
@@ -33,7 +33,7 @@ export function LinkMenu(props: LinkMenuProps) {
   // Auto show links if tag == reference and length of tag is at least 4
   const [showAutoLinks, setShowAutoLinks] = useState<boolean>(
     props.selectedAnnotation.text.length > 4 &&
-      props.selectedAnnotation.tag == "reference",
+    props.selectedAnnotation.tag == "reference",
   );
   const [otherFileAnnotations, setOtherFileAnnotations] = useState<TextSpan[]>(
     [],
@@ -138,8 +138,8 @@ export function LinkMenu(props: LinkMenuProps) {
     return query.length == 0
       ? annotations
       : fuzzysort
-          .go(query, annotations, { keys: ["text", "tag", "fileid"] })
-          .map((t) => t.obj);
+        .go(query, annotations, { keys: ["text", "tag", "fileid"] })
+        .map((t) => t.obj);
   };
 
   const highlightResult = (
@@ -212,7 +212,7 @@ export function LinkMenu(props: LinkMenuProps) {
               variant="text"
               onClick={(e) => toggleFileId(annotation.fileid)}
             >
-              {`${annotation.fileid.slice(0, 10) + "..."}`}
+              {shortenText(annotation.fileid, 10, true)}
             </Button>
           </Tooltip>
         </td>
@@ -278,7 +278,7 @@ export function LinkMenu(props: LinkMenuProps) {
 
   return (
     <div
-      style={{ width: "100%" }}
+      style={{ width: "100%", paddingLeft: "5px" }}
       onClick={(e) => {
         e.stopPropagation();
       }}

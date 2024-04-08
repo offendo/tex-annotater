@@ -71,7 +71,6 @@ ul {
 .mark-menu {
   position: absolute;
   width: fit-content;
-  overflow: scroll;
   border: 2px solid var(--text-color);
   border-radius: 5px;
   background-color: var(--secondary-background-color);
@@ -86,7 +85,6 @@ ul {
   padding: 5px 5px;
   width: 100%;
   text-align: left;
-  overflow: scroll;
   opacity: 0.5;
 }
 .mark-menu-item:hover {

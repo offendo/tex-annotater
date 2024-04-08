@@ -13,7 +13,7 @@ export type SplitTagProps = {
 export const displaySplits = (content: string, annotations: TextSpan[]) => {
   let offsetStart = 0;
   let offsetEnd = 0;
-  const splits: {start: number, end: number, content: string, tags: SplitTagProps[], hasLink: boolean}[] = [];
+  const splits: { start: number, end: number, content: string, tags: SplitTagProps[], hasLink: boolean }[] = [];
   let currentTags: SplitTagProps[] = [];
   let hasLink: boolean = false;
   let hasBackLink: boolean = false;
@@ -214,4 +214,9 @@ export const getViewerWidthInChars = () => {
   }
   const ch = singleCharacterWidth();
   return Math.floor(viewer.scrollWidth / ch);
+}
+
+export const shortenText = (text: string, maxLen: number, replaceLines: boolean = true) => {
+  const shortened = `${text.slice(0, Math.min(maxLen, text.length)).trim()}...`;
+  return replaceLines ? shortened.replaceAll("\n", " ") : shortened;
 }

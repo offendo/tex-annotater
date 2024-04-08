@@ -13,7 +13,7 @@ import BoltIcon from "@mui/icons-material/Bolt";
 import AddLinkIcon from "@mui/icons-material/AddLink";
 import Collapse from "@mui/material/Collapse";
 import LinkMenu from "./LinkMenu";
-import { selectionIsEmpty } from "@/lib/utils";
+import { selectionIsEmpty, shortenText } from "@/lib/utils";
 
 import Popover from "@mui/material/Popover";
 import MenuItem from "@mui/material/MenuItem";
@@ -97,66 +97,67 @@ export function MarkMenu(props: MarkMenuProps) {
         };
 
         return (
-            <Card
+            <Resizable
+                defaultSize={{
+                    width: "600px",
+                    height: "300px",
+                }}
                 style={{
                     backgroundColor: "var(--secondary-background-color)",
                     border: "1px solid black",
                     borderRadius: "5px",
-                    width: "100%",
-                    maxHeight: "300px",
-                    overflow: "scroll",
+                    height: "300px",
+                    overflowY: "scroll",
                 }}
+            // disable the giant black fade click
+            // onMouseDown={(e) => { e.stopPropagation(); }}
             >
                 <Grid container spacing={1}>
-                    <Grid item xs={2}>
-                        <CardActions disableSpacing>
-                            {/* Link button */}
-                            <IconButton
-                                onClick={(e) => {
-                                    handleLinkButtonPress(e);
-                                }}
-                            >
-                                {" "}
-                                <AddLinkIcon />{" "}
-                            </IconButton>
+                    <Grid item xs={2} style={{ margin: "auto", paddingLeft: "5px" }}>
+                        {/* Link button */}
+                        <IconButton
+                            onClick={(e) => {
+                                handleLinkButtonPress(e);
+                            }}
+                        >
+                            {" "}
+                            <AddLinkIcon />{" "}
+                        </IconButton>
 
-                            {/* Delete button */}
-                            <IconButton
-                                size="small"
-                                onClick={(e) =>
-                                    props.deleteAnnotation(annotation, index)
-                                }
-                            >
-                                {" "}
-                                <DeleteIcon />{" "}
-                            </IconButton>
-                        </CardActions>
+                        {/* Delete button */}
+                        <IconButton
+                            size="small"
+                            onClick={(e) =>
+                                props.deleteAnnotation(annotation, index)
+                            }
+                        >
+                            {" "}
+                            <DeleteIcon />{" "}
+                        </IconButton>
                     </Grid>
 
-                    <Grid item xs={3}>
-                        <CardContent>
+                    <Grid item xs={3} style={{ margin: "auto" }}>
+                        <div>
                             {/* Tag name */}
                             <span
-                                style={{ color: props.colors[annotation.tag] }}
+                                style={{ margin: "auto", color: props.colors[annotation.tag] }}
                             >
                                 {`${annotation.tag}`}
                             </span>
-                        </CardContent>
+                        </div>
                     </Grid>
-                    <Grid item xs={7}>
-                        <CardContent>
+                    <Grid item xs={7} style={{ margin: "auto" }}>
+                        <div>
                             {/* Content */}
                             <span
                                 className="expand-text"
                                 style={{
                                     minWidth: "300px",
-                                    alignContent: "top",
                                 }}
                             >
                                 <Tooltip title="Click to expand">
                                     <pre
                                         style={{
-                                            margin: "0px",
                                             whiteSpace: "pre-wrap",
                                         }}
                                         onClick={(e) => {
@@ -166,21 +167,11 @@ export function MarkMenu(props: MarkMenuProps) {
                                     >
                                         {selected == index
                                             ? `${annotation.text}`
-                                            : `${annotation.text
-                                                .slice(
-                                                    0,
-                                                    Math.min(
-                                                        25,
-                                                        annotation.text
-                                                            .length,
-                                                    ),
-                                                )
-                                                .trim()
-                                                .replaceAll("\n", " ")}...`}
+                                            : shortenText(annotation.text, 25, true)}
                                     </pre>
                                 </Tooltip>
                             </span>
-                        </CardContent>
+                        </div>
                     </Grid>
                     <Grid item xs={12}>
                         {/* Link menu card*/}
@@ -191,7 +182,7 @@ export function MarkMenu(props: MarkMenuProps) {
                             orientation="vertical"
                             collapsedSize={0}
                         >
-                            <CardContent>
+                            <div>
                                 <LinkMenu
                                     left={0}
                                     top={0}
@@ -201,11 +192,11 @@ export function MarkMenu(props: MarkMenuProps) {
                                     toggleLink={props.toggleLink}
                                     onDeletePress={() => {}}
                                 />
-                            </CardContent>
+                            </div>
                         </Collapse>
                     </Grid>
                 </Grid>
-            </Card>
+            </Resizable>
         );
     };
 
@@ -234,6 +225,7 @@ export function MarkMenu(props: MarkMenuProps) {
                 disableScrollLock={true}
                 style={{
                     position: "absolute",
+                    padding: "10px"
                 }}
             >
                 {hoveredAnnotations.map((annotation, index) => {
@@ -241,7 +233,6 @@ export function MarkMenu(props: MarkMenuProps) {
                         <MenuItem
                             style={{
                                 backgroundColor: "#00000000",
-                                width: "600px",
                                 padding: "0px",
                                 margin: "0px",
                             }}

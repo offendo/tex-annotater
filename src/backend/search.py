@@ -154,7 +154,7 @@ def scorer(query, match, **kwargs):
     mod_queries = [
       f"a {query} is a",
       f"an {query} is a",
-      f"the {query} is ",
+      f"the {query} is",
       f"we call a {query}",
       f"we define a {query} to be",
     ]
@@ -170,7 +170,7 @@ def fuzzysearch(query: str, index: pd.DataFrame, topk: int = 5, fileid: str = ""
     results = process.extract(
         query,
         new_index.to_dict(orient="records"),
-        scorer=lambda a, b, **kwargs: scorer(a, b['text'], **kwargs),
+        scorer=lambda a, b, **kwargs: fuzz.partial_token_set_ratio(a, b['text'], **kwargs),
         limit=topk,
     )
     return [match for match, score, dist in results]
