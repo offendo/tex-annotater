@@ -20,11 +20,15 @@ logger = logging.getLogger(__name__)
 
 patterns = [
     r"an\? \([^ ]* \)*is an\? ",
+    r"an\? \([^ ]* \)*is an\? \([^ ]* \)*if",
     r"the \([^ ]* \)*is an\? ",
     r"the \([^ ]* \)*is the ",
     r"is called \([^ ]* \)*if",
     r"is called \([^ ]* \)*when",
+    r"is called an\? \([^ ]* \)*",
     r"we call \([^ ]* \)*if",
+    r"we call \([^ ]* \)*the \([^ ]* \)if",
+    r"we call \([^ ]* \)*the \([^ ]* \)when",
     r"we define \([^ ]* \)*to be",
 ]
 
@@ -176,16 +180,16 @@ def scorer(query, match, **kwargs):
     return max([fuzz.WRatio(pat, match, **kwargs) for pat in mod_queries])
 
 
-def fuzzysearch(query: str, index: pd.DataFrame, topk: int = 5, fileid: str = ""):
+def fuzzysearch(query: str, index: pd.DataFrame, topk: int = 20, fileid: str = ""):
     if fileid:
         new_index = index[index["file"].apply(lambda x: str(Path(x).name)) == fileid]
         assert isinstance(new_index, pd.DataFrame)
     else:
         new_index = index
     results = process.extract(
-        query,
+        query.strip(),
         new_index.to_dict(orient="records"),
         scorer=lambda a, b, **kwargs: fuzz.partial_token_set_ratio(a, b['text'], **kwargs),
         limit=topk,
     )
-    return [match for match, score, dist in results]
+    return [match for match, score, dist in results if query.strip() in match['text']]

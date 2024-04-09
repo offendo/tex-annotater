@@ -71,7 +71,7 @@ export function LinkMenu(props: LinkMenuProps) {
     }
   }
 
-  async function queryAutoLinks(text: string, fileid: string, topk: number = 5) {
+  async function queryAutoLinks(text: string, fileid: string, topk: number = 20) {
     try {
       const width = getViewerWidthInChars();
       const response = await fetch(
@@ -93,7 +93,7 @@ export function LinkMenu(props: LinkMenuProps) {
       loadAllAnnotations();
     }
     if (showAutoLinks) {
-      queryAutoLinks(props.selectedAnnotation.text, showAllAnnotations ? "" : props.selectedAnnotation.fileid, 5);
+      queryAutoLinks(props.selectedAnnotation.text, showAllAnnotations ? "" : props.selectedAnnotation.fileid, 20);
     } else {
       setAutoLinkSuggestions([]);
     }
