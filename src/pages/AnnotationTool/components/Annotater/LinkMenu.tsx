@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { Link, TextSpan } from "@/lib/span";
 import { getViewerWidthInChars, jumpToPercent, shortenText } from "@/lib/utils";
 import Divider from "@mui/material/Divider";
@@ -16,31 +16,27 @@ import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { partition, sortBy } from "lodash";
+import { GlobalState, toggleLink } from "../GlobalState";
 
 type LinkMenuProps = {
   left: number;
   top: number;
   colors: any;
   selectedAnnotation: TextSpan;
-  annotations: TextSpan[];
-  toggleLink: (source: TextSpan, target: TextSpan) => any;
-  onDeletePress: (e: any, anno: any) => any;
 };
 
 export function LinkMenu(props: LinkMenuProps) {
+  const state = useContext(GlobalState);
   const [expandedIndex, setExpandedIndex] = useState<number>(-1);
   const [showAllAnnotations, setShowAnnotations] = useState<boolean>(false);
+
   // Auto show links if tag == reference and length of tag is at least 4
   const [showAutoLinks, setShowAutoLinks] = useState<boolean>(
     props.selectedAnnotation.text.length > 4 &&
     props.selectedAnnotation.tag == "reference",
   );
-  const [otherFileAnnotations, setOtherFileAnnotations] = useState<TextSpan[]>(
-    [],
-  );
-  const [autoLinkSuggestions, setAutoLinkSuggestions] = useState<TextSpan[]>(
-    [],
-  );
+  const [otherFileAnnotations, setOtherFileAnnotations] = useState<TextSpan[]>([]);
+  const [autoLinkSuggestions, setAutoLinkSuggestions] = useState<TextSpan[]>([]);
   const [query, setQuery] = useState("");
   const [filterTag, setFilterTag] = useState("");
   const [filterFileId, setFilterFileId] = useState("");
@@ -101,7 +97,7 @@ export function LinkMenu(props: LinkMenuProps) {
 
   /* Full list of all annotations. If we're showing all annotations, include the ones from other files. */
   let allAnnos = [
-    ...props.annotations,
+    ...state.annotations,
     ...(showAllAnnotations ? otherFileAnnotations : []),
   ];
   allAnnos = allAnnos.filter((anno) => anno != props.selectedAnnotation);
@@ -190,9 +186,7 @@ export function LinkMenu(props: LinkMenuProps) {
           {" "}
           <IconButton
             size="small"
-            onClick={(e) =>
-              props.toggleLink(props.selectedAnnotation, annotation)
-            }
+            onClick={(e) => toggleLink(state, props.selectedAnnotation, annotation)}
           >
             {" "}
             {icon}{" "}
@@ -204,7 +198,7 @@ export function LinkMenu(props: LinkMenuProps) {
             size="small"
             variant="text"
             onClick={(e) => toggleTag(annotation.tag)}
-            style={{ color: props.colors[annotation.tag] }}
+            style={{ color: state.colors[annotation.tag] }}
           >
             {" "}
             {`${annotation.tag}`}{" "}

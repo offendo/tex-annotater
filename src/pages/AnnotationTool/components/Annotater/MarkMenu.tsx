@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useContext } from "react";
 import { TextSpan, Link } from "@/lib/span";
 import {
     Card,
@@ -18,19 +18,13 @@ import { selectionIsEmpty, shortenText } from "@/lib/utils";
 import Popover from "@mui/material/Popover";
 import MenuItem from "@mui/material/MenuItem";
 import { Resizable } from "re-resizable";
+import { GlobalState } from "../GlobalState";
 
 export interface MarkMenuProps {
     anno: TextSpan;
     innerContent: any;
-    colors: any;
     start: number;
     end: number;
-    annotations: TextSpan[];
-    saveid: string;
-    otherFileAnnotations: TextSpan[];
-    toggleLink: (source: TextSpan, target: TextSpan) => any;
-    deleteAnnotation: (annotation: TextSpan, index: number) => any;
-    editAnnotation: (annotation: TextSpan, index: number) => any;
     openLinkMenuByDefault: boolean;
 }
 
@@ -39,9 +33,8 @@ export function MarkMenu(props: MarkMenuProps) {
     const [selectedRow, setSelectedRow] = useState<number>(-1);
     const [pos, setPos] = useState({ left: 0, top: 0 });
     const [menuOpen, setMenuOpen] = useState<boolean>(false);
-    const [hoveredAnnotations, setHoveredAnnotations] = useState<TextSpan[]>(
-        [],
-    );
+    const [hoveredAnnotations, setHoveredAnnotations] = useState<TextSpan[]>([]);
+    const state = useContext(GlobalState);
 
     const handleJumpClick = (e: any) => {
         if (props.anno.links.length > 0) {
@@ -62,7 +55,7 @@ export function MarkMenu(props: MarkMenuProps) {
         const selection = window.getSelection();
         if (selectionIsEmpty(selection)) {
             setPos({ left: e.pageX, top: e.pageY });
-            const annotations = props.annotations.filter((s: TextSpan) => {
+            const annotations = state.annotations.filter((s: TextSpan) => {
                 return props.start >= s.start && props.end <= s.end;
             });
             setHoveredAnnotations(annotations);
@@ -130,9 +123,7 @@ export function MarkMenu(props: MarkMenuProps) {
                         {/* Delete button */}
                         <IconButton
                             size="small"
-                            onClick={(e) =>
-                                props.deleteAnnotation(annotation, index)
-                            }
+                            onClick={(e) => deleteAnnotation(annotation, index)}
                         >
                             {" "}
                             <DeleteIcon />{" "}
@@ -143,7 +134,7 @@ export function MarkMenu(props: MarkMenuProps) {
                         <div>
                             {/* Tag name */}
                             <span
-                                style={{ margin: "auto", color: props.colors[annotation.tag] }}
+                                style={{ margin: "auto", color: state.colors[annotation.tag] }}
                             >
                                 {`${annotation.tag}`}
                             </span>
@@ -189,11 +180,7 @@ export function MarkMenu(props: MarkMenuProps) {
                                 <LinkMenu
                                     left={0}
                                     top={0}
-                                    colors={props.colors}
                                     selectedAnnotation={annotation}
-                                    annotations={props.annotations}
-                                    toggleLink={props.toggleLink}
-                                    onDeletePress={() => {}}
                                 />
                             </div>
                         </Collapse>

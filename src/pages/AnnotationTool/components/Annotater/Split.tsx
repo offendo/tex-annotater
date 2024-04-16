@@ -1,53 +1,26 @@
-import React, { useRef, useState } from "react";
+import React, { useContext, useRef, useState } from "react";
 import { MenuButton } from '@mui/base/MenuButton';
 import { Dropdown } from '@mui/base/Dropdown';
 import { MarkMenu } from './MarkMenu';
 import ColorMap from "@/lib/colors";
 import { TextSpan, Link } from "@/lib/span";
 import { selectionIsEmpty, parseSelection, SplitTagProps } from "@/lib/utils";
+import { GlobalState } from "../GlobalState";
 
 export interface SplitProps {
   content: string
-  tags?: any[]
-  annotations?: TextSpan[]
-  otherFileAnnotations?: TextSpan[]
-  hasLink?: boolean
-  colors?: ColorMap
   start: number
   end: number
-  saveid?: string;
-  onClick?: (arg: any, anno: TextSpan, location: any) => any
-  onContextMenu?: (e: any, location: any) => (any)
-  toggleLink: (source: TextSpan, target: TextSpan) => any;
-  deleteAnnotation: (annotation: TextSpan, index: number) => any;
-  editAnnotation: (annotation: TextSpan, index: number) => any;
 }
 
 export interface MarkProps extends SplitProps {
-  key: string
   tags: SplitTagProps[]
-  mark?: boolean
-  hasLink?: boolean
-  colors: ColorMap
-  annotations: TextSpan[]
-  saveid: string;
-  otherFileAnnotations: TextSpan[]
   onClick: (e: any, anno: TextSpan, location: any) => (any)
   onContextMenu: (e: any, location: any) => (any)
-  toggleLink: (source: TextSpan, target: TextSpan) => any;
-  deleteAnnotation: (annotation: TextSpan, index: number) => any;
-  editAnnotation: (annotation: TextSpan, index: number) => any;
 }
 
 export function isMarkProps(props: SplitProps): props is MarkProps {
   return "tags" in props && props.tags.length > 0;
-}
-
-const addLineAnchors = (content: string) => {
-  // const lines = content.split(/\n/);
-  // const withAnchors = lines.map((line: string, index: number) => { return <React.Fragment id={`line-${index}`}> {`${line}\n`} </React.Fragment> })
-  // return withAnchors;
-  return content
 }
 
 export function Split(props: SplitProps): React.JSX.Element {
@@ -60,13 +33,15 @@ export function Split(props: SplitProps): React.JSX.Element {
       data-end={props.end}
       className="split"
     >
-      {addLineAnchors(props.content)}
+      {props.content}
     </span>
   );
 
 };
 
 export function Mark(props: MarkProps): React.JSX.Element {
+
+  const state = useContext(GlobalState);
 
   const getSplitColor = (split: any) => {
     // If it's linked to something, use the link's target color
@@ -98,7 +73,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
           className="annotation"
           ref={finalRef}
           style={{
-            borderColor: props.colors[split.tag],
+            borderColor: state.colors[split.tag],
             paddingBottom: split.height * 4,
             backgroundColor: getSplitColor(split),
             backgroundClip: "content-box",
@@ -108,15 +83,8 @@ export function Mark(props: MarkProps): React.JSX.Element {
             anno={split.anno}
             openLinkMenuByDefault={props.tags.length == 1}
             innerContent={final}
-            colors={props.colors}
             start={props.start}
             end={props.end}
-            saveid={props.saveid}
-            annotations={props.annotations}
-            otherFileAnnotations={props.otherFileAnnotations}
-            toggleLink={props.toggleLink}
-            deleteAnnotation={props.deleteAnnotation}
-            editAnnotation={props.editAnnotation}
           />
         </span>
       )
@@ -127,7 +95,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
           ref={finalRef}
           className="annotation"
           style={{
-            borderColor: props.colors[split.tag],
+            borderColor: state.colors[split.tag],
             paddingBottom: split.height * 4,
             backgroundColor: getSplitColor(split),
             backgroundClip: "content-box"
