@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 
 import { LabelMenu } from "./Menu";
 import { Split } from "./Split";
@@ -12,15 +12,9 @@ import {
 } from "@/lib/utils";
 import { ColorMap, colors } from "@/lib/colors"
 import sortBy from "lodash.sortby";
+import { GlobalState, toggleLink, updateAnnotations } from "../GlobalState";
 
 type AnnotatorProps = {
-  fileid: string;
-  saveid: string;
-  labels: string[];
-  colors: ColorMap;
-  content: string;
-  annotations: TextSpan[];
-  onAddAnnotation: (value: TextSpan[]) => any;
   getSpan: (span: TextSpan) => TextSpan;
   style: any;
 };
@@ -39,11 +33,10 @@ const getNextColor = function (start_color: string = "") {
 const Annotator = (props: AnnotatorProps) => {
   /*  Context Menu stuff */
   const [selectionClicked, setSelectionClicked] = useState(false);
-  const [linkMenuClicked, setLinkMenuClicked] = useState(false);
 
   /* State */
+  const state = useContext(GlobalState);
   const [currentSelection, setCurrentSelection] = useState<Selection | null>(null);
-  const [clickedAnnotation, setClickedAnnotation] = useState<TextSpan>({} as TextSpan);
   const [currentColor, setCurrentColor] = useState<string>("");
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
 
@@ -56,10 +49,9 @@ const Annotator = (props: AnnotatorProps) => {
 
   /** Add annotation to document */
   const addMark = (start: number, end: number, label: string, name: string) => {
-    if (!props.onAddAnnotation) return null;
     if (start == end) return null;
 
-    const splitIndex = props.annotations.findIndex((s) => s.end == end && s.start == start && s.tag == label);
+    const splitIndex = state.annotations.findIndex((s) => s.end == end && s.start == start && s.tag == label);
 
     // If it doesn't already exist in the annotations, add it
     const nextColor = getNextColor(currentColor);
@@ -69,78 +61,19 @@ const Annotator = (props: AnnotatorProps) => {
         annoid: crypto.randomUUID(),
         start: start,
         end: end,
-        text: props.content.slice(start, end),
+        text: state.tex.slice(start, end),
         tag: label,
         name: name,
-        fileid: props.fileid,
+        fileid: state.fileid,
         links: [],
         color: nextColor
       });
     if (splitIndex == -1) {
-      props.onAddAnnotation([...props.annotations, newSpan]);
+      updateAnnotations(state, [...state.annotations, newSpan]);
     }
     const selection = window.getSelection();
     if (selection != null) selection.empty();
     return newSpan;
-  };
-
-  /** Remove annotation on click */
-  const removeMark = (ts: TextSpan) => {
-    const splitIndex = props.annotations.findIndex((s) => s.end == ts.end && s.start == ts.start && s.tag == ts.tag && ts.fileid == s.fileid);
-    if (splitIndex >= 0) {
-      props.onAddAnnotation([
-        ...props.annotations.slice(0, splitIndex),
-        ...props.annotations.slice(splitIndex + 1),
-      ]);
-    }
-  };
-
-  const updateMark = (anno: TextSpan) => {
-    const splitIndex = props.annotations.findIndex((s) => s.end == anno.end && s.start == anno.start && s.tag == anno.tag);
-    // If it doesn't already exist in the annotations, add it
-
-    if (splitIndex == -1) {
-      props.onAddAnnotation([...props.annotations, anno]);
-    } else {
-      props.onAddAnnotation([
-        ...props.annotations.slice(0, splitIndex),
-        anno,
-        ...props.annotations.slice(splitIndex + 1),
-      ]);
-    }
-  }
-
-  const toggleLink = (source: TextSpan, target: TextSpan) => {
-    const link = makeLink(source, target);
-    const splitIndex = source.links.findIndex((s) => s.end == link.end && s.start == link.start && s.tag == link.tag && s.fileid == link.fileid);
-    if (splitIndex == -1) {
-      source.links = [...source.links, link];
-    } else {
-      source.links = [
-        ...source.links.slice(0, splitIndex),
-        ...source.links.slice(splitIndex + 1),
-      ]
-    }
-    updateMark(source);
-  }
-
-  const handleSplitPress = (e: any, anno: TextSpan, loc: { start: number, end: number }) => {
-    if (linkMenuClicked && anno != clickedAnnotation) {
-      toggleLink(clickedAnnotation, anno);
-    } else {
-      const selection = window.getSelection();
-      if (selection == null || !selectionIsEmpty(selection)) {
-        return;
-      }
-    }
-  }
-
-
-  const handleAddLinkPress = (source: TextSpan, target: TextSpan) => {
-    // Launch the link menu button
-    setClickedAnnotation(source);
-    toggleLink(source, target)
-    // setLinkMenuClicked(true);
   };
 
   const launchContextMenu = (e: any) => {
@@ -245,7 +178,7 @@ const Annotator = (props: AnnotatorProps) => {
     }
   }
 
-  const splits = displaySplits(props.content, props.annotations);
+  const splits = displaySplits(state.tex, state.annotations);
 
   // Return the formatted code
   return (
@@ -254,17 +187,7 @@ const Annotator = (props: AnnotatorProps) => {
         <pre id="viewer" style={{ whiteSpace: "pre-wrap" }}>
           <div style={props.style} onContextMenu={launchContextMenu} onMouseUp={launchContextMenu}>
             {splits.map((split) => (
-              <Split
-                key={`${split.start}-${split.end}`}
-                colors={props.colors}
-                {...split}
-                onClick={handleSplitPress}
-                saveid={props.saveid}
-                annotations={props.annotations}
-                toggleLink={handleAddLinkPress}
-                deleteAnnotation={(anno, index) => { removeMark(anno); }}
-                editAnnotation={(anno, index) => {}}
-              />
+              <Split key={`${split.start}-${split.end}`} {...split}/>
             )
             )}
           </div>
@@ -275,8 +198,6 @@ const Annotator = (props: AnnotatorProps) => {
           top={cursorPos.y - 10}
           left={cursorPos.x - 10}
           range={parseSelection(currentSelection)}
-          colors={props.colors}
-          labels={props.labels}
           onButtonPress={(e, label, name, start, end) => { e.preventDefault(); handleContextMenuButtonPress(start, end, label, name) }}
           onMouseLeave={(e) => { setSelectionClicked(false); }}
         />

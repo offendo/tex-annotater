@@ -3,39 +3,53 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import Annotater from "./components/Annotater/Annotater";
 import PDFViewer from "./components/PDFViewer";
 import TopBar from "./components/TopBar";
-import { ColorMap } from "@/lib/colors";
 import { TextSpan } from "@/lib/span";
 import { jumpToElement, jumpToPercent } from "@/lib/utils";
 import { defaultColorMap } from "@/lib/colors";
 import "@/style/style.css";
 import { pdfjs } from "react-pdf";
 import useAuth from "../Token";
+import { GlobalState as GlobaLContext, GlobalStateProps, loadAnnotations, loadDocument } from "./components/GlobalState";
 
 pdfjs.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-const AnnotationTool = () => {
-    const labels: string[] = Object.keys(defaultColorMap);
-    const colors: ColorMap = defaultColorMap;
 
-    // State
-    const [queryParameters, setQueryParameters] = useSearchParams();
-    const [fileid, setFileId] = useState<string>(
-        queryParameters.get("fileid") || "",
-    );
-    const [tex, setTex] = useState<string>("");
-    const [pdf, setPdf] = useState<string>("");
-    const [annotations, setAnnotations] = useState<TextSpan[]>([]);
-    const [anchor, setAnchor] = useState<string>(
-        queryParameters.get("anchor") || "",
-    );
+const AnnotationTool = () => {
 
     // Login stuff
     const { token, userid, setAuth } = useAuth();
     const navigate = useNavigate();
 
-    // Load state
-    const saveid = queryParameters.get("saveid") || "";
+    // URL parameters
+    const [queryParameters, setQueryParameters] = useSearchParams();
+
+    // State
+    const [fileid, setFileId] = useState<string>(queryParameters.get("fileid") || "");
+    const [anchor, setAnchor] = useState<string>(queryParameters.get("anchor") || "");
+    const [tex, setTex] = useState<string>("");
+    const [pdf, setPdf] = useState<string>("");
+    const [saveid, setSaveId] = useState<string>(queryParameters.get("saveid") || "");
+    const [annotations, setAnnotations] = useState<TextSpan[]>([]);
+
+    const state: GlobalStateProps = {
+        colors: defaultColorMap,
+        labels: Object.keys(defaultColorMap),
+        userid: userid,
+        setUserId: () => {},
+        fileid: fileid,
+        setFileId: setFileId,
+        anchor: anchor,
+        setAnchor: setAnchor,
+        saveid: saveid,
+        setSaveId: setSaveId,
+        pdf: pdf,
+        setPdf: setPdf,
+        tex: tex,
+        setTex: setTex,
+        annotations: annotations,
+        setAnnotations: setAnnotations,
+    }
 
     useEffect(() => {
         if (!token || token.length == 0) {
@@ -43,8 +57,8 @@ const AnnotationTool = () => {
         }
 
         if (fileid != "") {
-            loadAnnotations(fileid, userid, saveid);
-            loadDocument(fileid);
+            loadAnnotations(state, saveid)
+            loadDocument(state, fileid)
         }
 
         // Wait 1 second before trying to scroll, gives the DOM time to load in.
@@ -70,130 +84,42 @@ const AnnotationTool = () => {
         }, 2000)
     }, []);
 
-    const updateAnnotations = (annotations: TextSpan[]) => {
-        setAnnotations(annotations);
-        saveAnnotations(fileid, userid, annotations, true);
-        console.log("Just autosaved: ", annotations);
-    };
-
-    async function saveAnnotations(
-        fileid: string,
-        userid: string,
-        annotations: TextSpan[],
-        autosave: boolean = false,
-    ) {
-        const requestOptions = {
-            method: "POST",
-            headers: { "Content-Type": "application/json", mode: "cors" },
-            body: JSON.stringify({ annotations: annotations }),
-        };
-        // We handle autosaves differently
-        const url = `/api/annotations?fileid=${fileid}&userid=${userid}&autosave=${autosave}`;
-
-        // POST save and ensure it saved correctly;
-        try {
-            console.log(`Saving annotations at ${url}`);
-            const response = await fetch(url, requestOptions);
-            const res = await response.text();
-            console.log(res)
-            return annotations;
-        } catch (e) {
-            console.error(e);
-            return null;
-        }
-    }
-
-    async function loadAnnotations(
-        fileid: string,
-        userid: string,
-        timestamp?: string,
-        empty?: boolean,
-    ) {
-        try {
-            let res: any = {};
-            if (empty) {
-                console.log("Clearing annotations...");
-                res = { annotations: [], fileid: fileid };
-            } else {
-                const url = `/api/annotations?fileid=${fileid}&userid=${userid}&timestamp=${timestamp ? timestamp : ""}`
-                console.log("Fetching: ", url)
-                const response = await fetch(url, { mode: "cors" });
-                res = await response.json();
-            }
-            setFileId(res["fileid"]);
-            setAnnotations(res["annotations"]);
-            console.log(`Loaded ${res["annotations"].length} annotations`);
-            return res["annotations"];
-        } catch (e) {
-            console.error(e);
-        }
-    }
-
-    async function loadDocument(fileid: string) {
-        try {
-            const tex_response = fetch(`/api/tex?fileid=${fileid}`, { mode: "cors" });
-            const pdf_response = fetch(`/api/pdf?fileid=${fileid}`, { mode: "cors" });
-            const tex_res = await (await tex_response).json();
-            setTex(tex_res["tex"]);
-            setFileId(tex_res["fileid"]);
-            const pdf_res = await (await pdf_response).json();
-            setPdf(pdf_res["pdf"]);
-            setQueryParameters({ fileid: fileid, saveid: saveid});
-        } catch (e) {
-            console.error(e);
-            setQueryParameters({ fileid: "", saveid: saveid});
-        }
-    }
-
     return (
         <div>
-            <TopBar
-                loadDocument={loadDocument}
-                loadAnnotations={loadAnnotations}
-                saveAnnotations={async () => {
-                    return await saveAnnotations(fileid, userid, annotations, false);
-                }}
-                userid={userid}
-                fileid={fileid}
-            />
-            <div
-                style={{
-                    display: "flex",
-                    alignContent: "center",
-                    width: "98vw",
-                    margin: "10px",
-                }}
-            >
+            <GlobaLContext.Provider value={state}>
+                <TopBar />
                 <div
-                    id="scroll-box"
                     style={{
-                        flexGrow: 1,
-                        resize: "horizontal",
-                        overflow: "scroll",
-                        width: "49vw",
-                        height: "90vh",
+                        display: "flex",
+                        alignContent: "center",
+                        width: "98vw",
+                        margin: "10px",
                     }}
                 >
-                    <Annotater
+                    <div
+                        id="scroll-box"
                         style={{
-                            paddingBottom: "8px",
-                            lineHeight: 3,
-                            margin: "10px",
+                            flexGrow: 1,
+                            resize: "horizontal",
+                            overflow: "scroll",
+                            width: "49vw",
+                            height: "90vh",
                         }}
-                        fileid={fileid}
-                        saveid={saveid}
-                        colors={colors}
-                        labels={labels}
-                        content={tex}
-                        annotations={annotations}
-                        onAddAnnotation={(annos) => updateAnnotations(annos)}
-                        getSpan={(span: TextSpan) => ({ ...span })}
-                    />
+                    >
+                        <Annotater
+                            style={{
+                                paddingBottom: "8px",
+                                lineHeight: 3,
+                                margin: "10px",
+                            }}
+                            getSpan={(span: TextSpan) => ({ ...span })}
+                        />
+                    </div>
+                    <div style={{ flexGrow: 3 }}>
+                        <PDFViewer/>
+                    </div>
                 </div>
-                <div style={{ flexGrow: 3 }}>
-                    <PDFViewer data={pdf} />
-                </div>
-            </div>
+            </GlobaLContext.Provider>
         </div>
     );
 };

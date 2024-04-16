@@ -23,19 +23,12 @@ import { ColorMap, defaultColorMap } from "@/lib/colors";
 import { jumpToElement, shortenText } from "@/lib/utils";
 import { Grid } from "@mui/material";
 import sortBy from "lodash.sortby";
+import { GlobalState, loadAnnotations, loadDocument, saveAnnotations } from "./GlobalState";
 
-type SaveFileProps = {
-    fileid: string;
-    userid: string;
-    loadAnnotations: (
-        fileid: string,
-        userid: string,
-        timestamp?: string,
-        empty?: boolean,
-    ) => any;
-};
+type SaveFileProps = {};
 
 const SaveFileSelector = (props: SaveFileProps) => {
+    const state = React.useContext(GlobalState);
     const [selected, setSelected] = React.useState("");
     const [saves, setSaves] = React.useState<any[]>([]);
 
@@ -43,13 +36,13 @@ const SaveFileSelector = (props: SaveFileProps) => {
 
     const handleChange = (event: SelectChangeEvent) => {
         if (event.target.value == "empty") {
-            props.loadAnnotations("", "", "", true);
+            loadAnnotations(state, "", "", "", true);
             setSelected(event.target.value);
             return;
         }
         const s = JSON.parse(event.target.value);
         setSelected(event.target.value);
-        props.loadAnnotations(s["fileid"], s["userid"], s["timestamp"]);
+        loadAnnotations(state, s["fileid"], s["userid"], s["timestamp"]);
         setQueryParameters({ fileid: s['fileid'], saveid: s['timestamp'] })
     };
 
@@ -67,11 +60,11 @@ const SaveFileSelector = (props: SaveFileProps) => {
     };
 
     React.useEffect(() => {
-        loadSaves(props.fileid);
+        loadSaves(state.fileid);
         const saveid = queryParameters.get('saveid') || "";
-        props.loadAnnotations(props.fileid, props.userid, saveid);
-        setQueryParameters({ ...queryParameters, saveid: saveid })
-    }, [props.fileid, props.userid]);
+        loadAnnotations(state, state.fileid, state.userid, saveid);
+        setQueryParameters({ ...queryParameters, fileid: state.fileid, saveid: saveid, anchor: state.anchor })
+    }, [state.fileid, state.userid]);
 
     return (
         <Box sx={{ minWidth: 200, marginLeft: "20px", marginRight: "20px" }}>
@@ -104,21 +97,12 @@ const SaveFileSelector = (props: SaveFileProps) => {
     );
 };
 
-type TopBarProps = {
-    userid: string;
-    fileid: string;
-    saveAnnotations: () => Promise<TextSpan[] | null>;
-    loadAnnotations: (
-        fileid: string,
-        userid: string,
-        timestamp?: string,
-        empty?: boolean,
-    ) => any;
-    loadDocument: (fileid: string) => any;
-};
+type TopBarProps = {};
 
 export default function TopBar(props: TopBarProps) {
-    const [fileid, setFileid] = React.useState(props.fileid);
+    const state = React.useContext(GlobalState);
+
+    const [queryParameters, setQueryParameters] = useSearchParams();
     const [documents, setDocuments] = React.useState([]);
     const [didSave, setDidSave] = React.useState(false);
     const [message, setMessage] = React.useState("");
@@ -144,7 +128,6 @@ export default function TopBar(props: TopBarProps) {
     }, []);
 
     // Annotation list stuff
-    const [annotations, setAnnotations] = React.useState<TextSpan[]>([]);
     const [selected, setSelected] = React.useState(-1);
     const [annotationMenuAnchorEl, setAnnotationMenuAnchorel] =
         React.useState<null | HTMLElement>(null);
@@ -234,9 +217,8 @@ export default function TopBar(props: TopBarProps) {
                         aria-label="save annotations"
                         sx={{ mr: 2 }}
                         onClick={async (e) => {
-                            const annos = await props.saveAnnotations();
+                            const annos = await saveAnnotations(state, state.annotations, false);
                             setDidSave(annos != null);
-                            setAnnotations(annos == null ? [] : annos);
                             setMessage(
                                 annos
                                     ? "Successfully saved"
@@ -253,7 +235,7 @@ export default function TopBar(props: TopBarProps) {
                             color="inherit"
                             sx={{ mr: 2 }}
                             onClick={handleAnnotationMenuClick}
-                            disabled={annotations.length == 0}
+                            disabled={state.annotations.length == 0}
                         >
                             {annotationMenuOpen ? (
                                 <ExpandLessIcon style={{ padding: "5px" }} />
@@ -276,7 +258,7 @@ export default function TopBar(props: TopBarProps) {
                                 },
                             }}
                         >
-                            {annotations.map((anno, index) => {
+                            {state.annotations.map((anno, index) => {
                                 return (
                                     <MenuItem
                                         key={crypto.randomUUID()}
@@ -317,12 +299,14 @@ export default function TopBar(props: TopBarProps) {
                                 <Autocomplete
                                     options={documents}
                                     sx={{ width: 300 }}
-                                    value={fileid}
-                                    onChange={(e) => {
-                                        props.loadDocument(
-                                            e.target.textContent,
-                                        );
-                                        setFileid(e.target.textContent);
+                                    value={state.fileid}
+                                    onChange={(e: React.SyntheticEvent, value: string | null) => {
+                                        if (value == null) {
+                                            return;
+                                        }
+                                        loadDocument(state, value);
+                                        setQueryParameters({ fileid: value, saveid: state.saveid })
+                                        state.setFileId(value);
                                     }}
                                     renderInput={(params: any) => (
                                         <TextField
@@ -333,23 +317,7 @@ export default function TopBar(props: TopBarProps) {
                                     )}
                                 />
                             </div>
-                            <SaveFileSelector
-                                fileid={fileid}
-                                userid={props.userid}
-                                loadAnnotations={(fid, uid, time, empty) => {
-                                    props
-                                        .loadAnnotations(fid, uid, time, empty)
-                                        .then((annos: TextSpan[]) =>
-                                            setAnnotations(
-                                                sortBy(
-                                                    annos,
-                                                    (anno: TextSpan) =>
-                                                        anno.start,
-                                                ),
-                                            ),
-                                        );
-                                }}
-                            />
+                            <SaveFileSelector />
                         </span>
                     </div>
                 </Toolbar>
