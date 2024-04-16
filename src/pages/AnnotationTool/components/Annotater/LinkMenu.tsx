@@ -113,8 +113,8 @@ export function LinkMenu(props: LinkMenuProps) {
   }
 
   allAnnos = sortBy(allAnnos, (anno) => {
-    const mp1 =  anno.start + (anno.start - anno.end) / 2;
-    const mp2 =  props.selectedAnnotation.start + (props.selectedAnnotation.start - props.selectedAnnotation.end) / 2;
+    const mp1 = anno.start + (anno.start - anno.end) / 2;
+    const mp2 = props.selectedAnnotation.start + (props.selectedAnnotation.start - props.selectedAnnotation.end) / 2;
     return Math.abs(mp1 - mp2);
   })
 
@@ -253,7 +253,7 @@ export function LinkMenu(props: LinkMenuProps) {
         </td>
         <td>
           <Typography style={{ color: "var(--transparent-dark)" }}>
-            {"[unknown]"}
+            {""}
           </Typography>
         </td>
         <td>
@@ -273,9 +273,7 @@ export function LinkMenu(props: LinkMenuProps) {
           style={{ overflowX: "scroll", width: "80%" }}
         >
           <pre style={{ margin: "0px", whiteSpace: "pre-line" }}>
-            {index == expandedIndex
-              ? annotation.text
-              : annotation.text.slice(0, 50) + "..."}
+            {highlightResult(annotation, query, index)}
           </pre>
         </td>
       </tr>
@@ -336,7 +334,7 @@ export function LinkMenu(props: LinkMenuProps) {
           </tr>
         </thead>
         <tbody>
-          {autoLinkSuggestions.map((annotation, index) =>
+          {filterSearch(autoLinkSuggestions, query).map((annotation, index) =>
             makeAutoLinkRow(annotation, index),
           )}
           {linkedAnnos.map((annotation, index) =>

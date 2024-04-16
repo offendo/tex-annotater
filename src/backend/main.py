@@ -28,7 +28,7 @@ from .users import (
     init_users_db,
 )
 
-from .search import fuzzysearch, index_books, reindex
+from .search import fuzzysearch, download_and_index_tex, compute_fold_mapping
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -180,7 +180,7 @@ def search_for_definition():
         return jsonify({"error": "Error: query and width are required"}), 400
 
     # Get the index
-    index = index_books("/tmp/textbooks")
+    index = download_and_index_tex("/tmp/textbooks")
 
     # Do the fuzzysearch
     results = fuzzysearch(query, index, topk=topk, fileid=fileid)
@@ -188,7 +188,7 @@ def search_for_definition():
     # Remap the line numbers to the post-folding line numbers
     new_results = []
     for match in results:
-        old2new, lines = reindex(match["file"], width)
+        old2new, lines = compute_fold_mapping(match["file"], width)
         match["line"] = old2new[match["line"]]
         match["percent"] = int(match["line"]) / int(lines)
         match["file"] = str(Path(match["file"]).name)

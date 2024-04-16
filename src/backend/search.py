@@ -29,6 +29,7 @@ patterns = [
     r"we call \([^ ]* \)*if",
     r"we call \([^ ]* \)*the \([^ ]* \)if",
     r"we call \([^ ]* \)*the \([^ ]* \)when",
+    r"we call \([^ ]* \)*an\? \([^ ]* \)if",
     r"we define \([^ ]* \)*to be",
 ]
 
@@ -45,7 +46,7 @@ def download_books(output_dir: str):
     return [str(Path(output_dir, name).with_suffix(".tex")) for name in df["name"]]
 
 
-def download_texs(output_dir: str):
+def download_papers(output_dir: str):
     names = list_s3_documents()
     for name in names:
         logger.info(f"downloading {name}")
@@ -63,7 +64,23 @@ def download_texs(output_dir: str):
     return [str(Path(output_dir, name).with_suffix(".tex")) for name in names]
 
 
-def build_definition_index(patterns: list[str], books: list[str]):
+def index_tex(patterns: tuple[str, ...], tex: str, type: str):
+    p = Popen(
+        ["grep", "-oin", r"\|".join(patterns), tex],
+        stdout=PIPE,
+        stderr=STDOUT,
+    )
+    searched = []
+    for match in p.communicate()[0].decode().strip().split("\n"):
+        groups = re.match(r"(\d+):(.*)", match)
+        if groups is None:
+            continue
+        linenum, rest = groups.groups()
+        searched.append((tex, type, int(linenum), rest))
+
+    return searched
+
+def build_definition_index(patterns: list[str], books: list[str], papers: list[str]):
     """Grep
 
     Greps through all the `books` using `patterns` and saves the result as a csv
@@ -78,30 +95,23 @@ def build_definition_index(patterns: list[str], books: list[str]):
     Returns
     -------
     pd.DataFrame :
-        DataFrame with columns `[file, line, text]`
+        DataFrame with columns `[file, type, line, text]`
     """
 
     searched = []
     for book in books:
         # Create definition index
-        p = Popen(
-            ["grep", "-oin", r"\|".join(patterns), book],
-            stdout=PIPE,
-            stderr=STDOUT,
-        )
-        for match in p.communicate()[0].decode().strip().split("\n"):
-            groups = re.match(r"(\d+):(.*)", match)
-            if groups is None:
-                continue
-            linenum, rest = groups.groups()
-            searched.append((book, int(linenum), rest))
+        searched.extend(index_tex(tuple(patterns), book, 'book'))
+    for paper in papers:
+        # Create definition index
+        searched.extend(index_tex(tuple(patterns), paper, 'paper'))
 
-    df = pd.DataFrame.from_records(searched, columns=["file", "line", "text"])
+    df = pd.DataFrame.from_records(searched, columns=["file", "type", "line", "text"])
     return df
 
 
-# @lru_cache(maxsize=100)
-def reindex(book: str, width: int):
+@lru_cache(maxsize=100)
+def compute_fold_mapping(book: str, width: int):
     """Reindex a book's old lines to post-folding lines
 
     Parameters
@@ -151,31 +161,30 @@ def reindex(book: str, width: int):
 
     old2new = {}
     for line in grep_out.splitlines():
-        new, old, *_ = line.split(':')
+        new, old, *_ = line.split(":")
         old2new[int(old)] = int(new)
     return (old2new, lines)
 
 
-# @lru_cache(maxsize=30)
-def index_books(tex_dir: str):
+def download_and_index_tex(tex_dir: str):
     save_file = Path(tex_dir, f"index.csv")
     if save_file.exists():
         return pd.read_csv(save_file)
     Path(tex_dir).mkdir(exist_ok=True, parents=True)
-    # books = download_books(tex_dir)
-    texs = download_texs(tex_dir)
-    df = build_definition_index(patterns, texs)
+    books = download_books(tex_dir)
+    papers = download_papers(tex_dir)
+    df = build_definition_index(patterns, books, papers)
     df.to_csv(save_file, index=False)
     return df
 
 
 def scorer(query, match, **kwargs):
     mod_queries = [
-      f"a {query} is a",
-      f"an {query} is a",
-      f"the {query} is",
-      f"we call a {query}",
-      f"we define a {query} to be",
+        f"a {query} is a",
+        f"an {query} is a",
+        f"the {query} is",
+        f"we call a {query}",
+        f"we define a {query} to be",
     ]
     return max([fuzz.WRatio(pat, match, **kwargs) for pat in mod_queries])
 
@@ -185,11 +194,15 @@ def fuzzysearch(query: str, index: pd.DataFrame, topk: int = 20, fileid: str = "
         new_index = index[index["file"].apply(lambda x: str(Path(x).name)) == fileid]
         assert isinstance(new_index, pd.DataFrame)
     else:
-        new_index = index
+        new_index = index[index["type"] == "book"]
+
+    # Force the query text to be in the
+    new_index = new_index[new_index["text"].apply(lambda x: query.strip() in x)]  # type:ignore
+
     results = process.extract(
         query.strip(),
-        new_index.to_dict(orient="records"),
-        scorer=lambda a, b, **kwargs: fuzz.partial_token_set_ratio(a, b['text'], **kwargs),
+        new_index.to_dict(orient="records"),  # type:ignore
+        scorer=lambda a, b, **kwargs: fuzz.partial_token_set_ratio(a, b["text"], **kwargs),
         limit=topk,
     )
-    return [match for match, score, dist in results if query.strip() in match['text']]
+    return [match for match, score, dist in results]
