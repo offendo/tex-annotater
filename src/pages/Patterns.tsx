@@ -4,7 +4,6 @@ import React, { useState } from 'react'
 const usePatterns = () => {
     const getPatterns = () => {
         const regexPatterns = localStorage.getItem('patterns') || '{"patterns": [], "selectedPatterns": []}';
-        console.log('patterns: ', regexPatterns, typeof regexPatterns);
         return JSON.parse(regexPatterns)
     }
 
