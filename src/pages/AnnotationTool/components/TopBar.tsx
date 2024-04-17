@@ -72,7 +72,7 @@ const SaveFileSelector = (props: SaveFileProps) => {
         const saveid = queryParameters.get('saveid') || "";
         loadAnnotations(state, state.fileid, state.userid, saveid);
         setQueryParameters({ ...queryParameters, fileid: state.fileid, saveid: saveid, anchor: state.anchor })
-    }, [state.fileid, state.userid]);
+    }, [state.fileid]);
 
     return (
         <Box sx={{ minWidth: 200, marginLeft: "20px", marginRight: "20px" }}>
@@ -197,19 +197,19 @@ export default function TopBar(props: TopBarProps) {
             newSelections.splice(currentIndex, 1);
         }
 
-        setRegexPatterns({patterns: patterns, selectedPatterns: newSelections});
+        setRegexPatterns({ patterns: patterns, selectedPatterns: newSelections });
     };
     const removeRegexPattern = (regex: string) => {
         const currentIndex = patterns.indexOf(regex);
         const newPatterns = [...patterns];
         if (currentIndex !== -1) {
             newPatterns.splice(currentIndex, 1);
-            const selIndex = selectedPatterns.indexOf(regex) ;
-            if (selIndex !== -1){
+            const selIndex = selectedPatterns.indexOf(regex);
+            if (selIndex !== -1) {
                 selectedPatterns.splice(selIndex, 1);
             }
         }
-        setRegexPatterns({patterns: newPatterns, selectedPatterns: selectedPatterns});
+        setRegexPatterns({ patterns: newPatterns, selectedPatterns: selectedPatterns });
     }
 
     const addRegexPattern = (regex: string) => {
@@ -219,7 +219,7 @@ export default function TopBar(props: TopBarProps) {
             newPatterns.push(regex);
             selectedPatterns.push(regex);
         }
-        setRegexPatterns({patterns: newPatterns, selectedPatterns: selectedPatterns});
+        setRegexPatterns({ patterns: newPatterns, selectedPatterns: selectedPatterns });
     }
 
     return (

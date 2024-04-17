@@ -73,7 +73,7 @@ export async function loadAnnotations(
             const response = await fetch(url, { mode: "cors" });
             res = await response.json();
         }
-        state.setFileId(res["fileid"]);
+        // state.setFileId(res["fileid"]);
         state.setSaveId(res['timestamp']);
         state.setAnnotations(res["annotations"]);
         console.log(`Loaded ${res["annotations"].length} annotations`);
