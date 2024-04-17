@@ -166,14 +166,15 @@ def compute_fold_mapping(book: str, width: int):
     return (old2new, lines)
 
 
-def download_and_index_tex(tex_dir: str):
-    save_file = Path(tex_dir, f"index.csv")
+def download_and_index_tex(tex_dir: str, extraPatterns: list[str]):
+    uniq = hash(','.join(extraPatterns))
+    save_file = Path(tex_dir, f"index.{uniq}.csv")
     if save_file.exists():
         return pd.read_csv(save_file)
     Path(tex_dir).mkdir(exist_ok=True, parents=True)
     books = download_books(tex_dir)
     papers = download_papers(tex_dir)
-    df = build_definition_index(patterns, books, papers)
+    df = build_definition_index(patterns + extraPatterns, books, papers)
     df.to_csv(save_file, index=False)
     return df
 

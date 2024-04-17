@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Divider, Tooltip } from "@mui/material";
+import { Checkbox, Divider, IconButton, Input, Tooltip } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
@@ -17,6 +17,11 @@ import SaveIcon from "@mui/icons-material/Save";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import MenuItem from "@mui/material/MenuItem";
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
 import Menu from "@mui/material/Menu";
 import { TextSpan } from "@/lib/span";
 import { ColorMap, defaultColorMap } from "@/lib/colors";
@@ -24,6 +29,9 @@ import { jumpToElement, shortenText } from "@/lib/utils";
 import { Grid } from "@mui/material";
 import sortBy from "lodash.sortby";
 import { GlobalState, loadAnnotations, loadDocument, saveAnnotations } from "./GlobalState";
+import RemoveIcon from '@mui/icons-material/Remove';
+import AddIcon from '@mui/icons-material/Add';
+import usePatterns from "@/pages/Patterns";
 
 type SaveFileProps = {};
 
@@ -128,22 +136,23 @@ export default function TopBar(props: TopBarProps) {
     }, []);
 
     // Annotation list stuff
-    const [selected, setSelected] = React.useState(-1);
-    const [annotationMenuAnchorEl, setAnnotationMenuAnchorel] =
-        React.useState<null | HTMLElement>(null);
-    const annotationMenuOpen = Boolean(annotationMenuAnchorEl);
+    const { regexPatterns, setRegexPatterns } = usePatterns();
+    const { patterns, selectedPatterns } = regexPatterns;
 
-    const handleAnnotationMenuClick = (
-        event: React.MouseEvent<HTMLButtonElement>,
-    ) => {
-        setAnnotationMenuAnchorel(event.currentTarget);
-    };
+    const [newPattern, setNewPattern] = React.useState("");
 
-    const handleAnnotationMenuClose = () => {
-        setAnnotationMenuAnchorel(null);
-    };
+    // Regex Menu
+    const handleRegexMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => { setRegexMenuAnchorEl(event.currentTarget); };
+    const handleRegexMenuClose = () => { setRegexMenuAnchorEl(null); };
+    const [regexMenuAnchorEl, setRegexMenuAnchorEl] = React.useState<null | HTMLElement>(null);
+    const regexMenuOpen = Boolean(regexMenuAnchorEl);
 
     /* Annotation list at the top of the bar */
+    const handleAnnotationMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => { setAnnotationMenuAnchorEl(event.currentTarget); };
+    const handleAnnotationMenuClose = () => { setAnnotationMenuAnchorEl(null); };
+    const [annotationMenuAnchorEl, setAnnotationMenuAnchorEl] = React.useState<null | HTMLElement>(null);
+    const annotationMenuOpen = Boolean(annotationMenuAnchorEl);
+
     const AnnotationListRow = ({
         annotation,
         index,
@@ -153,14 +162,6 @@ export default function TopBar(props: TopBarProps) {
         index: number;
         colors: ColorMap;
     }) => {
-        const toggleSelected = (index: number) => {
-            if (selected == index) {
-                setSelected(-1);
-            } else {
-                setSelected(index);
-            }
-        };
-
         return (
             <Grid
                 container
@@ -189,6 +190,40 @@ export default function TopBar(props: TopBarProps) {
         );
     };
 
+    const toggleRegexPattern = (value: string) => {
+        const currentIndex = selectedPatterns.indexOf(value);
+        const newSelections = [...selectedPatterns];
+        if (currentIndex === -1) {
+            newSelections.push(value);
+        } else {
+            newSelections.splice(currentIndex, 1);
+        }
+
+        setRegexPatterns({patterns: patterns, selectedPatterns: newSelections});
+    };
+    const removeRegexPattern = (regex: string) => {
+        const currentIndex = patterns.indexOf(regex);
+        const newPatterns = [...patterns];
+        if (currentIndex !== -1) {
+            newPatterns.splice(currentIndex, 1);
+            const selIndex = selectedPatterns.indexOf(regex) ;
+            if (selIndex !== -1){
+                selectedPatterns.splice(selIndex, 1);
+            }
+        }
+        setRegexPatterns({patterns: newPatterns, selectedPatterns: selectedPatterns});
+    }
+
+    const addRegexPattern = (regex: string) => {
+        const currentIndex = patterns.indexOf(regex);
+        const newPatterns = [...patterns];
+        if (currentIndex === -1) {
+            newPatterns.push(regex);
+            selectedPatterns.push(regex);
+        }
+        setRegexPatterns({patterns: newPatterns, selectedPatterns: selectedPatterns});
+    }
+
     return (
         <Box sx={{ flexGrow: 1 }}>
             <AppBar
@@ -211,6 +246,90 @@ export default function TopBar(props: TopBarProps) {
                     >
                         LaTeX Annotater
                     </Typography>
+                    <span>
+                        <Button
+                            size="large"
+                            color="inherit"
+                            onClick={handleRegexMenuClick}
+                        >
+                            {regexMenuOpen ? (
+                                <ExpandLessIcon style={{ padding: "5px" }} />
+                            ) : (
+                                <ExpandMoreIcon style={{ padding: "5px" }} />
+                            )}
+                            {"Modify AutoLink Regex"}
+                        </Button>
+                        <Menu
+                            id="basic-menu"
+                            anchorEl={regexMenuAnchorEl}
+                            open={regexMenuOpen}
+                            onClose={handleRegexMenuClose}
+                            MenuListProps={{
+                                "aria-labelledby": "basic-button",
+                                style: {
+                                    backgroundColor: "var(--background-color)",
+                                    margin: "0px",
+                                    padding: "0px",
+                                },
+                            }}
+                        >
+                            {
+                                patterns.map((regex) => {
+                                    return (
+                                        <ListItem
+                                            key={crypto.randomUUID()}
+                                            secondaryAction={
+                                                <IconButton edge="end" aria-label="remove" onClick={(e) => { removeRegexPattern(regex) }}>
+                                                    <RemoveIcon />
+                                                </IconButton>
+                                            }
+                                            disablePadding
+                                        >
+                                            <ListItemButton onClick={(e) => { toggleRegexPattern(regex) }} dense>
+                                                <ListItemIcon>
+                                                    <Checkbox
+                                                        edge="start"
+                                                        checked={selectedPatterns.indexOf(regex) !== -1}
+                                                        tabIndex={-1}
+                                                        disableRipple
+                                                    />
+                                                </ListItemIcon>
+                                                <ListItemText id={regex} primary={regex} />
+                                            </ListItemButton>
+                                        </ListItem>
+                                    );
+                                })
+                            }
+                            {
+                                <ListItem
+                                    key={crypto.randomUUID()}
+                                    disablePadding
+                                >
+                                    <ListItemButton
+                                        dense
+                                        onClick={(e) => {
+                                            const el = document.getElementById("newpattern");
+                                            addRegexPattern(el.value);
+                                        }}
+                                    >
+                                        <ListItemIcon>
+                                            <AddIcon />
+                                        </ListItemIcon>
+                                        <TextField
+                                            size="small"
+                                            margin="dense"
+                                            id="newpattern" label="Add new regex" variant="standard"
+
+                                            onClick={(e) => { e.stopPropagation(); }}
+                                            onMouseDown={(e) => { e.stopPropagation(); }}
+                                            onKeyDown={(e) => { e.stopPropagation(); }}
+                                        />
+                                    </ListItemButton>
+                                </ListItem>
+                            }
+
+                        </Menu>
+                    </span>
                     <Button
                         size="large"
                         color="inherit"
@@ -336,6 +455,6 @@ export default function TopBar(props: TopBarProps) {
                     {message}
                 </Alert>
             </Snackbar>
-        </Box>
+        </Box >
     );
 }

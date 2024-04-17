@@ -17,6 +17,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { partition, sortBy } from "lodash";
 import { GlobalState, toggleLink } from "../GlobalState";
+import usePatterns from "@/pages/Patterns";
 
 type LinkMenuProps = {
   left: number;
@@ -40,6 +41,9 @@ export function LinkMenu(props: LinkMenuProps) {
   const [query, setQuery] = useState("");
   const [filterTag, setFilterTag] = useState("");
   const [filterFileId, setFilterFileId] = useState("");
+
+  const { regexPatterns, setRegexPatterns } = usePatterns();
+  const { patterns, selectedPatterns } = regexPatterns;
 
   /* Toggle states */
   const toggleExpandedIndex = (index: number) =>
@@ -67,14 +71,11 @@ export function LinkMenu(props: LinkMenuProps) {
     }
   }
 
-  async function queryAutoLinks(text: string, fileid: string, topk: number = 20) {
+  async function queryAutoLinks(text: string, fileid: string, topk: number = 20, extraPatterns: string[] = []) {
     try {
       const width = getViewerWidthInChars();
       const response = await fetch(
-        `/api/definition?query=${encodeURIComponent(text)}&fileid=${fileid}&topk=${topk}&width=${width}`,
-        {
-          mode: "cors",
-        },
+        `/api/definition?query=${encodeURIComponent(text)}&fileid=${fileid}&topk=${topk}&width=${width}&extraPatterns=${encodeURIComponent(JSON.stringify(extraPatterns))}`
       );
       const res = await response.json();
       setAutoLinkSuggestions(res["results"]);
@@ -89,7 +90,12 @@ export function LinkMenu(props: LinkMenuProps) {
       loadAllAnnotations();
     }
     if (showAutoLinks) {
-      queryAutoLinks(props.selectedAnnotation.text, showAllAnnotations ? "" : props.selectedAnnotation.fileid, 20);
+      queryAutoLinks(
+        props.selectedAnnotation.text,
+        showAllAnnotations ? "" : props.selectedAnnotation.fileid,
+        20,
+        patterns.filter((pat: string) => selectedPatterns.indexOf(pat) !== -1) // send along extra patterns
+      );
     } else {
       setAutoLinkSuggestions([]);
     }

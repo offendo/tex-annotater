@@ -142,7 +142,7 @@ const Annotator = (props: AnnotatorProps) => {
       // 3. with the same text as the reference
       // and then sort by start (in reverse order)
       const candidates: TextSpan[] = sortBy(
-        props.annotations.filter((a) => a.tag == 'name' && a.end <= anno.start && a.text == anno.text),
+        state.annotations.filter((a) => a.tag == 'name' && a.end <= anno.start && a.text == anno.text),
         (o: TextSpan) => -o.start
       )
 

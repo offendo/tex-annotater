@@ -8,6 +8,7 @@ import re
 import os
 import sqlite3
 import boto3
+import json
 
 from .search import fuzzysearch
 from .data import (
@@ -176,11 +177,13 @@ def search_for_definition():
     fileid = request.args.get("fileid", "")  # default to empty string
     topk = int(request.args.get("topk", 20))
     width = int(request.args.get("width", -1))
+    extraPatterns = json.loads(request.args.get("extraPatterns", "[]"))
     if query is None or width == -1:
         return jsonify({"error": "Error: query and width are required"}), 400
 
     # Get the index
-    index = download_and_index_tex("/tmp/textbooks")
+    print('got extras: ', extraPatterns)
+    index = download_and_index_tex("/tmp/textbooks", extraPatterns)
 
     # Do the fuzzysearch
     results = fuzzysearch(query, index, topk=topk, fileid=fileid)
@@ -189,7 +192,7 @@ def search_for_definition():
     new_results = []
     for match in results:
         old2new, lines = compute_fold_mapping(match["file"], width)
-        match["line"] = old2new[match["line"]]
+        match["line"] = old2new.get(match["line"], match['line'])
         match["percent"] = int(match["line"]) / int(lines)
         match["file"] = str(Path(match["file"]).name)
         new_results.append(match)
