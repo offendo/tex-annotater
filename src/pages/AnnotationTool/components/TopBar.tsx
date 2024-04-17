@@ -139,8 +139,6 @@ export default function TopBar(props: TopBarProps) {
     const { regexPatterns, setRegexPatterns } = usePatterns();
     const { patterns, selectedPatterns } = regexPatterns;
 
-    const [newPattern, setNewPattern] = React.useState("");
-
     // Regex Menu
     const handleRegexMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => { setRegexMenuAnchorEl(event.currentTarget); };
     const handleRegexMenuClose = () => { setRegexMenuAnchorEl(null); };
