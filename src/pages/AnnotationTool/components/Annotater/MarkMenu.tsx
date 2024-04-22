@@ -18,7 +18,7 @@ import { selectionIsEmpty, shortenText } from "@/lib/utils";
 import Popover from "@mui/material/Popover";
 import MenuItem from "@mui/material/MenuItem";
 import { Resizable } from "re-resizable";
-import { GlobalState } from "../GlobalState";
+import { GlobalState, removeMark } from "../GlobalState";
 import { useTraceUpdate } from "@/pages/Tracker";
 
 export interface MarkMenuProps {
@@ -125,7 +125,7 @@ export function MarkMenu(props: MarkMenuProps) {
                         {/* Delete button */}
                         <IconButton
                             size="small"
-                            onClick={(e) => deleteAnnotation(annotation, index)}
+                            onClick={(e) => removeMark(state, annotation)}
                         >
                             {" "}
                             <DeleteIcon />{" "}
