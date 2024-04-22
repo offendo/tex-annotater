@@ -117,7 +117,7 @@ const Annotator = (props: AnnotatorProps) => {
       const isInside = (anno: TextSpan, defOrThm: TextSpan) => {
         return anno.start >= defOrThm.start && anno.end <= defOrThm.end;
       }
-      for (const anno_b of props.annotations) {
+      for (const anno_b of state.annotations) {
         if ((anno_b.tag == "definition" || anno_b.tag == "theorem" || anno_b.tag == "reference") && isInside(anno, anno_b)) {
           // we want the most-inner definition
           if (target == null || (target.end - target.start) > (anno_b.end - anno_b.start)) {
@@ -127,7 +127,7 @@ const Annotator = (props: AnnotatorProps) => {
       }
       // If there's a possible target, add it as a link
       if (target != null) {
-        toggleLink(anno, target)
+        toggleLink(state, anno, target)
       }
     }
     //-------------------------------------------------------------------
@@ -148,7 +148,7 @@ const Annotator = (props: AnnotatorProps) => {
 
       // If we have any candidates, go for it.
       if (candidates.length > 0) {
-        toggleLink(anno, candidates[0]);
+        toggleLink(state, anno, candidates[0]);
       }
     }
     //-------------------------------------------------------------------
