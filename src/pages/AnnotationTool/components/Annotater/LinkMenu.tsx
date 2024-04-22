@@ -10,13 +10,17 @@ import {
   TextField,
   Switch,
   Tooltip,
+  Input,
+  Grid,
+  Box,
 } from "@mui/material";
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { IconButton } from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { partition, sortBy } from "lodash";
-import { GlobalState, toggleLink } from "../GlobalState";
+import { GlobalState, Status, toggleLink } from "../GlobalState";
 import usePatterns from "@/pages/Patterns";
 
 type LinkMenuProps = {
@@ -29,7 +33,7 @@ type LinkMenuProps = {
 export function LinkMenu(props: LinkMenuProps) {
   const state = useContext(GlobalState);
   const [expandedIndex, setExpandedIndex] = useState<number>(-1);
-  const [showAllAnnotations, setShowAnnotations] = useState<boolean>(false);
+  const [showAllAnnotations, setShowAllAnnotations] = useState<boolean>(false);
 
   // Auto show links if tag == reference and length of tag is at least 4
   const [showAutoLinks, setShowAutoLinks] = useState<boolean>(
@@ -39,6 +43,7 @@ export function LinkMenu(props: LinkMenuProps) {
   const [otherFileAnnotations, setOtherFileAnnotations] = useState<TextSpan[]>([]);
   const [autoLinkSuggestions, setAutoLinkSuggestions] = useState<TextSpan[]>([]);
   const [query, setQuery] = useState("");
+  const [autolinkQuery, setAutolinkQuery] = useState(props.selectedAnnotation.text);
   const [filterTag, setFilterTag] = useState("");
   const [filterFileId, setFilterFileId] = useState("");
 
@@ -73,33 +78,26 @@ export function LinkMenu(props: LinkMenuProps) {
 
   async function queryAutoLinks(text: string, fileid: string, topk: number = 20, extraPatterns: string[] = []) {
     try {
+      if (state.status == Status.WaitingForAutoLinks) {
+        console.log('already waiting for autolinks - no need to re-fetch');
+        return;
+      }
+      state.status = Status.WaitingForAutoLinks;
+      console.log('Querying auto-links...')
       const width = getViewerWidthInChars();
       const response = await fetch(
         `/api/definition?query=${encodeURIComponent(text)}&fileid=${fileid}&topk=${topk}&width=${width}&extraPatterns=${encodeURIComponent(JSON.stringify(extraPatterns))}`
       );
       const res = await response.json();
       setAutoLinkSuggestions(res["results"]);
-      console.log(res["results"]);
+      // state.setStatus(Status.Ready);
+      state.status = Status.Ready;
+      setAutolinkQuery(text);
     } catch (e) {
+      state.status = Status.Error;
       console.error(e);
     }
   }
-
-  useEffect(() => {
-    if (showAllAnnotations) {
-      loadAllAnnotations();
-    }
-    if (showAutoLinks) {
-      queryAutoLinks(
-        props.selectedAnnotation.text,
-        showAllAnnotations ? "" : props.selectedAnnotation.fileid,
-        20,
-        patterns.filter((pat: string) => selectedPatterns.indexOf(pat) !== -1) // send along extra patterns
-      );
-    } else {
-      setAutoLinkSuggestions([]);
-    }
-  }, [showAllAnnotations, showAutoLinks]);
 
   /* Full list of all annotations. If we're showing all annotations, include the ones from other files. */
   let allAnnos = [
@@ -288,40 +286,68 @@ export function LinkMenu(props: LinkMenuProps) {
       }}
     >
       {/* Header */}
-      <div>
-        <TextField
-          size="small"
-          id="search-bar"
-          label="Search"
-          variant="outlined"
-          onChange={(q) => setQuery(q.target.value)}
-        />
-        <FormControlLabel
-          style={{ float: "left" }}
-          control={
-            <Switch
-              checked={showAllAnnotations}
-              onChange={() => {
-                setShowAnnotations(!showAllAnnotations);
-              }}
-            />
-          }
-          label="Show other files"
-        />
-        <FormControlLabel
-          style={{ float: "left" }}
-          control={
-            <Switch
-              checked={showAutoLinks}
-              onChange={() => {
-                setShowAutoLinks(!showAutoLinks);
-              }}
-            />
-          }
-          label="Show autolinks"
-        />
-      </div>
-      <Divider> </Divider>
+      <Grid container rowSpacing={1}>
+        <Grid item xs={4}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showAllAnnotations}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                  setShowAllAnnotations(!showAllAnnotations);
+                  if (event.target.checked) {
+                    loadAllAnnotations()
+                  } else {
+                    setOtherFileAnnotations([]);
+                  }
+                }}
+              />
+            }
+            label="Show other files"
+          />
+        </Grid>
+        <Grid item xs={8}>
+          <TextField
+            size="small"
+            variant="outlined"
+            id="search-bar"
+            label="Search"
+            onChange={(q) => setQuery(q.target.value)}
+          />
+        </Grid>
+        <Grid item xs={4} style={{ alignContent: "center" }}>
+          <Button
+            size="small"
+            variant="text"
+            startIcon={<AutoAwesomeIcon />}
+            onClick={(event) => {
+              // setShowAutoLinks(true);
+              queryAutoLinks(
+                autolinkQuery,
+                showAllAnnotations ? "" : props.selectedAnnotation.fileid,
+                20,
+                patterns.filter((pat: string) => selectedPatterns.indexOf(pat) !== -1) // send along extra patterns
+              );
+            }}
+          >
+            {"Run Autolinker"}
+          </Button>
+        </Grid>
+        <Grid item xs={8}>
+          <TextField
+            variant="outlined"
+            size="small"
+            id="autolink-search-bar"
+            placeholder="Autolink Query"
+            label="Autolink Query"
+            defaultValue={autolinkQuery}
+            style={{ marginTop: "5px" }}
+            onChange={(q) => {
+              setAutolinkQuery(q.target.value)
+            }
+            }
+          />
+        </Grid>
+      </Grid>
 
       {/* Table content */}
       <table cellSpacing={0}>
@@ -345,7 +371,7 @@ export function LinkMenu(props: LinkMenuProps) {
           )}
         </tbody>
       </table>
-    </div>
+    </div >
   );
 }
 

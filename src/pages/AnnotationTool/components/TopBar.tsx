@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Checkbox, Divider, IconButton, Input, Tooltip } from "@mui/material";
+import { Checkbox, Divider, IconButton, Input, SnackbarContent, Tooltip } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
@@ -17,7 +17,6 @@ import SaveIcon from "@mui/icons-material/Save";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import MenuItem from "@mui/material/MenuItem";
-import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -28,10 +27,14 @@ import { ColorMap, defaultColorMap } from "@/lib/colors";
 import { jumpToElement, shortenText } from "@/lib/utils";
 import { Grid } from "@mui/material";
 import sortBy from "lodash.sortby";
-import { GlobalState, loadAnnotations, loadDocument, saveAnnotations } from "./GlobalState";
+import { Status, GlobalState, loadAnnotations, loadDocument, saveAnnotations } from "./GlobalState";
 import RemoveIcon from '@mui/icons-material/Remove';
+import CircularProgress from '@mui/material/CircularProgress';
+import LinearProgress from '@mui/material/LinearProgress';
+import ErrorIcon from '@mui/icons-material/Error';
 import AddIcon from '@mui/icons-material/Add';
 import usePatterns from "@/pages/Patterns";
+import { useTraceUpdate } from "@/pages/Tracker";
 
 type SaveFileProps = {};
 
@@ -109,6 +112,7 @@ type TopBarProps = {};
 
 export default function TopBar(props: TopBarProps) {
     const state = React.useContext(GlobalState);
+    // useTraceUpdate(props);
 
     const [queryParameters, setQueryParameters] = useSearchParams();
     const [documents, setDocuments] = React.useState([]);
@@ -120,6 +124,9 @@ export default function TopBar(props: TopBarProps) {
         setMessage("");
         setDidSave(false);
     };
+    const handleStatusClose = (e: any) => {
+        state.setStatus(Status.Ready);
+    }
 
     async function listAllDocuments() {
         try {

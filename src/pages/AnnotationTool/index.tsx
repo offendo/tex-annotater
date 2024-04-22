@@ -9,7 +9,7 @@ import { defaultColorMap } from "@/lib/colors";
 import "@/style/style.css";
 import { pdfjs } from "react-pdf";
 import useAuth from "../Token";
-import { GlobalState as GlobaLContext, GlobalStateProps, loadAnnotations, loadDocument } from "./components/GlobalState";
+import { GlobalState as GlobaLContext, GlobalStateProps, Status, loadAnnotations, loadDocument } from "./components/GlobalState";
 
 pdfjs.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
@@ -31,6 +31,7 @@ const AnnotationTool = () => {
     const [pdf, setPdf] = useState<string>("");
     const [saveid, setSaveId] = useState<string>(queryParameters.get("saveid") || "");
     const [annotations, setAnnotations] = useState<TextSpan[]>([]);
+    const [status, setStatus] = useState<Status>(Status.Ready);
 
     const state: GlobalStateProps = {
         colors: defaultColorMap,
@@ -49,6 +50,8 @@ const AnnotationTool = () => {
         setTex: setTex,
         annotations: annotations,
         setAnnotations: setAnnotations,
+        status: status,
+        setStatus: setStatus,
     }
 
     useEffect(() => {
@@ -57,7 +60,7 @@ const AnnotationTool = () => {
         }
 
         if (fileid != "") {
-            loadAnnotations(state, saveid)
+            loadAnnotations(state, fileid, userid, saveid)
             loadDocument(state, fileid)
         }
 

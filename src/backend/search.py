@@ -198,7 +198,7 @@ def fuzzysearch(query: str, index: pd.DataFrame, topk: int = 20, fileid: str = "
         new_index = index[index["type"] == "book"]
 
     # Force the query text to be in the
-    new_index = new_index[new_index["text"].apply(lambda x: query.strip() in x)]  # type:ignore
+    new_index = new_index[new_index["text"].apply(lambda x: query.strip().lower() in x.lower())]  # type:ignore
 
     results = process.extract(
         query.strip(),

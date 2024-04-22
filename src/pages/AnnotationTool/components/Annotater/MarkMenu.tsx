@@ -19,6 +19,7 @@ import Popover from "@mui/material/Popover";
 import MenuItem from "@mui/material/MenuItem";
 import { Resizable } from "re-resizable";
 import { GlobalState } from "../GlobalState";
+import { useTraceUpdate } from "@/pages/Tracker";
 
 export interface MarkMenuProps {
     anno: TextSpan;
@@ -29,6 +30,7 @@ export interface MarkMenuProps {
 }
 
 export function MarkMenu(props: MarkMenuProps) {
+    // useTraceUpdate(props)
     const [selected, setSelected] = useState<number>(-1);
     const [selectedRow, setSelectedRow] = useState<number>(-1);
     const [pos, setPos] = useState({ left: 0, top: 0 });

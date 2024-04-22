@@ -4,6 +4,15 @@ import ColorMap, { defaultColorMap } from "@/lib/colors";
 import { Link, TextSpan, makeLink } from "@/lib/span";
 
 
+export enum Status {
+    Ready,
+    Error,
+    LoadingTex,
+    LoadingPdf,
+    DownloadingTextbooks,
+    WaitingForAutoLinks,
+}
+
 export type GlobalStateProps = {
     labels: string[],
     colors: ColorMap,
@@ -28,6 +37,10 @@ export type GlobalStateProps = {
 
     pdf: string,
     setPdf: (pdf: string) => any,
+
+    // global status
+    status: Status,
+    setStatus: (status: Status) => any,
 }
 
 const defaultState = {
@@ -54,6 +67,11 @@ const defaultState = {
 
     pdf: "",
     setPdf: () => {},
+
+    // global status
+    status: Status.Ready,
+    setStatus: () => {},
+
 } as GlobalStateProps;
 
 export async function loadAnnotations(
