@@ -77,6 +77,10 @@ const SaveFileSelector = (props: SaveFileProps) => {
         setQueryParameters({ ...queryParameters, fileid: state.fileid, saveid: saveid, anchor: state.anchor })
     }, [state.fileid]);
 
+    React.useEffect(() => {
+        loadSaves(state.fileid);
+    }, [state.annotations]);
+
     return (
         <Box sx={{ minWidth: 200, marginLeft: "20px", marginRight: "20px" }}>
             <FormControl fullWidth variant="filled">
