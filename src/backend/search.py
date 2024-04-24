@@ -49,11 +49,11 @@ def download_books(output_dir: str):
 def download_papers(output_dir: str):
     names = list_s3_documents()
     for name in names:
-        logger.info(f"downloading {name}")
         outputfile = Path(output_dir, name).with_suffix(".tex")
         if outputfile.exists():
             continue
         try:
+            logger.info(f"downloading {name}")
             tex = load_tex(name)
             with open(outputfile, "w") as f:
                 f.write(tex)
@@ -170,11 +170,15 @@ def download_and_index_tex(tex_dir: str, extraPatterns: list[str]):
     uniq = hash(','.join(extraPatterns))
     save_file = Path(tex_dir, f"index.{uniq}.csv")
     if save_file.exists():
+        logger.info(f"Found cache: loading from index.{uniq}.csv")
         return pd.read_csv(save_file)
+    logger.info("Cache miss, need to re-index...")
     Path(tex_dir).mkdir(exist_ok=True, parents=True)
     books = download_books(tex_dir)
     papers = download_papers(tex_dir)
-    df = build_definition_index(patterns + extraPatterns, books, papers)
+    # df = build_definition_index(patterns + extraPatterns, books, papers)
+    df = build_definition_index(extraPatterns, books, papers)
+    logger.info(f"Re-indexed, found {len(df)} patterns")
     df.to_csv(save_file, index=False)
     return df
 

@@ -25,9 +25,7 @@ logger = logging.getLogger()
 def filecache(maxsize=None):
     def decorator(original_func):
         def new_func(file_name, *args, **kwargs):
-            with shelve.open(CACHE_FILE) as cache, shelve.open(
-                CACHE_FILE + ".lru"
-            ) as times:
+            with shelve.open(CACHE_FILE) as cache, shelve.open(CACHE_FILE + ".lru") as times:
                 if file_name in cache:
                     logger.debug("Cache hit!")
                     times[file_name] = time.time()
@@ -52,9 +50,7 @@ def filecache(maxsize=None):
 
 def list_s3_documents():
     docs = session.list_objects(Bucket="tex-annotation")["Contents"]
-    names = [
-        d["Key"].replace("texs/", "") for d in docs if d["Key"].startswith("texs/")
-    ]
+    names = [d["Key"].replace("texs/", "") for d in docs if d["Key"].startswith("texs/")]
     return names
 
 
@@ -132,9 +128,7 @@ def load_all_annotations(fileid: str):
     annotations = pd.DataFrame.from_records(annotations)
 
     grouped = (
-        annotations.groupby(
-            ["annoid", "fileid", "start", "end", "tag", "text", "color"]
-        )[
+        annotations.groupby(["annoid", "fileid", "start", "end", "tag", "text", "color"])[
             [
                 "link_start",
                 "link_end",
@@ -200,9 +194,7 @@ def load_annotations(file_id, user_id, timestamp=None):
         return []
 
     annotations = pd.DataFrame.from_records(annotations)
-    grouped = annotations.groupby(
-        ["annoid", "fileid", "start", "end", "tag", "text", "color"]
-    )[
+    grouped = annotations.groupby(["annoid", "fileid", "start", "end", "tag", "text", "color"])[
         [
             "link_source",
             "link_target",
@@ -276,7 +268,11 @@ def save_annotations(file_id, user_id, annotations, autosave: bool = False):
                     for ln in links
                 ],
             )
-    return True
+        result = conn.execute(
+            "SELECT timestamp FROM annotations WHERE savename = :savename;",
+            dict(savename="autosave" if autosave else savename),
+        )
+        return result.fetchone()[0]
 
 
 def init_annotation_db():

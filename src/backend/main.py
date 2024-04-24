@@ -47,8 +47,8 @@ def post_annotations():
     autosave = request.args.get("autosave")
     autosave = True if autosave == "true" else False
     annotations = request.get_json()["annotations"]
-    save_annotations(fileid, userid, annotations, autosave=autosave)
-    return "Success!", 200
+    timestamp = save_annotations(fileid, userid, annotations, autosave=autosave)
+    return {"timestamp": timestamp}, 200
 
 
 @app.get("/annotations/all")
@@ -59,9 +59,7 @@ def get_all_annotations():
         return "Bad request: need fileid!", 400
     annotations = load_all_annotations(fileid)
 
-    return {
-        "otherAnnotations": annotations,
-    }, 200
+    return {"otherAnnotations": annotations}, 200
 
 
 @app.get("/annotations")
@@ -72,9 +70,7 @@ def get_annotations():
     timestamp = request.args.get("timestamp")
     if userid is None or fileid is None or timestamp is None:
         return "Bad request: need userid, fileid, and timestamp!", 400
-    annotations = load_annotations(
-        fileid, userid, timestamp if len(timestamp) else None
-    )
+    annotations = load_annotations(fileid, userid, timestamp if len(timestamp) else None)
 
     return {
         "fileid": fileid,
@@ -182,7 +178,6 @@ def search_for_definition():
         return jsonify({"error": "Error: query and width are required"}), 400
 
     # Get the index
-    print('got extras: ', extraPatterns)
     index = download_and_index_tex("/tmp/textbooks", extraPatterns)
 
     # Do the fuzzysearch
@@ -192,7 +187,7 @@ def search_for_definition():
     new_results = []
     for match in results:
         old2new, lines = compute_fold_mapping(match["file"], width)
-        match["line"] = old2new.get(match["line"], match['line'])
+        match["line"] = old2new.get(match["line"], match["line"])
         match["percent"] = int(match["line"]) / int(lines)
         match["file"] = str(Path(match["file"]).name)
         new_results.append(match)

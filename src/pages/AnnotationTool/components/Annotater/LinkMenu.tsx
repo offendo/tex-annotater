@@ -36,10 +36,6 @@ export function LinkMenu(props: LinkMenuProps) {
   const [showAllAnnotations, setShowAllAnnotations] = useState<boolean>(false);
 
   // Auto show links if tag == reference and length of tag is at least 4
-  const [showAutoLinks, setShowAutoLinks] = useState<boolean>(
-    props.selectedAnnotation.text.length > 4 &&
-    props.selectedAnnotation.tag == "reference",
-  );
   const [otherFileAnnotations, setOtherFileAnnotations] = useState<TextSpan[]>([]);
   const [autoLinkSuggestions, setAutoLinkSuggestions] = useState<TextSpan[]>([]);
   const [query, setQuery] = useState("");
@@ -295,9 +291,7 @@ export function LinkMenu(props: LinkMenuProps) {
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                   setShowAllAnnotations(!showAllAnnotations);
                   if (event.target.checked) {
-                    loadAllAnnotations()
-                  } else {
-                    setOtherFileAnnotations([]);
+                    loadAllAnnotations();
                   }
                 }}
               />

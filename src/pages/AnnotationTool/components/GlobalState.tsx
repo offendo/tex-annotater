@@ -140,8 +140,9 @@ export async function saveAnnotations(
     try {
         console.log(`Saving annotations at ${url}`);
         const response = await fetch(url, requestOptions);
-        const res = await response.text();
-        console.log(res)
+        const res = await response.json();
+        console.log('Saved: ', res)
+        state.setSaveId(res['timestamp'])
         return annotations;
     } catch (e) {
         console.error(e);

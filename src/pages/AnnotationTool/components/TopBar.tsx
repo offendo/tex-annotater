@@ -79,7 +79,7 @@ const SaveFileSelector = (props: SaveFileProps) => {
 
     React.useEffect(() => {
         loadSaves(state.fileid);
-    }, [state.annotations]);
+    }, [state.saveid]);
 
     return (
         <Box sx={{ minWidth: 200, marginLeft: "20px", marginRight: "20px" }}>
