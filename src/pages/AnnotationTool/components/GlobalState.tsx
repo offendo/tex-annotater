@@ -2,7 +2,10 @@ import { createContext, useContext, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import ColorMap, { defaultColorMap } from "@/lib/colors";
 import { Link, TextSpan, makeLink } from "@/lib/span";
+import { cloneDeep } from "lodash";
 
+
+const UNDO_BUF_MAXLEN = 15;
 
 export enum Status {
     Ready,
@@ -148,13 +151,16 @@ export async function loadDocument(state: GlobalStateProps, fileid: string) {
 
 
 export function updateAnnotations(state: GlobalStateProps, annotations: TextSpan[]) {
-    // Forget all the redos after the current one, and then add the previous annotations
-    const buffer = state.undoBuffer.slice(0, state.undoIndex+1);
-    buffer.push(annotations);
-    console.log('Set buffer to length ', buffer.length, ' and incrment index to ', buffer.length - 1);
-    state.setUndoBuffer(buffer);
-    state.setUndoIndex(buffer.length - 1);
+    // When we make an update, reset the undo tree. Also, we have to clone it so the in-place updates in toggleLink get tracked
+    const buffer = state.undoBuffer
+    buffer.push(cloneDeep(annotations));
+    const slicedBuffer = buffer.slice(-UNDO_BUF_MAXLEN, undefined);
 
+    state.setUndoBuffer(slicedBuffer);
+    state.setUndoIndex(slicedBuffer.length - 1);
+    console.log('undo buffer just added: ', annotations, ' new index: ', slicedBuffer.length - 1)
+
+    // Now save the annotations
     state.setAnnotations(annotations);
     saveAnnotations(state, annotations, true);
 };
@@ -218,17 +224,16 @@ export async function saveAnnotations(
 export const toggleLink = (state: GlobalStateProps, source: TextSpan, target: TextSpan) => {
     const link = makeLink(source, target);
     const splitIndex = source.links.findIndex((s) => s.end == link.end && s.start == link.start && s.tag == link.tag && s.fileid == link.fileid);
-    const newSource = source;
     if (splitIndex == -1) {
-        newSource.links = [...newSource.links, link];
+        source.links = [...source.links, link];
     } else {
-        newSource.links = [
-            ...newSource.links.slice(0, splitIndex),
-            ...newSource.links.slice(splitIndex + 1),
+        source.links = [
+            ...source.links.slice(0, splitIndex),
+            ...source.links.slice(splitIndex + 1),
         ]
     }
-    updateMark(state, newSource);
-    return newSource;
+    updateMark(state, source);
+    return source;
 }
 
 export const removeMark = (state: GlobalStateProps, ts: TextSpan) => {

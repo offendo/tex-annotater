@@ -295,7 +295,11 @@ def save_annotations(file_id, user_id, annotations, autosave: bool = False):
             "SELECT timestamp FROM annotations WHERE savename = :savename;",
             dict(savename="autosave" if autosave else savename),
         )
-        return result.fetchone()[0]
+        top = result.fetchone()
+        # Return timestamp if it exists
+        if top is not None:
+            return top[0]
+        return conn.execute("SELECT CURRENT_TIMESTAMP").fetchone()[0]
 
 
 def init_annotation_db():

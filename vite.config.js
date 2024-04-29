@@ -8,10 +8,11 @@ export default defineConfig({
   plugins: [react(), mkcert()],
   build: {
     appTitle: "TeX",
+    sourcemap: true
   },
   server: {
     port: 3000,
-    https: false,
+    https: true,
     cors: true,
     proxy: {
       '/api': {
