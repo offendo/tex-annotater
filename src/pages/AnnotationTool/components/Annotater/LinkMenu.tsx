@@ -60,7 +60,7 @@ export function LinkMenu(props: LinkMenuProps) {
 
   const handleAnnoJumpClick = (e: any, anno: any) => {
     window.open(
-      `?userid=&fileid=${anno.file}&anchor=${anno.annoid}`,
+      `?userid=&fileid=${anno.fileid}&anchor=${anno.annoid}`,
       "_blank",
     );
   };
