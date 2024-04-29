@@ -227,7 +227,6 @@ export const toggleLink = (state: GlobalStateProps, source: TextSpan, target: Te
             ...newSource.links.slice(splitIndex + 1),
         ]
     }
-    removeMark(state, source);
     updateMark(state, newSource);
     return newSource;
 }

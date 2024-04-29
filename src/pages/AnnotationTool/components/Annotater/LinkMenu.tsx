@@ -51,9 +51,16 @@ export function LinkMenu(props: LinkMenuProps) {
     tag == filterTag ? setFilterTag("") : setFilterTag(tag);
 
   /* Jump to autolink definition */
-  const handleJumpClick = (e: any, anno: any) => {
+  const handlePercentJumpClick = (e: any, anno: any) => {
     window.open(
       `?userid=&fileid=${anno.file}&anchor=${anno.percent}`,
+      "_blank",
+    );
+  };
+
+  const handleAnnoJumpClick = (e: any, anno: any) => {
+    window.open(
+      `?userid=&fileid=${anno.file}&anchor=${anno.annoid}`,
       "_blank",
     );
   };
@@ -193,6 +200,16 @@ export function LinkMenu(props: LinkMenuProps) {
           </IconButton>
         </td>
         <td>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              handleAnnoJumpClick(e, annotation);
+            }}
+          >
+            <OpenInNewIcon />
+          </IconButton>
+        </td>
+        <td>
           {" "}
           <Button
             size="small"
@@ -239,7 +256,7 @@ export function LinkMenu(props: LinkMenuProps) {
           <IconButton
             size="small"
             onClick={(e) => {
-              handleJumpClick(e, annotation);
+              handlePercentJumpClick(e, annotation);
             }}
           >
             <OpenInNewIcon />
@@ -348,6 +365,7 @@ export function LinkMenu(props: LinkMenuProps) {
         <thead>
           <tr>
             <th> Select </th>
+            <th> Jump </th>
             <th> Type </th>
             <th> File ID</th>
             <th> Text </th>
