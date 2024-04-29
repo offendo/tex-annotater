@@ -158,7 +158,6 @@ export function updateAnnotations(state: GlobalStateProps, annotations: TextSpan
 
     state.setUndoBuffer(slicedBuffer);
     state.setUndoIndex(slicedBuffer.length - 1);
-    console.log('undo buffer just added: ', annotations, ' new index: ', slicedBuffer.length - 1)
 
     // Now save the annotations
     state.setAnnotations(annotations);
@@ -170,7 +169,6 @@ export function undoUpdate(state: GlobalStateProps) {
     if (state.undoBuffer.length == 1 || state.undoIndex == 0) {
         return false;
     }
-    console.log('Undoing to index ', state.undoIndex - 1);
     // If so, undo it
     const undid = state.undoBuffer[state.undoIndex - 1];
     state.setAnnotations(undid);
@@ -184,7 +182,6 @@ export function redoUpdate(state: GlobalStateProps) {
     if (state.undoBuffer.length == 0 || state.undoIndex + 1 >= state.undoBuffer.length) {
         return false;
     }
-    console.log('Redoing to index ', state.undoIndex + 1);
 
     // If so, redo it
     const redid = state.undoBuffer[state.undoIndex + 1];
