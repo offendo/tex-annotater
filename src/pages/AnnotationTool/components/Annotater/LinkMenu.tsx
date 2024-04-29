@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { Link, TextSpan } from "@/lib/span";
 import { getViewerWidthInChars, jumpToPercent, shortenText } from "@/lib/utils";
-import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 import fuzzysort from "fuzzysort";
 import {
@@ -24,9 +23,6 @@ import { GlobalState, Status, toggleLink } from "../GlobalState";
 import usePatterns from "@/pages/Patterns";
 
 type LinkMenuProps = {
-  left: number;
-  top: number;
-  colors: any;
   selectedAnnotation: TextSpan;
 };
 
@@ -111,6 +107,10 @@ export function LinkMenu(props: LinkMenuProps) {
   allAnnos = sortBy(allAnnos, (anno) => {
     const mp1 = anno.start + (anno.start - anno.end) / 2;
     const mp2 = props.selectedAnnotation.start + (props.selectedAnnotation.start - props.selectedAnnotation.end) / 2;
+    // prioritize current file
+    if (anno.fileid != props.selectedAnnotation.fileid){
+      return 1e12 + Math.abs(mp1 - mp2);
+    }
     return Math.abs(mp1 - mp2);
   })
 

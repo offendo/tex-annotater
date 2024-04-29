@@ -41,6 +41,13 @@ export type GlobalStateProps = {
     // global status
     status: Status,
     setStatus: (status: Status) => any,
+
+    // undo buffer
+    undoBuffer: TextSpan[][],
+    setUndoBuffer: (buf: TextSpan[][]) => any,
+
+    undoIndex: number,
+    setUndoIndex: (i: number) => any,
 }
 
 const defaultState = {
@@ -72,6 +79,13 @@ const defaultState = {
     status: Status.Ready,
     setStatus: () => {},
 
+    // undo buffer
+    undoBuffer: [],
+    setUndoBuffer: () => {},
+
+    undoIndex: 0,
+    setUndoIndex: () => {},
+
 } as GlobalStateProps;
 
 export async function loadAnnotations(
@@ -94,12 +108,27 @@ export async function loadAnnotations(
         // state.setFileId(res["fileid"]);
         state.setSaveId(res['timestamp']);
         state.setAnnotations(res["annotations"]);
+        state.setUndoBuffer([res['annotations']]);
+        state.setUndoIndex(1);
         console.log(`Loaded ${res["annotations"].length} annotations`);
         return res["annotations"];
     } catch (e) {
         console.error(e);
     }
 }
+
+export async function loadAllAnnotations(state: GlobalStateProps, fileid: string) {
+    try {
+        const response = await fetch(`/api/annotations/all?fileid=${fileid}`);
+        const res = await response.json();
+        // Must be done like this, otherwise it calls constantly in the useEffect hook
+        // state.setOtherFileAnnotations = res["otherAnnotations"];
+        return res['otherAnnotations']
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 
 export async function loadDocument(state: GlobalStateProps, fileid: string) {
     try {
@@ -111,17 +140,53 @@ export async function loadDocument(state: GlobalStateProps, fileid: string) {
         state.setFileId(tex_res["fileid"]);
         const pdf_res = await (await pdf_response).json();
         state.setPdf(pdf_res["pdf"]);
+
     } catch (e) {
         console.error(e);
     }
 }
 
 
-export async function updateAnnotations(state: GlobalStateProps, annotations: TextSpan[]) {
+export function updateAnnotations(state: GlobalStateProps, annotations: TextSpan[]) {
+    // Forget all the redos after the current one, and then add the previous annotations
+    const buffer = state.undoBuffer.splice(0, state.undoIndex);
+    buffer.push(annotations);
+    console.log('Set buffer to length ', buffer.length, ' and incrment index to ', buffer.length - 1);
+    state.setUndoBuffer(buffer);
+    state.setUndoIndex(buffer.length - 1);
+
     state.setAnnotations(annotations);
     saveAnnotations(state, annotations, true);
-    console.log("Just autosaved: ", annotations);
 };
+
+export function undoUpdate(state: GlobalStateProps) {
+    // Do we have anything to undo?
+    if (state.undoBuffer.length == 1 || state.undoIndex == 0) {
+        return false;
+    }
+    console.log('Undoing to index ', state.undoIndex - 1);
+    // If so, undo it
+    const undid = state.undoBuffer[state.undoIndex - 1];
+    state.setAnnotations(undid);
+
+    // and decrement the undo index
+    state.setUndoIndex(state.undoIndex - 1);
+}
+
+export function redoUpdate(state: GlobalStateProps) {
+    // Do we have anything to redo?
+    if (state.undoBuffer.length == 0 || state.undoIndex + 1 >= state.undoBuffer.length) {
+        return false;
+    }
+    console.log('Redoing to index ', state.undoIndex + 1);
+
+    // If so, redo it
+    const redid = state.undoBuffer[state.undoIndex + 1];
+    state.setAnnotations(redid);
+
+    // and increment the undo index
+    state.setUndoIndex(state.undoIndex + 1);
+}
 
 export async function saveAnnotations(
     state: GlobalStateProps,
@@ -141,7 +206,7 @@ export async function saveAnnotations(
         console.log(`Saving annotations at ${url}`);
         const response = await fetch(url, requestOptions);
         const res = await response.json();
-        console.log('Saved: ', res)
+        console.log('Saved!')
         state.setSaveId(res['timestamp'])
         return annotations;
     } catch (e) {
@@ -153,15 +218,18 @@ export async function saveAnnotations(
 export const toggleLink = (state: GlobalStateProps, source: TextSpan, target: TextSpan) => {
     const link = makeLink(source, target);
     const splitIndex = source.links.findIndex((s) => s.end == link.end && s.start == link.start && s.tag == link.tag && s.fileid == link.fileid);
+    const newSource = source;
     if (splitIndex == -1) {
-        source.links = [...source.links, link];
+        newSource.links = [...newSource.links, link];
     } else {
-        source.links = [
-            ...source.links.slice(0, splitIndex),
-            ...source.links.slice(splitIndex + 1),
+        newSource.links = [
+            ...newSource.links.slice(0, splitIndex),
+            ...newSource.links.slice(splitIndex + 1),
         ]
     }
-    updateMark(state, source);
+    removeMark(state, source);
+    updateMark(state, newSource);
+    return newSource;
 }
 
 export const removeMark = (state: GlobalStateProps, ts: TextSpan) => {

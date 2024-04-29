@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import Annotater from "./components/Annotater/Annotater";
 import PDFViewer from "./components/PDFViewer";
@@ -9,7 +9,7 @@ import { defaultColorMap } from "@/lib/colors";
 import "@/style/style.css";
 import { pdfjs } from "react-pdf";
 import useAuth from "../Token";
-import { GlobalState as GlobaLContext, GlobalStateProps, Status, loadAnnotations, loadDocument } from "./components/GlobalState";
+import { GlobalState as GlobaLContext, GlobalStateProps, Status, loadAnnotations, loadDocument, redoUpdate, undoUpdate } from "./components/GlobalState";
 
 pdfjs.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
@@ -32,6 +32,8 @@ const AnnotationTool = () => {
     const [saveid, setSaveId] = useState<string>(queryParameters.get("saveid") || "");
     const [annotations, setAnnotations] = useState<TextSpan[]>([]);
     const [status, setStatus] = useState<Status>(Status.Ready);
+    const [undoBuffer, setUndoBuffer] = useState<TextSpan[][]>([]);
+    const [undoIndex, setUndoIndex] = useState<number>(0);
 
     const state: GlobalStateProps = {
         colors: defaultColorMap,
@@ -52,7 +54,31 @@ const AnnotationTool = () => {
         setAnnotations: setAnnotations,
         status: status,
         setStatus: setStatus,
+        undoBuffer: undoBuffer,
+        setUndoBuffer: setUndoBuffer,
+        undoIndex: undoIndex,
+        setUndoIndex: setUndoIndex,
     }
+    // handle what happens on key press
+    const handleKeyPress = useCallback((event: any) => {
+        if (event.ctrlKey && event.key == 'z'){
+            undoUpdate(state);
+        }
+        if (event.ctrlKey && event.shiftKey && event.key == 'Z'){
+            redoUpdate(state);
+        }
+    }, [state]);
+
+    useEffect(() => {
+        // attach the event listener
+        document.addEventListener('keydown', handleKeyPress);
+
+        // remove the event listener
+        return () => {
+            document.removeEventListener('keydown', handleKeyPress);
+        };
+    }, [handleKeyPress]);
+
 
     useEffect(() => {
         if (!token || token.length == 0) {
@@ -119,7 +145,7 @@ const AnnotationTool = () => {
                         />
                     </div>
                     <div style={{ flexGrow: 3 }}>
-                        <PDFViewer/>
+                        <PDFViewer />
                     </div>
                 </div>
             </GlobaLContext.Provider>

@@ -180,8 +180,6 @@ export function MarkMenu(props: MarkMenuProps) {
                         >
                             <div>
                                 <LinkMenu
-                                    left={0}
-                                    top={0}
                                     selectedAnnotation={annotation}
                                 />
                             </div>
