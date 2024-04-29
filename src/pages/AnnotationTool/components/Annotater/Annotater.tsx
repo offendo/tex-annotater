@@ -113,7 +113,7 @@ const Annotator = (props: AnnotatorProps) => {
      *  If it's a name which is inside a definition or theorem, link it
      * -------------------------------------------------------------------
      */
-    if (anno.tag == 'name' || anno.tag == 'property') {
+    if (anno.tag == 'name') {
       let target: TextSpan | null = null;
       const isInside = (anno: TextSpan, defOrThm: TextSpan) => {
         return anno.start >= defOrThm.start && anno.end <= defOrThm.end;

@@ -1,5 +1,4 @@
 import { createContext, useContext, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import ColorMap, { defaultColorMap } from "@/lib/colors";
 import { Link, TextSpan, makeLink } from "@/lib/span";
 import { cloneDeep } from "lodash";
@@ -242,8 +241,8 @@ export const removeMark = (state: GlobalStateProps, ts: TextSpan) => {
 
 export const updateMark = (state: GlobalStateProps, anno: TextSpan) => {
     const splitIndex = state.annotations.findIndex((s) => s.end == anno.end && s.start == anno.start && s.tag == anno.tag);
-    // If it doesn't already exist in the annotations, add it
 
+    // If it doesn't already exist in the annotations, add it
     if (splitIndex == -1) {
         updateAnnotations(state, [...state.annotations, anno]);
     } else {

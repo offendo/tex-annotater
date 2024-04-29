@@ -10,9 +10,21 @@ import "@/style/style.css";
 import { pdfjs } from "react-pdf";
 import useAuth from "../Token";
 import { GlobalState as GlobaLContext, GlobalStateProps, Status, loadAnnotations, loadDocument, redoUpdate, undoUpdate } from "./components/GlobalState";
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 
 pdfjs.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+const theme = createTheme({
+    palette: {
+        primary: {
+            main: "#000000",
+        },
+        background: {
+            default: "#eee8d5"
+        },
+    },
+});
 
 
 const AnnotationTool = () => {
@@ -61,10 +73,10 @@ const AnnotationTool = () => {
     }
     // handle what happens on key press
     const handleKeyPress = useCallback((event: any) => {
-        if (event.ctrlKey && event.key == 'z'){
+        if (event.ctrlKey && event.key == 'z') {
             undoUpdate(state);
         }
-        if (event.ctrlKey && event.shiftKey && event.key == 'Z'){
+        if (event.ctrlKey && event.shiftKey && event.key == 'Z') {
             redoUpdate(state);
         }
     }, [state]);
@@ -114,42 +126,44 @@ const AnnotationTool = () => {
     }, []);
 
     return (
-        <div>
-            <GlobaLContext.Provider value={state}>
-                <TopBar />
-                <div
-                    style={{
-                        display: "flex",
-                        alignContent: "center",
-                        width: "98vw",
-                        margin: "10px",
-                    }}
-                >
+        <ThemeProvider theme={theme}>
+            <div>
+                <GlobaLContext.Provider value={state}>
+                    <TopBar />
                     <div
-                        id="scroll-box"
                         style={{
-                            flexGrow: 1,
-                            resize: "horizontal",
-                            overflow: "scroll",
-                            width: "49vw",
-                            height: "90vh",
+                            display: "flex",
+                            alignContent: "center",
+                            width: "98vw",
+                            margin: "10px",
                         }}
                     >
-                        <Annotater
+                        <div
+                            id="scroll-box"
                             style={{
-                                paddingBottom: "8px",
-                                lineHeight: 3,
-                                margin: "10px",
+                                flexGrow: 1,
+                                resize: "horizontal",
+                                overflow: "scroll",
+                                width: "49vw",
+                                height: "90vh",
                             }}
-                            getSpan={(span: TextSpan) => ({ ...span })}
-                        />
+                        >
+                            <Annotater
+                                style={{
+                                    paddingBottom: "8px",
+                                    lineHeight: 3,
+                                    margin: "10px",
+                                }}
+                                getSpan={(span: TextSpan) => ({ ...span })}
+                            />
+                        </div>
+                        <div style={{ flexGrow: 3 }}>
+                            <PDFViewer />
+                        </div>
                     </div>
-                    <div style={{ flexGrow: 3 }}>
-                        <PDFViewer />
-                    </div>
-                </div>
-            </GlobaLContext.Provider>
-        </div>
+                </GlobaLContext.Provider>
+            </div>
+        </ThemeProvider>
     );
 };
 

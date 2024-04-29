@@ -97,7 +97,8 @@ export const defaultColorMap = {
     reference: colors.yellow,
     example: colors.magenta,
     name: colors.cyan,
-    property: colors.orange,
+    "begin annotation": colors.orange,
+    "end annotation": colors.orange,
 } as ColorMap;
 
 export default ColorMap;

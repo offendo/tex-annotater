@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Checkbox, Divider, IconButton, Input, SnackbarContent, Tooltip } from "@mui/material";
+import { Checkbox, Divider, IconButton, Input, SnackbarContent, Tooltip, useTheme } from "@mui/material";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
@@ -115,8 +115,8 @@ const SaveFileSelector = (props: SaveFileProps) => {
 type TopBarProps = {};
 
 export default function TopBar(props: TopBarProps) {
+    const theme = useTheme();
     const state = React.useContext(GlobalState);
-    // useTraceUpdate(props);
 
     const [queryParameters, setQueryParameters] = useSearchParams();
     const [documents, setDocuments] = React.useState([]);
@@ -237,8 +237,8 @@ export default function TopBar(props: TopBarProps) {
         <Box sx={{ flexGrow: 1 }}>
             <AppBar
                 style={{
-                    backgroundColor: "var(--solarized-base2)",
-                    color: "var(--solarized-base03)",
+                    backgroundColor: theme.palette.background.default,
+                    color: theme.palette.text.primary,
                 }}
                 position="static"
             >

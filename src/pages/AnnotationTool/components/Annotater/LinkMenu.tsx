@@ -12,6 +12,7 @@ import {
   Input,
   Grid,
   Box,
+  useTheme,
 } from "@mui/material";
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { IconButton } from "@mui/material";
@@ -27,6 +28,7 @@ type LinkMenuProps = {
 };
 
 export function LinkMenu(props: LinkMenuProps) {
+  const theme = useTheme()
   const state = useContext(GlobalState);
   const [expandedIndex, setExpandedIndex] = useState<number>(-1);
   const [showAllAnnotations, setShowAllAnnotations] = useState<boolean>(false);
