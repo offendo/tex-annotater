@@ -149,7 +149,7 @@ export async function loadDocument(state: GlobalStateProps, fileid: string) {
 
 export function updateAnnotations(state: GlobalStateProps, annotations: TextSpan[]) {
     // Forget all the redos after the current one, and then add the previous annotations
-    const buffer = state.undoBuffer.splice(0, state.undoIndex);
+    const buffer = state.undoBuffer.slice(0, state.undoIndex+1);
     buffer.push(annotations);
     console.log('Set buffer to length ', buffer.length, ' and incrment index to ', buffer.length - 1);
     state.setUndoBuffer(buffer);

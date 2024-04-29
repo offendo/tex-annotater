@@ -96,7 +96,6 @@ def list_all_saves():
 @app.get("/document/all")
 @cross_origin()
 def list_all_documents():
-    # upload the new textbooks before listing s3 documents
     return {"documents": list_s3_documents()}
 
 @app.get("/tex")
