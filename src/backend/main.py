@@ -136,7 +136,7 @@ def get_pdf():
         return 400, "Request requires fileid"
     arxiv_id = fileid.split("-")[0].replace("texs/", "")
     if re.match(r"\d+\.\d+", arxiv_id):
-        pdf = f"https://arxiv.org/pdf/{arxiv_id}.pdf"
+        pdf = f"https://arxiv.org/pdf/{arxiv_id}"
     else:
         pdf = load_pdf(fileid.replace(".tex", ".pdf"))
     return {
