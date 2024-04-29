@@ -2,11 +2,13 @@
 import os
 import sqlite3
 import boto3
+from gdown.download import shutil
 import pandas as pd
 import randomname
 import shelve
 import time
 import logging
+import gdown
 from pathlib import Path
 
 session = boto3.client(
@@ -86,6 +88,27 @@ def list_all_textbooks():
     url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
     df = pd.read_csv(url)
     return df
+
+def upload_new_textbooks():
+    df = list_all_textbooks()
+    docs = session.list_objects(Bucket="tex-annotation")["Contents"]
+    existing = [d["Key"].replace("pdfs/", "").replace('.pdf', '') for d in docs if d["Key"].startswith("pdfs/")]
+    for idx, row in df.iterrows():
+        if row['name'] not in existing:
+            # download and upload tex file
+            tex_id = row['tex'].split('/')[5]
+            tex_out = gdown.download(id=tex_id, output=f"/tmp/{row['name']}.tex")
+            session.upload_file(tex_out, 'tex-annotation', f"texs/{Path(tex_out).name}", ExtraArgs={'ACL':'public-read', 'ContentType': 'application/pdf'})
+
+            # download and upload pdf file
+            pdf_id = row.pdf.split('/')[5]
+            pdf_out = gdown.download(id=pdf_id, output=f"/tmp/{row["name"]}.pdf")
+            session.upload_file(pdf_out, 'tex-annotation', f'pdfs/{Path(pdf_out).name}', ExtraArgs={'ACL':'public-read', 'ContentType': 'application/pdf'})
+
+            # remove both
+            os.remove(tex_out)
+            os.remove(pdf_out)
+            logger.info(f"Uploaded {Path(tex_out).name} to S3.")
 
 
 def load_save_files(file_id, user_id=None):

@@ -159,17 +159,15 @@ const Annotator = (props: AnnotatorProps) => {
      */
     if (anno.tag == 'proof') {
       // filter
-      // 1. names
+      // 1. theorems
       // 2. which occur before the proof
       // 3. within 500 characters
-      // 2. which link to a theorem
       // and then sort by closest distance
       const candidates: TextSpan[] = sortBy(
         state.annotations.filter((a) =>
-          a.tag == 'name'
+          a.tag == 'theorem'
           && a.end <= anno.start
           && a.end + 500 >= anno.start
-          && a.links.length > 0 && a.links[0].tag == 'theorem'
         ),
         (o: TextSpan) => -(o.start - anno.start)
       )

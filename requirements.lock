@@ -8,6 +8,8 @@
 #   with-sources: false
 
 -e file:.
+apscheduler==3.10.4
+    # via tex-annotater
 beautifulsoup4==4.12.3
     # via gdown
 blinker==1.7.0
@@ -64,6 +66,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
     # via tex-annotater
 pytz==2024.1
+    # via apscheduler
     # via pandas
 randomname==0.2.1
     # via tex-annotater
@@ -74,6 +77,7 @@ requests==2.31.0
 s3transfer==0.10.0
     # via boto3
 six==1.16.0
+    # via apscheduler
     # via fire
     # via python-dateutil
 soupsieve==2.5
@@ -85,6 +89,8 @@ tqdm==4.66.2
     # via tex-annotater
 tzdata==2024.1
     # via pandas
+tzlocal==5.2
+    # via apscheduler
 urllib3==2.0.7
     # via botocore
     # via requests

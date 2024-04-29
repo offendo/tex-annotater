@@ -8,6 +8,8 @@
 #   with-sources: false
 
 -e file:.
+apscheduler==3.10.4
+    # via tex-annotater
 asttokens==2.4.1
     # via stack-data
 bcrypt==4.1.2
@@ -113,6 +115,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
     # via tex-annotater
 pytz==2024.1
+    # via apscheduler
     # via pandas
 randomname==0.2.1
     # via tex-annotater
@@ -127,6 +130,7 @@ setuptools==69.2.0
 sexpdata==1.0.2
     # via epc
 six==1.16.0
+    # via apscheduler
     # via asttokens
     # via fire
     # via python-dateutil
@@ -144,6 +148,8 @@ traitlets==5.14.2
     # via matplotlib-inline
 tzdata==2024.1
     # via pandas
+tzlocal==5.2
+    # via apscheduler
 urllib3==2.0.7
     # via botocore
     # via requests

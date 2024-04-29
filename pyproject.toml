@@ -17,6 +17,7 @@ dependencies = [
     "rapidfuzz>=3.6.2",
     "python-dotenv>=1.0.1",
     "passlib>=1.7.4",
+    "apscheduler>=3.10.4",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"

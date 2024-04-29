@@ -3,6 +3,7 @@ import uuid
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 from pathlib import Path
+
 import base64
 import re
 import os
@@ -10,6 +11,7 @@ import sqlite3
 import boto3
 import json
 
+from apscheduler.schedulers.background import BackgroundScheduler
 from .search import fuzzysearch
 from .data import (
     load_tex,
@@ -22,6 +24,7 @@ from .data import (
     get_savename_from_annoid,
     list_s3_documents,
     init_annotation_db,
+    upload_new_textbooks,
 )
 from .users import (
     add_user,
@@ -38,6 +41,9 @@ app.config["CORS_HEADERS"] = "Content-Type"
 init_annotation_db()
 init_users_db()
 
+sched = BackgroundScheduler(daemon=True)
+sched.add_job(upload_new_textbooks,'interval',minutes=10)
+sched.start()
 
 @app.post("/annotations")
 @cross_origin()
@@ -90,8 +96,8 @@ def list_all_saves():
 @app.get("/document/all")
 @cross_origin()
 def list_all_documents():
+    # upload the new textbooks before listing s3 documents
     return {"documents": list_s3_documents()}
-
 
 @app.get("/tex")
 @cross_origin()
