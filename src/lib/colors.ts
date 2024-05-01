@@ -5,6 +5,8 @@ export type ColorMap = {
     reference: string
     example: string
     name: string
+    "begin annotation": string,
+    "end annotation": string,
 };
 
 export const colors = {

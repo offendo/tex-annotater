@@ -47,7 +47,7 @@ def download_books(output_dir: str):
 
 
 def download_papers(output_dir: str):
-    names = list_s3_documents()
+    names = [x['name'] for x in list_s3_documents()]
     for name in names:
         outputfile = Path(output_dir, name).with_suffix(".tex")
         if outputfile.exists():

@@ -19,8 +19,7 @@ import { selectionIsEmpty, shortenText } from "@/lib/utils";
 import Popover from "@mui/material/Popover";
 import MenuItem from "@mui/material/MenuItem";
 import { Resizable } from "re-resizable";
-import { GlobalState, removeMark } from "../GlobalState";
-import { useTraceUpdate } from "@/pages/Tracker";
+import { GlobalState, removeMark } from "@/lib/GlobalState";
 
 export interface MarkMenuProps {
     anno: TextSpan;
@@ -99,7 +98,7 @@ export function MarkMenu(props: MarkMenuProps) {
         return (
             <Resizable
                 defaultSize={{
-                    width: "600px",
+                    width: 600,
                     height: "fit-content",
                 }}
                 maxHeight={500}
@@ -107,8 +106,8 @@ export function MarkMenu(props: MarkMenuProps) {
                     backgroundColor: theme.palette.background.toString() || "white",
                     border: "1px solid black",
                     borderRadius: "5px",
-                    maxHeight: "500px",
-                    overflowY: "hidden",
+                    maxHeight: 500,
+                    overflowY: "scroll",
                     overflowX: "hidden",
                 }}
                 onMouseDown={(e) => { e.stopPropagation(); }}
@@ -173,7 +172,6 @@ export function MarkMenu(props: MarkMenuProps) {
                         </div>
                     </Grid>
                     <Grid item xs={12}>
-                        {/* Link menu card*/}
                         <Collapse
                             in={linksOpen}
                             timeout="auto"
@@ -181,10 +179,8 @@ export function MarkMenu(props: MarkMenuProps) {
                             orientation="vertical"
                             collapsedSize={0}
                         >
-                            <div>
-                                <LinkMenu
-                                    selectedAnnotation={annotation}
-                                />
+                            <div style={{ overflowY: "scroll" }}>
+                                <LinkMenu selectedAnnotation={annotation} />
                             </div>
                         </Collapse>
                     </Grid>

@@ -9,6 +9,7 @@ import shelve
 import time
 import logging
 import gdown
+import re
 from pathlib import Path
 
 session = boto3.client(
@@ -52,8 +53,27 @@ def filecache(maxsize=None):
 
 def list_s3_documents():
     docs = session.list_objects(Bucket="tex-annotation")["Contents"]
-    names = [d["Key"].replace("texs/", "") for d in docs if d["Key"].startswith("texs/")]
-    return names
+    objs = [
+        {
+            'name': d["Key"].replace("texs/", ""),
+            'modified': d['LastModified'].strftime("'%y %b %d @%H:%M"),
+            'size': f"{int(d['Size']) / 1024:.1f}",
+        }
+        for d in docs if d["Key"].startswith("texs/")
+    ]
+    # names = [d["Key"].replace("texs/", "") for d in docs if d["Key"].startswith("texs/")]
+
+    result = []
+    for obj in objs:
+        name = obj['name']
+        if re.match(r"\d+\.\d+-", name):
+            arxiv_id, filename = name.split('-', maxsplit=1)
+            filename = filename.replace('.tex', '')
+        else:
+            arxiv_id = ""
+            filename = name.replace('.tex', '')
+        result.append({'arxiv_id': arxiv_id, "filename": filename, **obj })
+    return result
 
 
 def load_pdf(pdf_key):

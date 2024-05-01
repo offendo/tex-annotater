@@ -20,8 +20,8 @@ import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { partition, sortBy } from "lodash";
-import { GlobalState, Status, toggleLink } from "../GlobalState";
-import usePatterns from "@/pages/Patterns";
+import { GlobalState, Status, toggleLink } from "@/lib/GlobalState";
+import usePatterns from "@/lib/Patterns";
 
 type LinkMenuProps = {
   selectedAnnotation: TextSpan;
@@ -31,7 +31,6 @@ export function LinkMenu(props: LinkMenuProps) {
   const theme = useTheme()
   const state = useContext(GlobalState);
   const [expandedIndex, setExpandedIndex] = useState<number>(-1);
-  const [showAllAnnotations, setShowAllAnnotations] = useState<boolean>(false);
 
   // Auto show links if tag == reference and length of tag is at least 4
   const [otherFileAnnotations, setOtherFileAnnotations] = useState<TextSpan[]>([]);
@@ -91,7 +90,6 @@ export function LinkMenu(props: LinkMenuProps) {
       );
       const res = await response.json();
       setAutoLinkSuggestions(res["results"]);
-      // state.setStatus(Status.Ready);
       state.status = Status.Ready;
       setAutolinkQuery(text);
     } catch (e) {
@@ -103,7 +101,7 @@ export function LinkMenu(props: LinkMenuProps) {
   /* Full list of all annotations. If we're showing all annotations, include the ones from other files. */
   let allAnnos = [
     ...state.annotations,
-    ...(showAllAnnotations ? otherFileAnnotations : []),
+    ...(state.showAllAnnotations ? otherFileAnnotations : []),
   ];
   allAnnos = allAnnos.filter((anno) => anno != props.selectedAnnotation);
   if (filterTag != "") {
@@ -117,7 +115,7 @@ export function LinkMenu(props: LinkMenuProps) {
     const mp1 = anno.start + (anno.start - anno.end) / 2;
     const mp2 = props.selectedAnnotation.start + (props.selectedAnnotation.start - props.selectedAnnotation.end) / 2;
     // prioritize current file
-    if (anno.fileid != props.selectedAnnotation.fileid){
+    if (anno.fileid != props.selectedAnnotation.fileid) {
       return 1e12 + Math.abs(mp1 - mp2);
     }
     return Math.abs(mp1 - mp2);
@@ -192,13 +190,11 @@ export function LinkMenu(props: LinkMenuProps) {
         className={selected ? "link-menu-item link-selected" : "link-menu-item"}
       >
         <td>
-          {" "}
           <IconButton
             size="small"
             onClick={(e) => toggleLink(state, props.selectedAnnotation, annotation)}
           >
-            {" "}
-            {icon}{" "}
+            {icon}
           </IconButton>
         </td>
         <td>
@@ -306,9 +302,9 @@ export function LinkMenu(props: LinkMenuProps) {
           <FormControlLabel
             control={
               <Switch
-                checked={showAllAnnotations}
+                checked={state.showAllAnnotations}
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                  setShowAllAnnotations(!showAllAnnotations);
+                  state.setShowAllAnnotations(!state.showAllAnnotations);
                   if (event.target.checked) {
                     loadAllAnnotations();
                   }
@@ -336,7 +332,7 @@ export function LinkMenu(props: LinkMenuProps) {
               // setShowAutoLinks(true);
               queryAutoLinks(
                 autolinkQuery,
-                showAllAnnotations ? "" : props.selectedAnnotation.fileid,
+                state.showAllAnnotations ? "" : props.selectedAnnotation.fileid,
                 20,
                 patterns.filter((pat: string) => selectedPatterns.indexOf(pat) !== -1) // send along extra patterns
               );
@@ -356,8 +352,7 @@ export function LinkMenu(props: LinkMenuProps) {
             style={{ marginTop: "5px" }}
             onChange={(q) => {
               setAutolinkQuery(q.target.value)
-            }
-            }
+            }}
           />
         </Grid>
       </Grid>

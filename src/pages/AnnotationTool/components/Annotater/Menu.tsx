@@ -1,8 +1,7 @@
 import React, { useState, useRef, useContext } from "react";
 import { List, ListItemButton } from "@mui/material"
-import Menu from "@mui/material/Menu"
-import MenuItem from "@mui/material/MenuItem"
-import { GlobalState } from "../GlobalState";
+import { GlobalState } from "@/lib/GlobalState";
+import { useTheme } from "@mui/material";
 
 export interface MenuProps {
   left: number;
@@ -13,6 +12,7 @@ export interface MenuProps {
 }
 
 export const LabelMenu = (props: MenuProps) => {
+  const theme = useTheme();
   const state = useContext(GlobalState);
   const [name, setName] = useState("")
   const [selected, setSelected] = useState("")
@@ -23,13 +23,19 @@ export const LabelMenu = (props: MenuProps) => {
       onClick={(e) => { e.preventDefault() }}
       onMouseLeave={props.onMouseLeave}
       className="label-menu"
-      style={{ top: props.top, left: props.left, position: "absolute", boxSizing: "border-box" }}
+      style={{
+        top: props.top,
+        left: props.left,
+        position: "absolute",
+        backgroundColor: theme.palette.background.default,
+        fontFamily: theme.typography.fontFamily
+      }}
     >
       <List>
         {state.labels.map((label: string, index: number) => (
           <ListItemButton
             key={label}
-            style={{ color: state.colors[label] }}
+            style={{ color: (state.colors as any)[label] }}
             onMouseDown={(e) => { e.preventDefault() }}
             onClick={(e) => { props.onButtonPress(e, label, name, start, end) }}
           >
