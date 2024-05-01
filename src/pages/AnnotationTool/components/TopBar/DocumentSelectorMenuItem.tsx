@@ -1,9 +1,8 @@
 import * as React from "react";
 import { useSearchParams } from "react-router-dom";
 import TextField from "@mui/material/TextField";
-import Autocomplete from "@mui/material/Autocomplete";
-import { GlobalState, loadDocument, loadAnnotations } from "@/lib/GlobalState";
-import { Typography, Box, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, useTheme, Grid, ListSubheader } from "@mui/material";
+import { GlobalState, loadDocument } from "@/lib/GlobalState";
+import { Typography, Box, Dialog, DialogTitle, DialogContent, DialogActions, useTheme, Grid, ListSubheader } from "@mui/material";
 import MenuItem from '@mui/material/MenuItem';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -11,11 +10,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import fuzzysort from "fuzzysort";
-import ManageSearchIcon from '@mui/icons-material/ManageSearch';
 import FileOpenIcon from '@mui/icons-material/FileOpen';
-import RemoveIcon from '@mui/icons-material/Remove';
-import AddIcon from '@mui/icons-material/Add';
-import usePatterns from "@/lib/Patterns";
 import { orderBy } from "lodash";
 import { SaveFileSelector } from "./SaveFileSelector";
 
