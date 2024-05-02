@@ -8,7 +8,6 @@ export default defineConfig({
   plugins: [react(), mkcert()],
   build: {
     appTitle: "TeX",
-    sourcemap: true
   },
   server: {
     port: 3000,
