@@ -12,7 +12,7 @@ import {
 } from "@/lib/utils";
 import { ColorMap, colors } from "@/lib/colors"
 import sortBy from "lodash.sortby";
-import { GlobalState, toggleLink, updateAnnotations } from "../GlobalState";
+import { GlobalState, toggleLink, updateAnnotations } from "@/lib/GlobalState";
 
 type AnnotatorProps = {
   getSpan: (span: TextSpan) => TextSpan;

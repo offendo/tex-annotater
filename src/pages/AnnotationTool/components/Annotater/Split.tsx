@@ -1,11 +1,8 @@
 import React, { useContext, useRef, useState } from "react";
-import { MenuButton } from '@mui/base/MenuButton';
-import { Dropdown } from '@mui/base/Dropdown';
 import { MarkMenu } from './MarkMenu';
-import ColorMap from "@/lib/colors";
 import { TextSpan, Link } from "@/lib/span";
-import { selectionIsEmpty, parseSelection, SplitTagProps } from "@/lib/utils";
-import { GlobalState } from "../GlobalState";
+import { SplitTagProps } from "@/lib/utils";
+import { GlobalState } from "@/lib/GlobalState";
 
 export interface SplitProps {
   content: string
@@ -31,7 +28,6 @@ export function Split(props: SplitProps): React.JSX.Element {
     <span
       data-start={props.start}
       data-end={props.end}
-      className="split"
     >
       {props.content}
     </span>
@@ -70,10 +66,11 @@ export function Mark(props: MarkProps): React.JSX.Element {
           data-start={props.start}
           data-end={props.end}
           data-uid={split.tag}
-          className="annotation"
           ref={finalRef}
           style={{
-            borderColor: state.colors[split.tag],
+            borderColor: (state.colors as any)[split.tag],
+            borderBottomWidth: "3px",
+            borderBottomStyle: "solid",
             paddingBottom: split.height * 4,
             backgroundColor: getSplitColor(split),
             backgroundClip: "content-box",
@@ -93,9 +90,10 @@ export function Mark(props: MarkProps): React.JSX.Element {
       final = (
         <span
           ref={finalRef}
-          className="annotation"
           style={{
-            borderColor: state.colors[split.tag],
+            borderColor: (state.colors as any)[split.tag],
+            borderBottomWidth: "3px",
+            borderBottomStyle: "solid",
             paddingBottom: split.height * 4,
             backgroundColor: getSplitColor(split),
             backgroundClip: "content-box"

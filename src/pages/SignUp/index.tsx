@@ -12,7 +12,7 @@ import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { Link as RouterLink } from 'react-router-dom';
-import useAuth from "../Token";
+import useAuth from "@/lib/Token";
 
 type SignUpFormProps = {
 

@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { GlobalState, GlobalStateProps } from "./GlobalState";
+import { GlobalState, GlobalStateProps } from "@/lib/GlobalState";
 
 export interface PDFViewerProps {}
 
