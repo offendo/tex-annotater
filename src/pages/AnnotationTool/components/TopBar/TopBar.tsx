@@ -4,50 +4,43 @@ import { Checkbox, Divider, IconButton, Input, SnackbarContent, Tooltip, useThem
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
-import TextField from "@mui/material/TextField";
-import Autocomplete from "@mui/material/Autocomplete";
-import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
-import InputLabel from "@mui/material/InputLabel";
-import FormControl from "@mui/material/FormControl";
-import Select, { SelectChangeEvent } from "@mui/material/Select";
 import SaveIcon from "@mui/icons-material/Save";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import MenuItem from "@mui/material/MenuItem";
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Menu from "@mui/material/Menu";
-import { TextSpan } from "@/lib/span";
-import { ColorMap, defaultColorMap } from "@/lib/colors";
-import { jumpToElement, shortenText } from "@/lib/utils";
-import { Grid } from "@mui/material";
 import { Status, GlobalState, loadAnnotations, loadDocument, saveAnnotations } from "@/lib/GlobalState";
-import RemoveIcon from '@mui/icons-material/Remove';
 import ManageSearchIcon from '@mui/icons-material/ManageSearch';
 import BackspaceIcon from '@mui/icons-material/Backspace';
-import AddIcon from '@mui/icons-material/Add';
 import FileOpenIcon from '@mui/icons-material/FileOpen';
-import usePatterns from "@/lib/Patterns";
 import MenuIcon from '@mui/icons-material/Menu';
 import { AnnotationMenu } from "./AnnotationMenu";
-import { SaveFileSelector } from "./SaveFileSelector";
-import { DocumentSelectorMenuItem } from "./DocumentSelectorMenuItem";
-import { RegexPatternMenuItem } from "./RegexPatternMenuItem";
+import { DocumentSelectorModal } from "./DocumentSelectorModal";
+import { RegexPatternModal } from "./RegexPatternModal";
 
 
 export default function TopBar() {
     const theme = useTheme();
     const state = React.useContext(GlobalState);
 
+    /* DocumentSelectorMenu */
+    const [documentSelectorMenuOpen, setDocumentSelectorMenuOpen] = React.useState<boolean>(false);
+    const handleDocumentSelectorMenuClick = (event: any) => { setDocumentSelectorMenuOpen(true); };
+    // const handleDocumentSelectorMenuClose = () => { setDocumentSelectorMenuOpen(false); };
+
+    /* RegexPatternMenu */
+    const [regexPatternMenuOpen, setRegexPatternMenuOpen] = React.useState<boolean>(false);
+    const handleRegexPatternMenuClick = (event: any) => { setRegexPatternMenuOpen(true); };
+    // const handleRegexPatternMenuClose = () => { setRegexPatternMenuOpen(false); };
+
+
+    /* LoadFileMenu */
     const handleLoadMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => { setLoadMenuAnchorEl(event.currentTarget); };
     const handleLoadMenuClose = () => { setLoadMenuAnchorEl(null); };
     const [loadMenuAnchorEl, setLoadMenuAnchorEl] = React.useState<null | HTMLElement>(null);
-    const loadMenuOpen = Boolean(loadMenuAnchorEl);
 
     const [queryParameters, setQueryParameters] = useSearchParams();
     const [didSave, setDidSave] = React.useState(false);
@@ -73,6 +66,42 @@ export default function TopBar() {
         setQueryParameters({ ...queryParameters, fileid: state.fileid, saveid: saveid, anchor: state.anchor })
     }, [state.fileid]);
 
+
+    // handle what happens on key press
+    const handleKeyPress = React.useCallback((event: any) => {
+        /* Menu items
+           ========= */
+        if ((event.ctrlKey || event.metaKey) && event.key == 's') {
+            // save annotations on ctrl+s
+            const annos = saveAnnotations(state, state.annotations);
+            setDidSave(annos != null)
+            setMessage(
+                annos != null
+                    ? "Successfully saved"
+                    : "Error: please see console",
+            );
+            event.preventDefault();
+        } else if ((event.ctrlKey || event.metaKey) && event.key == 'o') {
+            // open document menu on ctrl-o
+            handleDocumentSelectorMenuClick(event)
+            event.preventDefault();
+        } else if ((event.ctrlKey || event.metaKey) && event.key == 'm') {
+            // open regex menu on ctrl-m
+            handleRegexPatternMenuClick(event)
+            event.preventDefault();
+        }
+    }, [state]);
+
+    React.useEffect(() => {
+        // attach the event listener
+        document.addEventListener('keydown', handleKeyPress);
+
+        // remove the event listener
+        return () => {
+            document.removeEventListener('keydown', handleKeyPress);
+        };
+    }, [handleKeyPress]);
+
     return (
         <Box sx={{ flexGrow: 1 }}>
             <AppBar
@@ -91,8 +120,9 @@ export default function TopBar() {
                         </IconButton>
                         <Menu
                             anchorEl={loadMenuAnchorEl}
-                            open={loadMenuOpen}
+                            open={Boolean(loadMenuAnchorEl)}
                             onClose={handleLoadMenuClose}
+                            keepMounted
                             slotProps={{
                                 paper: {
                                     style: {
@@ -113,7 +143,6 @@ export default function TopBar() {
                                     handleLoadMenuClose();
                                 }}
                             >
-                                {/*<SaveFileSelector />*/}
                                 <ListItemIcon>
                                     <SaveIcon />
                                 </ListItemIcon>
@@ -125,10 +154,7 @@ export default function TopBar() {
                                 </Typography>
                             </MenuItem>
 
-                            <MenuItem onClick={() => {
-                                clearAnnotations();
-                                handleLoadMenuClose();
-                            }}>
+                            <MenuItem onClick={() => { clearAnnotations(); handleLoadMenuClose(); }}>
                                 <ListItemIcon>
                                     <BackspaceIcon />
                                 </ListItemIcon>
@@ -136,8 +162,26 @@ export default function TopBar() {
                                     Clear Annotations
                                 </ListItemText>
                             </MenuItem>
-                            <DocumentSelectorMenuItem />
-                            <RegexPatternMenuItem />
+                            <MenuItem onClick={handleDocumentSelectorMenuClick} >
+                                <ListItemIcon>
+                                    <FileOpenIcon />
+                                </ListItemIcon>
+                                <ListItemText>
+                                    Open Doc/Load Save
+                                </ListItemText>
+                                <Typography variant="body2" color="text.secondary"> ⌘O </Typography>
+                                <DocumentSelectorModal isOpen={documentSelectorMenuOpen} setIsOpen={setDocumentSelectorMenuOpen} />
+                            </MenuItem>
+                            <MenuItem onClick={handleRegexPatternMenuClick} >
+                                <ListItemIcon>
+                                    <ManageSearchIcon />
+                                </ListItemIcon>
+                                <ListItemText>
+                                    Modify AutoLink Regex
+                                </ListItemText>
+                                <Typography variant="body2" color="text.secondary"> ⌘M </Typography>
+                                <RegexPatternModal isOpen={regexPatternMenuOpen} setIsOpen={setRegexPatternMenuOpen} />
+                            </MenuItem>
                         </Menu>
                     </span>
                     <Typography
@@ -152,8 +196,10 @@ export default function TopBar() {
                     >
                         LaTeX Annotater
                     </Typography>
+
                     <AnnotationMenu />
                     <Divider orientation="vertical" sx={{ flexGrow: 1 }} />
+                    <Typography variant="h6" > {state.fileid.replace('.tex', '')} </Typography>
                 </Toolbar>
             </AppBar>
             <Snackbar

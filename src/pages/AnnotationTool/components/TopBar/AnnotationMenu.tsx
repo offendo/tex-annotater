@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTheme } from "@mui/material";
 import { Tooltip } from "@mui/material";
 import Button from "@mui/material/Button";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -10,6 +11,7 @@ import { ColorMap, defaultColorMap } from "@/lib/colors";
 import { jumpToElement, shortenText } from "@/lib/utils";
 import { Grid } from "@mui/material";
 import { GlobalState } from "@/lib/GlobalState";
+import { orderBy } from "lodash";
 
 
 /* Annotation list at the top of the bar */
@@ -22,11 +24,12 @@ const AnnotationListRow = ({
     index: number;
     colors: ColorMap;
 }) => {
+    const theme = useTheme();
     return (
         <Grid
             container
             spacing={0}
-            style={{ padding: "5px", margin: "2px" }}
+            style={{ margin: "5px", width: 500}}
         >
             <Grid item xs={3}>
                 {/* Tag name */}
@@ -35,12 +38,10 @@ const AnnotationListRow = ({
                 </span>
             </Grid>
             <Grid item xs={7}>
-                <span
-                    style={{ minWidth: "300px" }}
-                >
+                <span >
                     <Tooltip title={annotation.text} >
-                        <pre style={{ margin: "0px", whiteSpace: "pre-wrap" }}>
-                            {shortenText(annotation.text, 30, true)}
+                        <pre style={{ fontSize: "10pt", margin: "0px", whiteSpace: "pre-wrap" }}>
+                            {shortenText(annotation.text, 30, false)}
                         </pre>
                     </Tooltip>
                 </span>
@@ -77,7 +78,7 @@ export const AnnotationMenu = () => {
                 open={annotationMenuOpen}
                 onClose={handleAnnotationMenuClose}
             >
-                {state.annotations.map((anno: TextSpan, index: number) => {
+                {orderBy(state.annotations, ['start'], 'asc').map((anno: TextSpan, index: number) => {
                     return (
                         <MenuItem
                             key={crypto.randomUUID()}

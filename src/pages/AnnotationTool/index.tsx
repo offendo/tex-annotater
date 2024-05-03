@@ -9,7 +9,7 @@ import { defaultColorMap } from "@/lib/colors";
 import "@/style/style.css";
 import { pdfjs } from "react-pdf";
 import useAuth from "@/lib/Token";
-import { GlobalState as GlobaLContext, GlobalStateProps, Status, loadAnnotations, loadDocument, redoUpdate, undoUpdate } from "@/lib/GlobalState";
+import { GlobalState as GlobaLContext, GlobalStateProps, Status, loadAnnotations, loadDocument, redoUpdate, saveAnnotations, undoUpdate } from "@/lib/GlobalState";
 import { ThemeOptions, ThemeProvider, createTheme } from '@mui/material/styles';
 
 
@@ -83,11 +83,20 @@ const AnnotationTool = () => {
     }
     // handle what happens on key press
     const handleKeyPress = useCallback((event: any) => {
+        /* Undo/Redo
+           ========= */
         if (event.ctrlKey && event.key == 'z') {
             undoUpdate(state);
         }
-        if (event.ctrlKey && event.shiftKey && event.key == 'Z') {
+        else if (event.ctrlKey && event.shiftKey && event.key == 'Z') {
             redoUpdate(state);
+        }
+        /* Menu items
+           ========= */
+        else if ((event.ctrlKey || event.metaKey) && event.key == 's') {
+            // save annotations on ctrl+s or cmd+s
+            saveAnnotations(state, state.annotations);
+            event.preventDefault();
         }
     }, [state]);
 

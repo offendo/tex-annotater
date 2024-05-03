@@ -210,7 +210,7 @@ const Annotator = (props: AnnotatorProps) => {
     <div>
       <div className="tex-container" tabIndex={-1} onKeyUp={handleSelectionKeyPress} >
         <pre id="viewer" style={{ whiteSpace: "pre-wrap" }}>
-          <div style={props.style} onContextMenu={launchContextMenu} onMouseUp={launchContextMenu}>
+          <div style={props.style} onMouseUp={launchContextMenu}>
             {splits.map((split) => (
               <Split key={`${split.start}-${split.end}`} {...split} />
             )

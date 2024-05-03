@@ -141,8 +141,9 @@ def load_save_files(file_id, user_id=None):
         params["userid"] = user_id
 
     query = (
-        "SELECT DISTINCT userid, fileid, timestamp, savename FROM annotations WHERE "
+        "SELECT userid, fileid, timestamp, savename, COUNT(*) AS count FROM annotations WHERE "
         + " AND ".join(conditions)
+        + " GROUP BY userid, fileid, timestamp, savename"
         + " ORDER BY timestamp DESC;"
     )
     return query_db(query, params)
