@@ -57,6 +57,7 @@ export function MarkMenu(props: MarkMenuProps) {
     const handleRightClick = (e: React.MouseEvent<HTMLButtonElement>) => {
         const selection = window.getSelection();
         if (selectionIsEmpty(selection)) {
+            e.preventDefault();
             setPos({ left: e.pageX, top: e.pageY });
             const annotations = state.annotations.filter((s: TextSpan) => {
                 return props.start >= s.start && props.end <= s.end;

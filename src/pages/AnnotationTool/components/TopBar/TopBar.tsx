@@ -12,11 +12,13 @@ import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Menu from "@mui/material/Menu";
-import { Status, GlobalState, loadAnnotations, loadDocument, saveAnnotations } from "@/lib/GlobalState";
+import { Status, GlobalState, loadAnnotations, loadDocument, saveAnnotations, undoUpdate, redoUpdate } from "@/lib/GlobalState";
 import ManageSearchIcon from '@mui/icons-material/ManageSearch';
 import BackspaceIcon from '@mui/icons-material/Backspace';
 import FileOpenIcon from '@mui/icons-material/FileOpen';
 import MenuIcon from '@mui/icons-material/Menu';
+import RedoIcon from '@mui/icons-material/Redo';
+import UndoIcon from '@mui/icons-material/Undo';
 import { AnnotationMenu } from "./AnnotationMenu";
 import { DocumentSelectorModal } from "./DocumentSelectorModal";
 import { RegexPatternModal } from "./RegexPatternModal";
@@ -131,6 +133,28 @@ export default function TopBar() {
                                 }
                             }}
                         >
+                            <MenuItem onClick={() => {undoUpdate(state)}}>
+                                <ListItemIcon>
+                                    <UndoIcon />
+                                </ListItemIcon>
+                                <ListItemText>
+                                    Undo
+                                </ListItemText>
+                                <Typography variant="body2" color="text.secondary">
+                                    ⌘Z
+                                </Typography>
+                            </MenuItem>
+                            <MenuItem onClick={() => {redoUpdate(state)}}>
+                                <ListItemIcon>
+                                    <RedoIcon />
+                                </ListItemIcon>
+                                <ListItemText>
+                                    Redo
+                                </ListItemText>
+                                <Typography variant="body2" color="text.secondary">
+                                    ⇧⌘ Z
+                                </Typography>
+                            </MenuItem>
                             <MenuItem
                                 onClick={async (e) => {
                                     const annos = await saveAnnotations(state, state.annotations, false);
@@ -153,7 +177,6 @@ export default function TopBar() {
                                     ⌘S
                                 </Typography>
                             </MenuItem>
-
                             <MenuItem onClick={() => { clearAnnotations(); handleLoadMenuClose(); }}>
                                 <ListItemIcon>
                                     <BackspaceIcon />
