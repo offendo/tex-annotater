@@ -22,9 +22,12 @@ type AnnotatorProps = {
 const getNextColor = function (start_color: string = "") {
   // If we have a "start color", start at that color.
   // Otherwise, findIndex returns -1, so 1+-1 = 0 is our start index (as desired)
-  const items = Object.values(colors)
+  const items = Object.values(colors);
   let idx = 1 + items.findIndex((val) => val == start_color);
-  return items[idx]
+  if (idx == items.length){
+    idx = 0;
+  }
+  return items[idx];
 }
 
 /**
