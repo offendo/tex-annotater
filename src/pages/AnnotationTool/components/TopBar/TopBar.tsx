@@ -133,7 +133,7 @@ export default function TopBar() {
                                 }
                             }}
                         >
-                            <MenuItem onClick={() => {undoUpdate(state)}}>
+                            <MenuItem onClick={() => { undoUpdate(state) }}>
                                 <ListItemIcon>
                                     <UndoIcon />
                                 </ListItemIcon>
@@ -144,7 +144,7 @@ export default function TopBar() {
                                     ⌘Z
                                 </Typography>
                             </MenuItem>
-                            <MenuItem onClick={() => {redoUpdate(state)}}>
+                            <MenuItem onClick={() => { redoUpdate(state) }}>
                                 <ListItemIcon>
                                     <RedoIcon />
                                 </ListItemIcon>
@@ -185,7 +185,7 @@ export default function TopBar() {
                                     Clear Annotations
                                 </ListItemText>
                             </MenuItem>
-                            <MenuItem onClick={handleDocumentSelectorMenuClick} >
+                            <MenuItem onClick={(e) => { handleDocumentSelectorMenuClick(e); handleLoadMenuClose() }} >
                                 <ListItemIcon>
                                     <FileOpenIcon />
                                 </ListItemIcon>

@@ -65,8 +65,6 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
         e.stopPropagation();
     };
 
-
-
     // Load documents immediately
     React.useEffect(() => { listAllDocuments(); }, []);
 
@@ -83,7 +81,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
         <Dialog
             open={props.isOpen}
             onClose={handleClose}
-            // keepMounted
+            keepMounted
             fullWidth={false}
             maxWidth={'xl'}
             sx={{ overflowX: "hidden", overflowY: "hidden" }}

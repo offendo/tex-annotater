@@ -91,13 +91,6 @@ const AnnotationTool = () => {
         else if (event.ctrlKey && event.shiftKey && event.key == 'Z') {
             redoUpdate(state);
         }
-        /* Menu items
-           ========= */
-        else if ((event.ctrlKey || event.metaKey) && event.key == 's') {
-            // save annotations on ctrl+s or cmd+s
-            saveAnnotations(state, state.annotations);
-            event.preventDefault();
-        }
     }, [state]);
 
     useEffect(() => {
@@ -109,7 +102,6 @@ const AnnotationTool = () => {
             document.removeEventListener('keydown', handleKeyPress);
         };
     }, [handleKeyPress]);
-
 
     useEffect(() => {
         if (!token || token.length == 0) {
