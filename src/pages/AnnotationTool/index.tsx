@@ -50,6 +50,7 @@ const AnnotationTool = () => {
     const [pdf, setPdf] = useState<string>("");
     const [saveid, setSaveId] = useState<string>(queryParameters.get("saveid") || "");
     const [annotations, setAnnotations] = useState<TextSpan[]>([]);
+    const [editing, setEditing] = useState<TextSpan | null>(null);
     const [showAllAnnotations, setShowAllAnnotations] = useState(false);
     const [status, setStatus] = useState<Status>(Status.Ready);
     const [undoBuffer, setUndoBuffer] = useState<TextSpan[][]>([]);
@@ -70,6 +71,8 @@ const AnnotationTool = () => {
         setPdf: setPdf,
         tex: tex,
         setTex: setTex,
+        editing: editing,
+        setEditing: setEditing,
         annotations: annotations,
         setAnnotations: setAnnotations,
         showAllAnnotations: showAllAnnotations,

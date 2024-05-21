@@ -70,12 +70,12 @@ export default function TopBar() {
 
 
     // handle what happens on key press
-    const handleKeyPress = React.useCallback((event: any) => {
+    const handleKeyPress = React.useCallback(async (event: any) => {
         /* Menu items
            ========= */
         if ((event.ctrlKey || event.metaKey) && event.key == 's') {
             // save annotations on ctrl+s
-            const annos = saveAnnotations(state, state.annotations);
+            const annos = await saveAnnotations(state, state.annotations);
             setDidSave(annos != null)
             setMessage(
                 annos != null

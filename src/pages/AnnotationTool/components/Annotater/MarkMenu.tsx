@@ -10,7 +10,8 @@ import {
     useTheme,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import BoltIcon from "@mui/icons-material/Bolt";
+import EditIcon from "@mui/icons-material/Edit";
+import CancelIcon from "@mui/icons-material/Cancel";
 import AddLinkIcon from "@mui/icons-material/AddLink";
 import Collapse from "@mui/material/Collapse";
 import LinkMenu from "./LinkMenu";
@@ -19,7 +20,7 @@ import { selectionIsEmpty, shortenText } from "@/lib/utils";
 import Popover from "@mui/material/Popover";
 import MenuItem from "@mui/material/MenuItem";
 import { Resizable } from "re-resizable";
-import { GlobalState, removeMark } from "@/lib/GlobalState";
+import { GlobalState, toggleEditStatus, removeMark } from "@/lib/GlobalState";
 
 export interface MarkMenuProps {
     anno: TextSpan;
@@ -123,6 +124,18 @@ export function MarkMenu(props: MarkMenuProps) {
                         >
                             {" "}
                             <AddLinkIcon />{" "}
+                        </IconButton>
+
+                        {/* Edit button */}
+                        <IconButton
+                            size="small"
+                            onClick={(e) => {
+                                setMenuOpen(false);
+                                toggleEditStatus(state, annotation);
+                            }}
+                        >
+                            {" "}
+                            {state.editing == null ? <EditIcon /> : <CancelIcon />}{" "}
                         </IconButton>
 
                         {/* Delete button */}

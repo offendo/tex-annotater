@@ -2,7 +2,8 @@ import React, { useContext, useRef, useState } from "react";
 import { MarkMenu } from './MarkMenu';
 import { TextSpan, Link } from "@/lib/span";
 import { SplitTagProps } from "@/lib/utils";
-import { GlobalState } from "@/lib/GlobalState";
+import { GlobalState, updateMark } from "@/lib/GlobalState";
+import { sortBy } from "lodash";
 
 export interface SplitProps {
   content: string
@@ -40,6 +41,9 @@ export function Mark(props: MarkProps): React.JSX.Element {
   const state = useContext(GlobalState);
 
   const getSplitColor = (split: any) => {
+    if (state.editing != null && split.anno.annoid == state.editing.annoid) {
+      return "#00000080"; // faded black
+    }
     // If it's linked to something, use the link's target color
     if (split.anno.links.length > 0) {
       if (split.anno.tag == 'name') {
@@ -55,9 +59,9 @@ export function Mark(props: MarkProps): React.JSX.Element {
 
   // Nest the tag as many times as necessary
   let final: any = props.content;
-  const finalRef = useRef<any>(null);
+  // const finalRef = useRef<any>(null);
 
-  props.tags.forEach((split, idx) => {
+  sortBy(props.tags, (s) => {return -(s.end - s.start);}).forEach((split, idx) => {
     if (idx == props.tags.length - 1) {
       // on the last iteration, grab the bounding box
       final = (
@@ -66,7 +70,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
           data-start={props.start}
           data-end={props.end}
           data-uid={split.tag}
-          ref={finalRef}
+          // ref={finalRef}
           style={{
             borderColor: (state.colors as any)[split.tag],
             borderBottomWidth: "3px",
@@ -89,7 +93,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
     else {
       final = (
         <span
-          ref={finalRef}
+          // ref={finalRef}
           style={{
             borderColor: (state.colors as any)[split.tag],
             borderBottomWidth: "3px",

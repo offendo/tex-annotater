@@ -125,20 +125,14 @@ export function LinkMenu(props: LinkMenuProps) {
   const [linkedAnnos, nonLinkedAnnos] = partition(allAnnos, (candidate) => {
     const anno = props.selectedAnnotation;
     const lookup = {
-      start: candidate.start,
-      end: candidate.end,
-      tag: candidate.tag,
-      fileid: candidate.fileid,
+      source: candidate.annoid,
     };
 
     // Filter only links which are in the list
     return (
       anno.links.findIndex(
         (item) =>
-          lookup.start == item.start &&
-          lookup.end == item.end &&
-          lookup.tag == item.tag &&
-          lookup.fileid == item.fileid,
+          lookup.source == item.target
       ) != -1
     );
   });

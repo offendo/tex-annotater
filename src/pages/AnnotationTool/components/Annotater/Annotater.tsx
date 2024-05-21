@@ -12,7 +12,7 @@ import {
 } from "@/lib/utils";
 import { ColorMap, colors } from "@/lib/colors"
 import sortBy from "lodash.sortby";
-import { GlobalState, toggleLink, updateAnnotations } from "@/lib/GlobalState";
+import { GlobalState, toggleLink, updateAnnotations, updateMark } from "@/lib/GlobalState";
 
 type AnnotatorProps = {
   getSpan: (span: TextSpan) => TextSpan;
@@ -24,7 +24,7 @@ const getNextColor = function (start_color: string = "") {
   // Otherwise, findIndex returns -1, so 1+-1 = 0 is our start index (as desired)
   const items = Object.values(colors);
   let idx = 1 + items.findIndex((val) => val == start_color);
-  if (idx == items.length){
+  if (idx == items.length) {
     idx = 0;
   }
   return items[idx];
@@ -184,7 +184,16 @@ const Annotator = (props: AnnotatorProps) => {
   }
 
   const handleContextMenuButtonPress = (start: number, end: number, label: string, name: string) => {
-    const newAnno = addMark(start, end, label, name);
+    // if we're editing something, just update the mark instead
+    console.log('selected: ', state.editing)
+    console.log('new: ', label, ' ', start, '-', end)
+    let newAnno = null;
+    if (state.editing != null) {
+      newAnno = { ...state.editing, start: start, end: end, tag: label, text: state.tex.slice(start, end) };
+      updateMark(state, newAnno);
+    } else {
+      newAnno = addMark(start, end, label, name);
+    }
     setSelectionClicked(false);
 
     // Ensure we've successfully added a new mark
@@ -196,7 +205,7 @@ const Annotator = (props: AnnotatorProps) => {
     autoLink(newAnno);
   };
 
-  const handleSelectionKeyPress = (e) => {
+  const handleSelectionKeyPress = (e: any) => {
     switch (e.key) {
       case "Escape":
         setSelectionClicked(false);

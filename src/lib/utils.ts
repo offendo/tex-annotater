@@ -16,8 +16,6 @@ export const displaySplits = (content: string, annotations: TextSpan[]) => {
   const splits: { start: number, end: number, content: string, tags: SplitTagProps[], hasLink: boolean }[] = [];
   let currentTags: SplitTagProps[] = [];
   let hasLink: boolean = false;
-  let hasBackLink: boolean = false;
-  const allLinks = annotations.flatMap((anno) => anno.links);
 
   let sortAnnotations: TextSpan[] = sortBy(
     annotations,

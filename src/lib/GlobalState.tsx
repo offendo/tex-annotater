@@ -31,6 +31,9 @@ export type GlobalStateProps = {
     userid: string,
     setUserId: (uid: string) => any,
 
+    editing: TextSpan | null,
+    setEditing: (anno: TextSpan | null) => any,
+
     annotations: TextSpan[],
     setAnnotations: (annos: TextSpan[]) => any,
 
@@ -70,6 +73,9 @@ const defaultState = {
 
     userid: "",
     setUserId: (_) => {},
+
+    editing: null,
+    setEditing: (_) => {},
 
     annotations: [],
     setAnnotations: (_) => {},
@@ -225,7 +231,7 @@ export async function saveAnnotations(
 
 export const toggleLink = (state: GlobalStateProps, source: TextSpan, target: TextSpan) => {
     const link = makeLink(source, target);
-    const splitIndex = source.links.findIndex((s) => s.end == link.end && s.start == link.start && s.tag == link.tag && s.fileid == link.fileid);
+    const splitIndex = source.links.findIndex((s) => s.source == link.source && s.target == link.target);
     if (splitIndex == -1) {
         source.links = [...source.links, link];
     } else {
@@ -245,8 +251,16 @@ export const removeMark = (state: GlobalStateProps, ts: TextSpan) => {
     }
 };
 
+export const toggleEditStatus = (state: GlobalStateProps, anno: TextSpan | null) => {
+    if (anno == null || (state.editing && state.editing.annoid == anno.annoid)) {
+        state.setEditing(null);
+    } else {
+        state.setEditing(anno);
+    }
+}
+
 export const updateMark = (state: GlobalStateProps, anno: TextSpan) => {
-    const splitIndex = state.annotations.findIndex((s) => s.end == anno.end && s.start == anno.start && s.tag == anno.tag);
+    const splitIndex = state.annotations.findIndex((s) => s.annoid == anno.annoid);
 
     // If it doesn't already exist in the annotations, add it
     if (splitIndex == -1) {
@@ -258,6 +272,7 @@ export const updateMark = (state: GlobalStateProps, anno: TextSpan) => {
             ...state.annotations.slice(splitIndex + 1),
         ]);
     }
+    state.setEditing(null);
 }
 
 

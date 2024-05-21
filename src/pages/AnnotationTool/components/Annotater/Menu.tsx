@@ -1,6 +1,7 @@
 import React, { useState, useRef, useContext } from "react";
-import { List, ListItemButton } from "@mui/material"
-import { GlobalState } from "@/lib/GlobalState";
+import { IconButton, List, ListItemButton } from "@mui/material"
+import CancelIcon from "@mui/icons-material/Cancel";
+import { GlobalState, Status, toggleEditStatus } from "@/lib/GlobalState";
 import { useTheme } from "@mui/material";
 
 export interface MenuProps {
