@@ -118,7 +118,7 @@ def upload_new_textbooks():
             # download and upload tex file
             tex_id = row['tex'].split('/')[5]
             tex_out = gdown.download(id=tex_id, output=f"/tmp/{row['name']}.tex")
-            session.upload_file(tex_out, 'tex-annotation', f"texs/{Path(tex_out).name}", ExtraArgs={'ACL':'public-read', 'ContentType': 'application/pdf'})
+            session.upload_file(tex_out, 'tex-annotation', f"texs/{Path(tex_out).name}", ExtraArgs={'ACL':'public-read', 'ContentType': 'application/x-tex'})
 
             # download and upload pdf file
             pdf_id = row.pdf.split('/')[5]
