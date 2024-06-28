@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import uuid
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS, cross_origin
 from pathlib import Path
 
@@ -12,8 +12,10 @@ import boto3
 import json
 
 from apscheduler.schedulers.background import BackgroundScheduler
+from transformers import AutoTokenizer
 from .search import fuzzysearch
 from .data import (
+    export_annotations,
     load_tex,
     list_all_textbooks,
     load_all_annotations,
@@ -42,8 +44,9 @@ init_annotation_db()
 init_users_db()
 
 sched = BackgroundScheduler(daemon=True)
-sched.add_job(upload_new_textbooks,'interval',minutes=10)
+sched.add_job(upload_new_textbooks, "interval", minutes=10)
 sched.start()
+
 
 @app.post("/annotations")
 @cross_origin()
@@ -55,6 +58,20 @@ def post_annotations():
     annotations = request.get_json()["annotations"]
     timestamp = save_annotations(fileid, userid, annotations, autosave=autosave)
     return {"timestamp": timestamp}, 200
+
+
+@app.get("/export")
+@cross_origin()
+def export_save():
+    userid = request.args.get("userid")
+    fileid = request.args.get("fileid")
+    timestamp = request.args.get("timestamp")
+    tokenizer = AutoTokenizer.from_pretrained("EleutherAI/llemma_7b")
+    anno_json = export_annotations(file_id=fileid, user_id=userid, timestamp=timestamp, tokenizer=tokenizer)
+    out_file = f"/tmp/{fileid}-{userid}-{timestamp}.json"
+    with open(out_file, "w") as f:
+        json.dump(anno_json, f)
+    return send_file(out_file, as_attachment=True, download_name=out_file.split("/")[-1])
 
 
 @app.get("/annotations/all")
@@ -93,10 +110,11 @@ def list_all_saves():
     return {"saves": load_save_files(file_id=fileid, user_id=userid)}
 
 
-@app.get("/document/all")
+@app.get("/documents")
 @cross_origin()
 def list_all_documents():
     return {"documents": list_s3_documents()}
+
 
 @app.get("/tex")
 @cross_origin()

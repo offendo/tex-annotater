@@ -29,7 +29,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
 
     async function listAllDocuments() {
         try {
-            const response = await fetch("/api/document/all", { mode: "cors" });
+            const response = await fetch("/api/documents", { mode: "cors" });
             const res = await response.json();
             setDocuments(res["documents"]);
         } catch (e) {
@@ -44,6 +44,15 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
         } catch (e) {
             console.error(e)
             setSaves([])
+        }
+    };
+    const exportAnnotations = async (userid: string, fileid: string, timestamp: string) => {
+        try {
+            const res = await fetch(`/api/export?fileid=${fileid}&userid=${userid}&timestamp=${timestamp}`, { mode: "cors" });
+            const text = await res.file();
+            console.log(text);
+        } catch (e) {
+            console.error(e);
         }
     };
 
@@ -181,7 +190,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                                     <Grid item xs={3}>
                                         User ID
                                     </Grid>
-                                    <Grid item xs={4}>
+                                    <Grid item xs={3}>
                                         Save Name
                                     </Grid>
                                     <Grid item xs={3}>
@@ -189,6 +198,9 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                                     </Grid>
                                     <Grid item xs={2}>
                                         # Annotations
+                                    </Grid>
+                                    <Grid item xs={1}>
+                                        Export
                                     </Grid>
                                 </Grid>
                             </ListSubheader>
@@ -207,7 +219,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                                                     <Grid item xs={3}>
                                                         {save.userid}
                                                     </Grid>
-                                                    <Grid item xs={4}>
+                                                    <Grid item xs={3}>
                                                         {save.savename}
                                                     </Grid>
                                                     <Grid item xs={3}>
@@ -215,6 +227,17 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                                                     </Grid>
                                                     <Grid item xs={2}>
                                                         {save.count}
+                                                    </Grid>
+                                                    <Grid item xs={1}>
+                                                        <a
+                                                            onMouseDown={(e) => { e.stopPropagation() }}
+                                                            href={`/api/export?fileid=${state.fileid}&userid=${save.userid}&timestamp=${save.timestamp}`}
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                            }}
+                                                        >
+                                                            JSON
+                                                        </a>
                                                     </Grid>
                                                 </Grid>
                                             </ListItemButton>
@@ -226,6 +249,6 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                     </Grid>
                 </Box>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }
