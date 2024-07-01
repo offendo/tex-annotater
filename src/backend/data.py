@@ -376,11 +376,17 @@ def export_annotations(file_id, user_id, timestamp: Optional[str] = None, export
     # Find the begin/end annotations, otherwise use the earliest and latest annotations
     begin = None
     end = None
-    for anno in annotations:
-        if anno['tag'] == 'begin_annotation':
-            begin = anno
-        if anno['tag'] == 'end_annotation':
-            end = anno
+
+    # # earliest begin_annotation
+    # for anno in annotations:
+    #     if anno['tag'] == 'begin_annotation':
+    #         begin = anno
+    #         break
+    # # latest end_annotation
+    # for anno in annotations:
+    #     if anno['tag'] == 'end_annotation':
+    #         end = anno
+
     if begin is None:
         begin = min(annotations, key=lambda x: x['start'])
     if end is None:
@@ -403,6 +409,7 @@ def export_annotations(file_id, user_id, timestamp: Optional[str] = None, export
             # prefix = 'B-' if char_idx == anno['start'] else 'I-'
             # iob_tags[char_idx - offset].append(prefix + anno['tag'])
             iob_tags[char_idx - offset].append(anno['tag'])
+
     for tag in iob_tags:
         if len(tag) == 0:
             tag.append('O')
@@ -411,6 +418,7 @@ def export_annotations(file_id, user_id, timestamp: Optional[str] = None, export
         tokens = tokenizer(tex, add_special_tokens=False)
         token_tags = align_tags_to_tokens(tokens, char_tags=iob_tags)
         return {'tags': token_tags, 'tex': tex, 'tokens': [tokenizer.convert_ids_to_tokens(i) for i in tokens['input_ids']]}
+
     return {'tags': iob_tags, 'tex': tex}
 
 def align_tags_to_tokens(tokens: BatchEncoding, char_tags: list[list[str]]):

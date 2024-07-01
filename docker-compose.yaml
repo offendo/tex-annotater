@@ -23,4 +23,4 @@ services:
       - /tmp/:/tmp/
     ports:
       - 5000:5000
-    # command: "flask --app src/backend/main.py run --debug --port 5000 --host 0.0.0.0"
+        # command: "flask --app src/backend/main.py run --debug --port 5000 --host 0.0.0.0"

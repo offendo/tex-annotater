@@ -6,7 +6,6 @@
 #   features: []
 #   all-features: false
 #   with-sources: false
-#   generate-hashes: false
 
 -e file:.
 apscheduler==3.10.4
@@ -171,6 +170,7 @@ traitlets==5.14.2
     # via ipython
     # via matplotlib-inline
 transformers==4.42.3
+    # via tex-annotater
 typing-extensions==4.12.2
     # via huggingface-hub
 tzdata==2024.1

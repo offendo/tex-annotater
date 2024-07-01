@@ -18,6 +18,7 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "passlib>=1.7.4",
     "apscheduler>=3.10.4",
+    "transformers>=4.42.3",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
@@ -42,7 +43,6 @@ dev-dependencies = [
     "rapidfuzz>=3.6.2",
     "pyright>=1.1.355",
     "black>=24.3.0",
-    "transformers>=4.42.3",
 ]
 
 [tool.rye.scripts]
