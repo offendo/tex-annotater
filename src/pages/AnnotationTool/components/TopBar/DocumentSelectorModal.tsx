@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import TextField from "@mui/material/TextField";
 import { GlobalState, loadAnnotations, loadDocument } from "@/lib/GlobalState";
 import { Typography, Button, IconButton, Box, Dialog, DialogTitle, DialogContent, DialogActions, useTheme, Grid, ListSubheader } from "@mui/material";
+import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -26,6 +27,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
     const [saves, setSaves] = React.useState<any[]>([]);
     const [selectedSave, setSelectedSave] = React.useState<number>(-1);
     const [selectedDoc, setSelectedDoc] = React.useState<number>(-1);
+    const tokenizers = [{ name: "Llemma 7b", id: "EleutherAI/llemma_7b" }, { name: "Llama-3 8b Instruct", id: "meta-llama/Meta-Llama-3-8B-Instruct" }]
 
     async function listAllDocuments() {
         try {
@@ -46,16 +48,19 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
             setSaves([])
         }
     };
-    const exportAnnotations = async (userid: string, fileid: string, timestamp: string) => {
+    const exportAnnotations = async (userid: string, fileid: string, timestamp: string, tokenizer?: string) => {
         try {
-            const res = await fetch(`/api/export?fileid=${fileid}&userid=${userid}&timestamp=${timestamp}`, { mode: "cors" });
+            if (!tokenizer) {
+                tokenizer = "EleutherAI/llemma_7b"
+            }
+            tokenizer = encodeURI(tokenizer)
+            const res = await fetch(`/api/export?fileid=${fileid}&userid=${userid}&timestamp=${timestamp}&tokenizer=${tokenizer}`, { mode: "cors" });
             const text = await res.file();
             console.log(text);
         } catch (e) {
             console.error(e);
         }
     };
-
     const selectSave = (save: any, index: number) => {
         setSelectedSave(index);
         loadAnnotations(state, save["fileid"], save["userid"], save["timestamp"]);
@@ -84,6 +89,14 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
         return query.length == 0
             ? docs
             : fuzzysort.go(query, docs, { keys: ["filename", "arxiv_id"] }).map((t) => t.obj);
+    };
+    const [tokenizerMenuAnchorEl, setTokenizerMenuAnchorEl] = React.useState<null | HTMLElement>(null);
+    const tokenizerMenuOpen = Boolean(tokenizerMenuAnchorEl);
+    const handleTokenizerMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setTokenizerMenuAnchorEl(event.currentTarget);
+    };
+    const handleTokenizerMenuClose = () => {
+        setTokenizerMenuAnchorEl(null);
     };
 
     return (
@@ -229,15 +242,34 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                                                         {save.count}
                                                     </Grid>
                                                     <Grid item xs={1}>
-                                                        <a
+                                                        <Button
+                                                            aria-controls={tokenizerMenuOpen ? 'basic-menu' : undefined}
+                                                            aria-haspopup="true"
+                                                            aria-expanded={tokenizerMenuOpen ? 'true' : undefined}
                                                             onMouseDown={(e) => { e.stopPropagation() }}
-                                                            href={`/api/export?fileid=${state.fileid}&userid=${save.userid}&timestamp=${save.timestamp}`}
-                                                            onClick={async (e) => {
-                                                                e.stopPropagation();
-                                                            }}
+                                                            onClick={(e) => { e.stopPropagation(); handleTokenizerMenuClick(e) }}
                                                         >
-                                                            JSON
-                                                        </a>
+                                                            Select
+                                                        </Button>
+                                                        <Menu
+                                                            anchorEl={tokenizerMenuAnchorEl}
+                                                            open={tokenizerMenuOpen}
+                                                            onClose={handleTokenizerMenuClose}
+                                                        >
+                                                            {
+                                                                tokenizers.map(({ name, id }) => {
+                                                                    return (
+                                                                        <MenuItem
+                                                                            component="a"
+                                                                            href={`/api/export?fileid=${state.fileid}&userid=${save.userid}&timestamp=${save.timestamp}&tokenizer=${id}`}
+                                                                            onClick={handleTokenizerMenuClose}
+                                                                        >
+                                                                            {name}
+                                                                        </MenuItem>
+                                                                    );
+                                                                })
+                                                            }
+                                                        </Menu>
                                                     </Grid>
                                                 </Grid>
                                             </ListItemButton>
