@@ -25,8 +25,11 @@ export type GlobalStateProps = {
     anchor: string,
     setAnchor: (anchor: string) => any,
 
-    saveid: string,
-    setSaveId: (sid: string) => any,
+    timestamp: string,
+    setTimestamp: (time: string) => any,
+
+    savename: string,
+    setSavename: (sname: string) => any,
 
     userid: string,
     setUserId: (uid: string) => any,
@@ -68,8 +71,11 @@ const defaultState = {
     anchor: "",
     setAnchor: (_) => {},
 
-    saveid: "",
-    setSaveId: (_) => {},
+    timestamp: "",
+    setTimestamp: (_) => {},
+
+    savename: "",
+    setSavename: (_) => {},
 
     userid: "",
     setUserId: (_) => {},
@@ -107,20 +113,22 @@ export async function loadAnnotations(
     fileid: string,
     userid: string,
     timestamp?: string,
+    savename?: string,
     empty?: boolean,
 ) {
     try {
         let res: any = {};
         if (empty) {
             console.log("Clearing annotations...");
-            res = { annotations: [], fileid: fileid };
+            res = { annotations: [], fileid: fileid, savename: "" };
         } else {
-            const url = `/api/annotations?fileid=${fileid}&userid=${userid}&timestamp=${timestamp ? timestamp : ""}`
+            const url = `/api/annotations?fileid=${fileid}&userid=${userid}&timestamp=${timestamp ? timestamp : ""}&savename=${savename ? savename : ""}`
             const response = await fetch(url, { mode: "cors" });
             res = await response.json();
         }
-        // state.setFileId(res["fileid"]);
-        state.setSaveId(res['timestamp']);
+        state.setFileId(res["fileid"]);
+        state.setTimestamp(res['timestamp']);
+        state.setSavename(res['savename']);
         state.setAnnotations(res["annotations"]);
         state.setUndoBuffer([res['annotations']]);
         state.setUndoIndex(1);
@@ -146,12 +154,16 @@ export async function loadAllAnnotations(state: GlobalStateProps, fileid: string
 
 export async function loadDocument(state: GlobalStateProps, fileid: string) {
     try {
-        // URL parameters
+        // Fetch data
         const tex_response = fetch(`/api/tex?fileid=${fileid}`, { mode: "cors" });
         const pdf_response = fetch(`/api/pdf?fileid=${fileid}`, { mode: "cors" });
+
+        // Set TeX
         const tex_res = await (await tex_response).json();
         state.setTex(tex_res["tex"]);
         state.setFileId(tex_res["fileid"]);
+
+        // Set pdf
         const pdf_res = await (await pdf_response).json();
         state.setPdf(pdf_res["pdf"]);
 
@@ -161,7 +173,7 @@ export async function loadDocument(state: GlobalStateProps, fileid: string) {
 }
 
 
-export async function updateAnnotations(state: GlobalStateProps, annotations: TextSpan[]) {
+export function updateAnnotations(state: GlobalStateProps, annotations: TextSpan[]) {
     // When we make an update, reset the undo tree. Also, we have to clone it so the in-place updates in toggleLink get tracked
     const buffer = state.undoBuffer
     buffer.push(cloneDeep(annotations));
@@ -172,7 +184,7 @@ export async function updateAnnotations(state: GlobalStateProps, annotations: Te
 
     // Now save the annotations
     state.setAnnotations(annotations);
-    saveAnnotations(state, annotations, true);
+    saveAnnotations(state, annotations, true, state.savename);
 };
 
 export function undoUpdate(state: GlobalStateProps) {
@@ -206,6 +218,7 @@ export async function saveAnnotations(
     state: GlobalStateProps,
     annotations: TextSpan[],
     autosave: boolean = false,
+    savename: string = "",
 ) {
     const requestOptions = {
         method: "POST",
@@ -213,19 +226,21 @@ export async function saveAnnotations(
         body: JSON.stringify({ annotations: annotations }),
     };
     // We handle autosaves differently
-    const url = `/api/annotations?fileid=${state.fileid}&userid=${state.userid}&autosave=${autosave}`;
+    const url = `/api/annotations?fileid=${state.fileid}&userid=${state.userid}&autosave=${autosave}&savename=${savename}`;
 
     // POST save and ensure it saved correctly;
     try {
-        console.log(`Saving annotations at ${url}`);
+        const start = Date.now()
         const response = await fetch(url, requestOptions);
         const res = await response.json();
-        console.log('Saved!')
-        state.setSaveId(res['timestamp'])
-        return annotations;
+        console.log('total save time: ', Date.now() - start);
+        state.setTimestamp(res['timestamp'])
+        state.setSavename(res['savename'])
+        console.log('Saved annotations: ', res['savename'])
+        return true;
     } catch (e) {
         console.error(e);
-        return null;
+        return false;
     }
 }
 

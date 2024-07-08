@@ -48,7 +48,8 @@ const AnnotationTool = () => {
     const [anchor, setAnchor] = useState<string>(queryParameters.get("anchor") || "");
     const [tex, setTex] = useState<string>("");
     const [pdf, setPdf] = useState<string>("");
-    const [saveid, setSaveId] = useState<string>(queryParameters.get("saveid") || "");
+    const [timestamp, setTimestamp] = useState<string>(queryParameters.get("timestamp") || "");
+    const [savename, setSavename] = useState<string>(queryParameters.get("savename") || "");
     const [annotations, setAnnotations] = useState<TextSpan[]>([]);
     const [editing, setEditing] = useState<TextSpan | null>(null);
     const [showAllAnnotations, setShowAllAnnotations] = useState(false);
@@ -65,8 +66,10 @@ const AnnotationTool = () => {
         setFileId: setFileId,
         anchor: anchor,
         setAnchor: setAnchor,
-        saveid: saveid,
-        setSaveId: setSaveId,
+        timestamp: timestamp,
+        setTimestamp: setTimestamp,
+        savename: savename,
+        setSavename: setSavename,
         pdf: pdf,
         setPdf: setPdf,
         tex: tex,
@@ -111,18 +114,21 @@ const AnnotationTool = () => {
             navigate("/signin");
         }
 
-        if (fileid != "") {
-            loadAnnotations(state, fileid, userid, saveid)
+        if (state.fileid != "" && !state.tex) {
+            console.log('calling load doc: ', state)
             loadDocument(state, fileid)
+        }
+        if (state.fileid != "" && !state.annotations) {
+            loadAnnotations(state, fileid, userid, timestamp)
         }
 
         // Wait 1 second before trying to scroll, gives the DOM time to load in.
         // Probably a better way to do this but I tried a few things and it didn't work.
         // Retry x5
-        let tries = 0;
-        var repeater = setInterval(() => {
-            if (tries < 3) {
-                if (anchor.length > 0) {
+        if (anchor.length > 0) {
+            let tries = 0;
+            var repeater = setInterval(() => {
+                if (tries < 3) {
                     if (!isNaN(anchor)) {
                         const percent = parseFloat(anchor);
                         console.log(`jumping to ${percent}%, fudged by -0.0003 = ${percent - 0.0003}`)
@@ -131,12 +137,12 @@ const AnnotationTool = () => {
                         console.log(`jumping to ${anchor}`)
                         jumpToElement(anchor);
                     }
+                    tries += 1;
+                } else {
+                    clearInterval(repeater);
                 }
-                tries += 1;
-            } else {
-                clearInterval(repeater);
-            }
-        }, 2000)
+            }, 2000)
+        }
     }, []);
 
     return (

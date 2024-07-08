@@ -2,7 +2,7 @@ import * as React from "react";
 import { useSearchParams } from "react-router-dom";
 import TextField from "@mui/material/TextField";
 import { GlobalState, loadAnnotations, loadDocument } from "@/lib/GlobalState";
-import { Typography, Button, IconButton, Box, Dialog, DialogTitle, DialogContent, DialogActions, useTheme, Grid, ListSubheader } from "@mui/material";
+import { Typography, Button, IconButton, Box, Dialog, DialogTitle, DialogContent, DialogActions, useTheme, Grid, ListSubheader, Collapse } from "@mui/material";
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import List from '@mui/material/List';
@@ -12,22 +12,29 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import fuzzysort from "fuzzysort";
 import FileOpenIcon from '@mui/icons-material/FileOpen';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import ExpandLess from '@mui/icons-material/ExpandLess';
 import CloseIcon from '@mui/icons-material/Close';
-import { orderBy } from "lodash";
-import { SaveFileSelector } from "./SaveFileSelector";
+import { orderBy, groupBy, sortBy, maxBy, minBy } from "lodash";
 import { MenuItemProps } from "./MenuItemProps";
+
 
 export const DocumentSelectorModal = (props: MenuItemProps) => {
     const state = React.useContext(GlobalState);
     const theme = useTheme();
 
     const [query, setQuery] = React.useState("");
+    const [selectedSaveGroup, setSelectedSaveGroup] = React.useState(-1);
     const [queryParameters, setQueryParameters] = useSearchParams();
     const [documents, setDocuments] = React.useState([]);
     const [saves, setSaves] = React.useState<any[]>([]);
     const [selectedSave, setSelectedSave] = React.useState<number>(-1);
     const [selectedDoc, setSelectedDoc] = React.useState<number>(-1);
-    const tokenizers = [{ name: "Llemma 7b", id: "EleutherAI/llemma_7b" }, { name: "Llama-3 8b Instruct", id: "meta-llama/Meta-Llama-3-8B-Instruct" }]
+    const tokenizers = [
+        { name: "Llemma 7b", id: "EleutherAI/llemma_7b" },
+        { name: "Llemma 34b", id: "EleutherAI/llemma_34b" },
+        // { name: "Llama-3 8b Instruct", id: "meta-llama/Meta-Llama-3-8B-Instruct" }
+    ]
 
     async function listAllDocuments() {
         try {
@@ -42,7 +49,10 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
         try {
             const res = await fetch(`/api/saves?fileid=${fileid}`, { mode: "cors" });
             const json = await res.json();
-            setSaves(json["saves"]);
+            // Group results by savename, which aren't unique anymore
+            const groupedSaves = Object.values(groupBy(json['saves'], "savename"));
+            const sortedSaves = orderBy(groupedSaves, (savelist) => { return maxBy(savelist, "timestamp").timestamp }, 'desc')
+            setSaves(sortedSaves);
         } catch (e) {
             console.error(e)
             setSaves([])
@@ -61,10 +71,20 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
             console.error(e);
         }
     };
+
+    const handleSaveGroupClick = (index: number) => {
+        if (selectedSaveGroup != index) {
+            setSelectedSaveGroup(index);
+        } else {
+            setSelectedSaveGroup(-1);
+        }
+    }
+
+
     const selectSave = (save: any, index: number) => {
         setSelectedSave(index);
-        loadAnnotations(state, save["fileid"], save["userid"], save["timestamp"]);
-        setQueryParameters({ fileid: save['fileid'], saveid: save['timestamp'] })
+        loadAnnotations(state, save["fileid"], save["userid"], save["timestamp"], save["savename"]);
+        setQueryParameters({ fileid: save['fileid'], timestamp: save['timestamp'], savename: save['savename'] })
     };
     const selectDocument = (doc: any, index: number) => {
         setSelectedDoc(index);
@@ -83,7 +103,11 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
     React.useEffect(() => { listAllDocuments(); }, []);
 
     // Load saves whenever the fileid changes
-    React.useEffect(() => { loadSaves(state.fileid); }, [state.fileid, state.annotations])
+    React.useEffect(() => {
+        loadSaves(state.fileid);
+    },
+        [state.fileid, state.annotations, state.savename]
+    )
 
     const filterSearch = (docs: any[], query: string) => {
         return query.length == 0
@@ -98,6 +122,71 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
     const handleTokenizerMenuClose = () => {
         setTokenizerMenuAnchorEl(null);
     };
+
+    const makeSubSaveList = (savelist: any[], saveGroupIndex: number) => {
+        return (
+            savelist.map((save: any, index: number) => {
+                return (
+                    <ListItem
+                        key={save.timestamp + `groupIndex:${saveGroupIndex}:${index}`}
+                        style={{ backgroundColor: "var(--solarized-base3)" }}
+                        value={save.timestamp}
+                        onClick={(e) => {
+                            selectSave(save, index);
+                        }}
+                        disableGutters
+                        disablePadding
+                    >
+                        <ListItemButton selected={selectedSave === index && selectedSaveGroup === saveGroupIndex}>
+                            <Grid container >
+                                <Grid item xs={1}>
+                                    <Button
+                                        onMouseDown={(e) => { e.stopPropagation() }}
+                                        onClick={(e) => { e.stopPropagation(); handleTokenizerMenuClick(e) }}
+                                        style={{ padding: "0px" }}
+                                    >
+                                        Export
+                                    </Button>
+                                    <Menu
+                                        anchorEl={tokenizerMenuAnchorEl}
+                                        open={tokenizerMenuOpen}
+                                        onClose={handleTokenizerMenuClose}
+                                    >
+                                        {
+                                            tokenizers.map(({ name, id }) => {
+                                                return (
+                                                    <MenuItem
+                                                        key={`name:${name}id:${id}`}
+                                                        component="a"
+                                                        href={`/api/export?fileid=${state.fileid}&userid=${save.userid}&timestamp=${save.timestamp}&tokenizer=${id}`}
+                                                        onClick={handleTokenizerMenuClose}
+                                                    >
+                                                        {name}
+                                                    </MenuItem>
+                                                );
+                                            })
+                                        }
+                                    </Menu>
+                                </Grid>
+                                <Grid item xs={3}>
+                                    {save.autosave ? "autosave" : `version ${savelist.length - index}`}
+                                </Grid>
+                                <Grid item xs={3}>
+                                    {save.userid}
+                                </Grid>
+                                <Grid item xs={3}>
+                                    {save.timestamp}
+                                </Grid>
+                                <Grid item xs={2}>
+                                    {save.count}
+                                </Grid>
+                            </Grid>
+                        </ListItemButton>
+                    </ListItem >
+                );
+            })
+        );
+    }
 
     return (
         <Dialog
@@ -127,7 +216,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                 <Box
                     sx={{
                         width: 1000,
-                        maxHeight: 300,
+                        maxHeight: 200,
                         height: "fit-content",
                         backgroundColor: theme.palette.background.default,
                         overflowY: "scroll",
@@ -197,84 +286,55 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                     }}
                 >
                     <Grid container>
-                        <List dense sx={{ width: "100%" }}>
+                        <List disablePadding dense sx={{ width: "100%" }}>
                             <ListSubheader >
                                 <Grid container key={crypto.randomUUID()}>
-                                    <Grid item xs={3}>
-                                        User ID
+                                    <Grid item xs={1}>
                                     </Grid>
                                     <Grid item xs={3}>
                                         Save Name
                                     </Grid>
                                     <Grid item xs={3}>
-                                        Timestamp
+                                        Last User ID
+                                    </Grid>
+                                    <Grid item xs={3}>
+                                        Last Timestamp
                                     </Grid>
                                     <Grid item xs={2}>
-                                        # Annotations
-                                    </Grid>
-                                    <Grid item xs={1}>
-                                        Export
+                                        Last # Annotations
                                     </Grid>
                                 </Grid>
                             </ListSubheader>
                             {
-                                orderBy(saves, ['timestamp'], 'desc').map((save: any, index: number) => {
+                                saves.map((savelist: any[], index: number) => {
                                     return (
-                                        <ListItem
-                                            key={save.timestamp + `index:${index}`}
-                                            value={save.timestamp}
-                                            onClick={(e) => {
-                                                selectSave(save, index);
-                                            }}
-                                        >
-                                            <ListItemButton disableGutters selected={selectedSave === index}>
+                                        <div key={crypto.randomUUID()}>
+                                            <ListItemButton selected={selectedSaveGroup == index} onClick={(e) => handleSaveGroupClick(index)}>
                                                 <Grid container >
-                                                    <Grid item xs={3}>
-                                                        {save.userid}
+                                                    <Grid item xs={1}>
+                                                        {selectedSaveGroup == index ? <ExpandLess /> : <ExpandMore />}
                                                     </Grid>
                                                     <Grid item xs={3}>
-                                                        {save.savename}
+                                                        {savelist[0].savename}
                                                     </Grid>
                                                     <Grid item xs={3}>
-                                                        {save.timestamp}
+                                                        {savelist[0].userid}
+                                                    </Grid>
+                                                    <Grid item xs={3}>
+                                                        {savelist[0].timestamp}
                                                     </Grid>
                                                     <Grid item xs={2}>
-                                                        {save.count}
-                                                    </Grid>
-                                                    <Grid item xs={1}>
-                                                        <Button
-                                                            aria-controls={tokenizerMenuOpen ? 'basic-menu' : undefined}
-                                                            aria-haspopup="true"
-                                                            aria-expanded={tokenizerMenuOpen ? 'true' : undefined}
-                                                            onMouseDown={(e) => { e.stopPropagation() }}
-                                                            onClick={(e) => { e.stopPropagation(); handleTokenizerMenuClick(e) }}
-                                                        >
-                                                            Select
-                                                        </Button>
-                                                        <Menu
-                                                            anchorEl={tokenizerMenuAnchorEl}
-                                                            open={tokenizerMenuOpen}
-                                                            onClose={handleTokenizerMenuClose}
-                                                        >
-                                                            {
-                                                                tokenizers.map(({ name, id }) => {
-                                                                    return (
-                                                                        <MenuItem
-                                                                            component="a"
-                                                                            href={`/api/export?fileid=${state.fileid}&userid=${save.userid}&timestamp=${save.timestamp}&tokenizer=${id}`}
-                                                                            onClick={handleTokenizerMenuClose}
-                                                                        >
-                                                                            {name}
-                                                                        </MenuItem>
-                                                                    );
-                                                                })
-                                                            }
-                                                        </Menu>
+                                                        {savelist[0].count}
                                                     </Grid>
                                                 </Grid>
                                             </ListItemButton>
-                                        </ListItem>
-                                    );
+                                            <Collapse in={selectedSaveGroup == index} timeout="auto" unmountOnExit>
+                                                <List disablePadding>
+                                                    {makeSubSaveList(savelist, index)}
+                                                </List>
+                                            </Collapse>
+                                        </div>
+                                    )
                                 })
                             }
                         </List>

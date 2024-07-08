@@ -22,11 +22,17 @@ import UndoIcon from '@mui/icons-material/Undo';
 import { AnnotationMenu } from "./AnnotationMenu";
 import { DocumentSelectorModal } from "./DocumentSelectorModal";
 import { RegexPatternModal } from "./RegexPatternModal";
+import { SaveAsForm } from "./SaveAsForm";
 
 
 export default function TopBar() {
     const theme = useTheme();
     const state = React.useContext(GlobalState);
+
+    /* SaveAsMenu */
+    const [saveAsMenuOpen, setSaveAsMenuOpen] = React.useState<boolean>(false);
+    const handleSaveAsMenuClick = (event: any) => { setSaveAsMenuOpen(true); };
+    // const handleDocumentSelectorMenuClose = () => { setDocumentSelectorMenuOpen(false); };
 
     /* DocumentSelectorMenu */
     const [documentSelectorMenuOpen, setDocumentSelectorMenuOpen] = React.useState<boolean>(false);
@@ -59,29 +65,43 @@ export default function TopBar() {
     }
 
     const clearAnnotations = () => {
-        loadAnnotations(state, "", "", "", true);
+        loadAnnotations(state, "", "", "", "", true);
     }
 
     React.useEffect(() => {
-        const saveid = queryParameters.get('saveid') || "";
-        loadAnnotations(state, state.fileid, state.userid, saveid);
-        setQueryParameters({ ...queryParameters, fileid: state.fileid, saveid: saveid, anchor: state.anchor })
+        const timestamp = queryParameters.get('timestamp') || "";
+        const savename = queryParameters.get('savename') || "";
+        loadAnnotations(state, state.fileid, state.userid, timestamp, savename);
+        setQueryParameters({ ...queryParameters, fileid: state.fileid, timestamp: state.timestamp, savename: state.savename, anchor: state.anchor })
     }, [state.fileid]);
+
+    const doSave = async (name?: string) => {
+        const didSave = await saveAnnotations(state, state.annotations, false, name != undefined ? name : state.savename);
+        setDidSave(didSave);
+        setMessage(
+            didSave
+                ? "Successfully saved"
+                : "Error: please see console",
+        );
+    }
 
 
     // handle what happens on key press
     const handleKeyPress = React.useCallback(async (event: any) => {
         /* Menu items
            ========= */
-        if ((event.ctrlKey || event.metaKey) && event.key == 's') {
+        if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key == 's') {
+            // save annotations with name on ctrl+shift+s
+            handleSaveAsMenuClick(event);
+            event.preventDefault();
+        } else if ((event.ctrlKey || event.metaKey) && event.key == 's') {
             // save annotations on ctrl+s
-            const annos = await saveAnnotations(state, state.annotations);
-            setDidSave(annos != null)
-            setMessage(
-                annos != null
-                    ? "Successfully saved"
-                    : "Error: please see console",
-            );
+            // if we're not supplied a name or save name,
+            if (!state.savename) {
+                handleSaveAsMenuClick(event);
+            } else {
+                doSave();
+            }
             event.preventDefault();
         } else if ((event.ctrlKey || event.metaKey) && event.key == 'o') {
             // open document menu on ctrl-o
@@ -157,13 +177,7 @@ export default function TopBar() {
                             </MenuItem>
                             <MenuItem
                                 onClick={async (e) => {
-                                    const annos = await saveAnnotations(state, state.annotations, false);
-                                    setDidSave(annos != null);
-                                    setMessage(
-                                        annos
-                                            ? "Successfully saved"
-                                            : "Error: please see console",
-                                    );
+                                    handleSaveAsMenuClick(e);
                                     handleLoadMenuClose();
                                 }}
                             >
@@ -171,7 +185,28 @@ export default function TopBar() {
                                     <SaveIcon />
                                 </ListItemIcon>
                                 <ListItemText>
-                                    Save annotations
+                                    Save Annotations As
+                                </ListItemText>
+                                <Typography variant="body2" color="text.secondary">
+                                    ⇧⌘S
+                                </Typography>
+                                <SaveAsForm open={saveAsMenuOpen} setOpen={setSaveAsMenuOpen} doSave={doSave} />
+                            </MenuItem>
+                            <MenuItem
+                                onClick={async (e) => {
+                                    if (!state.savename) {
+                                        handleSaveAsMenuClick(event);
+                                    } else {
+                                        doSave();
+                                    }
+                                    handleLoadMenuClose();
+                                }}
+                            >
+                                <ListItemIcon>
+                                    <SaveIcon />
+                                </ListItemIcon>
+                                <ListItemText>
+                                    Save Annotations
                                 </ListItemText>
                                 <Typography variant="body2" color="text.secondary">
                                     ⌘S

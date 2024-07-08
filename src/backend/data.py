@@ -143,9 +143,9 @@ def load_save_files(file_id, user_id=None):
         params["userid"] = user_id
 
     query = (
-        "SELECT userid, fileid, timestamp, savename, COUNT(*) AS count FROM annotations WHERE "
+        "SELECT userid, fileid, timestamp, savename, autosave, COUNT(*) AS count FROM annotations WHERE "
         + " AND ".join(conditions)
-        + " GROUP BY userid, fileid, timestamp, savename"
+        + " GROUP BY userid, fileid, timestamp, savename, autosave"
         + " ORDER BY timestamp DESC;"
     )
     return query_db(query, params)
@@ -264,23 +264,25 @@ def load_annotations(file_id, user_id, timestamp=None):
     return grouped.reset_index().to_dict(orient="records")
 
 
-def save_annotations(file_id, user_id, annotations, autosave: bool = False):
+def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename: str | None = None):
     with sqlite3.connect(ANNOTATIONS_DB) as conn:
-        savename = randomname.get_name()
+        if not savename:
+            savename = randomname.get_name()
         # Insert new entries
         if autosave:
             conn.execute(
                 """
-                DELETE FROM annotations WHERE savename = 'autosave';
-                """
+                DELETE FROM annotations WHERE savename = :savename AND autosave = :autosave;
+                """,
+                dict(savename=savename, autosave=int(autosave)),
             )
         for an in annotations:
             links = an["links"]
             conn.execute(
                 """
-                INSERT INTO annotations (annoid, fileid, userid, start, end, text, tag, color, savename)
-                    VALUES (:annoid, :fileid, :userid, :start, :end, :text, :tag, :color, :savename)
-                ON CONFLICT(fileid,userid,start,end,tag,savename) DO NOTHING;
+                INSERT INTO annotations (annoid, fileid, userid, start, end, text, tag, color, savename, autosave)
+                    VALUES (:annoid, :fileid, :userid, :start, :end, :text, :tag, :color, :savename, :autosave)
+                ON CONFLICT(fileid,userid,start,end,tag,savename,timestamp,autosave) DO NOTHING;
                 """,
                 dict(
                     annoid=an["annoid"],
@@ -291,7 +293,8 @@ def save_annotations(file_id, user_id, annotations, autosave: bool = False):
                     text=an["text"],
                     tag=an["tag"],
                     color=an.get("color", "#d3d3d3"),
-                    savename="autosave" if autosave else savename,
+                    savename=savename,
+                    autosave=int(autosave),
                 ),
             )
             conn.executemany(
@@ -315,14 +318,14 @@ def save_annotations(file_id, user_id, annotations, autosave: bool = False):
                 ],
             )
         result = conn.execute(
-            "SELECT timestamp FROM annotations WHERE savename = :savename;",
-            dict(savename="autosave" if autosave else savename),
+            "SELECT timestamp FROM annotations WHERE savename = :savename AND autosave = :autosave;",
+            dict(savename=savename, autosave=int(autosave)),
         )
         top = result.fetchone()
         # Return timestamp if it exists
         if top is not None:
-            return top[0]
-        return conn.execute("SELECT CURRENT_TIMESTAMP").fetchone()[0]
+            return {'timestamp': top[0], 'savename': savename}
+        return {'timestamp': conn.execute("SELECT CURRENT_TIMESTAMP").fetchone()[0], 'savename': savename}
 
 
 def init_annotation_db():
@@ -341,8 +344,9 @@ def init_annotation_db():
                 tag TEXT,
                 color TEXT,
                 savename TEXT,
+                autosave INTEGER,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE (fileid, userid, start, end, tag, savename)
+                UNIQUE (fileid, userid, start, end, tag, savename, timestamp, autosave)
             );
         """
         )
@@ -378,14 +382,14 @@ def export_annotations(file_id, user_id, timestamp: Optional[str] = None, export
     end = None
 
     # # earliest begin_annotation
-    # for anno in annotations:
-    #     if anno['tag'] == 'begin_annotation':
-    #         begin = anno
-    #         break
-    # # latest end_annotation
-    # for anno in annotations:
-    #     if anno['tag'] == 'end_annotation':
-    #         end = anno
+    for anno in annotations:
+        if anno['tag'] == 'begin_annotation':
+            begin = anno
+            break
+    # latest end_annotation
+    for anno in annotations:
+        if anno['tag'] == 'end_annotation':
+            end = anno
 
     if begin is None:
         begin = min(annotations, key=lambda x: x['start'])

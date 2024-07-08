@@ -185,8 +185,7 @@ const Annotator = (props: AnnotatorProps) => {
 
   const handleContextMenuButtonPress = (start: number, end: number, label: string, name: string) => {
     // if we're editing something, just update the mark instead
-    console.log('selected: ', state.editing)
-    console.log('new: ', label, ' ', start, '-', end)
+    // console.log('new: ', label, ' ', start, '-', end)
     let newAnno = null;
     if (state.editing != null) {
       newAnno = { ...state.editing, start: start, end: end, tag: label, text: state.tex.slice(start, end) };

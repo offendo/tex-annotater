@@ -4,6 +4,7 @@ from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS, cross_origin
 from pathlib import Path
 
+import time
 import base64
 import re
 import os
@@ -54,10 +55,11 @@ def post_annotations():
     userid = request.args.get("userid")
     fileid = request.args.get("fileid")
     autosave = request.args.get("autosave")
-    autosave = True if autosave == "true" else False
+    savename = request.args.get("savename")
+    autosave = 1 if autosave == "true" else 0
     annotations = request.get_json()["annotations"]
-    timestamp = save_annotations(fileid, userid, annotations, autosave=autosave)
-    return {"timestamp": timestamp}, 200
+    save_info = save_annotations(fileid, userid, annotations, autosave=autosave, savename=savename)
+    return save_info, 200
 
 
 @app.get("/export")
@@ -92,6 +94,7 @@ def get_annotations():
     userid = request.args.get("userid")
     fileid = request.args.get("fileid")
     timestamp = request.args.get("timestamp")
+    savename = request.args.get("savename")
     if userid is None or fileid is None or timestamp is None:
         return "Bad request: need userid, fileid, and timestamp!", 400
     annotations = load_annotations(fileid, userid, timestamp if len(timestamp) else None)
@@ -100,6 +103,7 @@ def get_annotations():
         "fileid": fileid,
         "annotations": annotations,
         "timestamp": timestamp,
+        "savename": savename,
     }, 200
 
 
