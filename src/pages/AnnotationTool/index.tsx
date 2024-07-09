@@ -115,10 +115,9 @@ const AnnotationTool = () => {
         }
 
         if (state.fileid != "" && !state.tex) {
-            console.log('calling load doc: ', state)
             loadDocument(state, fileid)
         }
-        if (state.fileid != "" && !state.annotations) {
+        if (state.fileid != "") {
             loadAnnotations(state, fileid, userid, timestamp)
         }
 

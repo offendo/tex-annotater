@@ -23,6 +23,7 @@ from .data import (
     load_pdf,
     load_save_files,
     load_annotations,
+    mark_save_as_final,
     save_annotations,
     get_savename_from_annoid,
     list_s3_documents,
@@ -105,6 +106,20 @@ def get_annotations():
         "timestamp": timestamp,
         "savename": savename,
     }, 200
+
+
+@app.post("/finalize")
+@cross_origin()
+def finalize_save():
+    userid = request.args.get("userid")
+    fileid = request.args.get("fileid")
+    timestamp = request.args.get("timestamp")
+    savename = request.args.get("savename")
+    if userid is None or fileid is None or timestamp is None:
+        return "Bad request: need userid, fileid, and timestamp!", 400
+    finalized = mark_save_as_final(fileid, userid, savename, timestamp)
+
+    return {"finalized": finalized}, 200
 
 
 @app.get("/saves")

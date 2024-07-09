@@ -12,6 +12,9 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import fuzzysort from "fuzzysort";
 import FileOpenIcon from '@mui/icons-material/FileOpen';
+import DownloadIcon from '@mui/icons-material/Download';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import CloseIcon from '@mui/icons-material/Close';
@@ -114,14 +117,27 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
             ? docs
             : fuzzysort.go(query, docs, { keys: ["filename", "arxiv_id"] }).map((t) => t.obj);
     };
+
     const [tokenizerMenuAnchorEl, setTokenizerMenuAnchorEl] = React.useState<null | HTMLElement>(null);
     const tokenizerMenuOpen = Boolean(tokenizerMenuAnchorEl);
+
     const handleTokenizerMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setTokenizerMenuAnchorEl(event.currentTarget);
     };
     const handleTokenizerMenuClose = () => {
         setTokenizerMenuAnchorEl(null);
     };
+
+    const toggleIsFinal = async (timestamp, savename, userid, fileid) => {
+        const requestOptions = {
+            method: "POST",
+            headers: { "Content-Type": "application/json", mode: "cors" },
+        };
+        const response = await fetch(`/api/finalize?timestamp=${timestamp}&savename=${savename}&userid=${userid}&fileid=${fileid}`, requestOptions);
+        const json = await response.json();
+        loadSaves(state.fileid);
+        return;
+    }
 
     const makeSubSaveList = (savelist: any[], saveGroupIndex: number) => {
         return (
@@ -140,13 +156,17 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                         <ListItemButton selected={selectedSave === index && selectedSaveGroup === saveGroupIndex}>
                             <Grid container >
                                 <Grid item xs={1}>
-                                    <Button
-                                        onMouseDown={(e) => { e.stopPropagation() }}
-                                        onClick={(e) => { e.stopPropagation(); handleTokenizerMenuClick(e) }}
+                                    <IconButton
+                                        id={save.timestamp + `groupIndex:${saveGroupIndex}:${index}`}
+                                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                                        onClick={(e) => {
+                                            handleTokenizerMenuClick(e);
+                                            e.stopPropagation();
+                                        }}
                                         style={{ padding: "0px" }}
                                     >
-                                        Export
-                                    </Button>
+                                        <DownloadIcon />
+                                    </IconButton>
                                     <Menu
                                         anchorEl={tokenizerMenuAnchorEl}
                                         open={tokenizerMenuOpen}
@@ -168,10 +188,19 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                                         }
                                     </Menu>
                                 </Grid>
+                                <Grid item xs={1}>
+                                    <IconButton
+                                        onMouseDown={(e) => { e.stopPropagation() }}
+                                        onClick={(e) => { e.stopPropagation(); toggleIsFinal(save.timestamp, save.savename, save.userid, save.fileid) }}
+                                        style={{ padding: "0px" }}
+                                    >
+                                        {save.final ? <CheckBoxIcon /> : <CheckBoxOutlineBlankIcon />}
+                                    </IconButton>
+                                </Grid>
                                 <Grid item xs={3}>
                                     {save.autosave ? "autosave" : `version ${savelist.length - index}`}
                                 </Grid>
-                                <Grid item xs={3}>
+                                <Grid item xs={2}>
                                     {save.userid}
                                 </Grid>
                                 <Grid item xs={3}>
@@ -227,7 +256,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                     <Grid container>
                         <List dense sx={{ width: "100%" }}>
                             <ListSubheader >
-                                <Grid container key={crypto.randomUUID()}>
+                                <Grid container>
                                     <Grid item xs={2}>
                                         Arxiv ID
                                     </Grid>
@@ -288,13 +317,17 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                     <Grid container>
                         <List disablePadding dense sx={{ width: "100%" }}>
                             <ListSubheader >
-                                <Grid container key={crypto.randomUUID()}>
+                                <Grid container>
                                     <Grid item xs={1}>
+                                        Export
+                                    </Grid>
+                                    <Grid item xs={1}>
+                                        Mark Final
                                     </Grid>
                                     <Grid item xs={3}>
                                         Save Name
                                     </Grid>
-                                    <Grid item xs={3}>
+                                    <Grid item xs={2}>
                                         Last User ID
                                     </Grid>
                                     <Grid item xs={3}>
@@ -308,16 +341,16 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                             {
                                 saves.map((savelist: any[], index: number) => {
                                     return (
-                                        <div key={crypto.randomUUID()}>
+                                        <div key={index}>
                                             <ListItemButton selected={selectedSaveGroup == index} onClick={(e) => handleSaveGroupClick(index)}>
                                                 <Grid container >
-                                                    <Grid item xs={1}>
+                                                    <Grid item xs={2}>
                                                         {selectedSaveGroup == index ? <ExpandLess /> : <ExpandMore />}
                                                     </Grid>
                                                     <Grid item xs={3}>
                                                         {savelist[0].savename}
                                                     </Grid>
-                                                    <Grid item xs={3}>
+                                                    <Grid item xs={2}>
                                                         {savelist[0].userid}
                                                     </Grid>
                                                     <Grid item xs={3}>

@@ -57,24 +57,25 @@ def list_s3_documents():
     docs = session.list_objects(Bucket="tex-annotation")["Contents"]
     objs = [
         {
-            'name': d["Key"].replace("texs/", ""),
-            'modified': d['LastModified'].strftime("'%y %b %d @%H:%M"),
-            'size': f"{int(d['Size']) / 1024:.1f}",
+            "name": d["Key"].replace("texs/", ""),
+            "modified": d["LastModified"].strftime("'%y %b %d @%H:%M"),
+            "size": f"{int(d['Size']) / 1024:.1f}",
         }
-        for d in docs if d["Key"].startswith("texs/")
+        for d in docs
+        if d["Key"].startswith("texs/")
     ]
     # names = [d["Key"].replace("texs/", "") for d in docs if d["Key"].startswith("texs/")]
 
     result = []
     for obj in objs:
-        name = obj['name']
+        name = obj["name"]
         if re.match(r"\d+\.\d+-", name):
-            arxiv_id, filename = name.split('-', maxsplit=1)
-            filename = filename.replace('.tex', '')
+            arxiv_id, filename = name.split("-", maxsplit=1)
+            filename = filename.replace(".tex", "")
         else:
             arxiv_id = ""
-            filename = name.replace('.tex', '')
-        result.append({'arxiv_id': arxiv_id, "filename": filename, **obj })
+            filename = name.replace(".tex", "")
+        result.append({"arxiv_id": arxiv_id, "filename": filename, **obj})
     return result
 
 
@@ -111,21 +112,32 @@ def list_all_textbooks():
     df = pd.read_csv(url)
     return df
 
+
 def upload_new_textbooks():
     df = list_all_textbooks()
     docs = session.list_objects(Bucket="tex-annotation")["Contents"]
-    existing = [d["Key"].replace("pdfs/", "").replace('.pdf', '') for d in docs if d["Key"].startswith("pdfs/")]
+    existing = [d["Key"].replace("pdfs/", "").replace(".pdf", "") for d in docs if d["Key"].startswith("pdfs/")]
     for idx, row in df.iterrows():
-        if row['name'] not in existing:
+        if row["name"] not in existing:
             # download and upload tex file
-            tex_id = row['tex'].split('/')[5]
+            tex_id = row["tex"].split("/")[5]
             tex_out = gdown.download(id=tex_id, output=f"/tmp/{row['name']}.tex")
-            session.upload_file(tex_out, 'tex-annotation', f"texs/{Path(tex_out).name}", ExtraArgs={'ACL':'public-read', 'ContentType': 'application/pdf'})
+            session.upload_file(
+                tex_out,
+                "tex-annotation",
+                f"texs/{Path(tex_out).name}",
+                ExtraArgs={"ACL": "public-read", "ContentType": "application/pdf"},
+            )
 
             # download and upload pdf file
-            pdf_id = row.pdf.split('/')[5]
-            pdf_out = gdown.download(id=pdf_id, output=f"/tmp/{row["name"]}.pdf")
-            session.upload_file(pdf_out, 'tex-annotation', f'pdfs/{Path(pdf_out).name}', ExtraArgs={'ACL':'public-read', 'ContentType': 'application/pdf'})
+            pdf_id = row.pdf.split("/")[5]
+            pdf_out = gdown.download(id=pdf_id, output=f"/tmp/{row['name']}.pdf")
+            session.upload_file(
+                pdf_out,
+                "tex-annotation",
+                f"pdfs/{Path(pdf_out).name}",
+                ExtraArgs={"ACL": "public-read", "ContentType": "application/pdf"},
+            )
 
             # remove both
             os.remove(tex_out)
@@ -135,18 +147,18 @@ def upload_new_textbooks():
 
 def load_save_files(file_id, user_id=None):
     """Loads all the annotation save files for a particular file/user"""
-    conditions = ["fileid = :fileid"]
+    conditions = ["a.fileid = :fileid"]
     params = dict(fileid=file_id)
 
     if user_id is not None:
-        conditions.append("userid = :userid")
+        conditions.append("a.userid = :userid")
         params["userid"] = user_id
 
     query = (
-        "SELECT userid, fileid, timestamp, savename, autosave, COUNT(*) AS count FROM annotations WHERE "
+        "SELECT a.userid, a.fileid, a.timestamp, a.savename, a.autosave, s.final, COUNT(*) AS count FROM annotations a LEFT JOIN saves s ON a.fileid = s.fileid AND a.userid = s.userid AND a.timestamp = s.timestamp AND a.savename = s.savename WHERE "
         + " AND ".join(conditions)
-        + " GROUP BY userid, fileid, timestamp, savename, autosave"
-        + " ORDER BY timestamp DESC;"
+        + " GROUP BY a.userid, a.fileid, a.timestamp, a.savename, a.autosave"
+        + " ORDER BY a.timestamp DESC;"
     )
     return query_db(query, params)
 
@@ -225,10 +237,16 @@ def load_annotations(file_id, user_id, timestamp=None):
         SELECT
           a.annoid, a.fileid, a.start, a.end, a.tag, a.text, a.color,
           l.start AS link_start, l.end AS link_end, l.tag AS link_tag,
-          l.source AS link_source, l.target AS link_target, l.fileid AS link_fileid, l.color AS link_color
+          l.source AS link_source, l.target AS link_target, l.fileid AS link_fileid, l.color AS link_color,
+          s.final AS final
         FROM annotations a
         LEFT JOIN links l
-        ON a.annoid = link_source
+            ON a.annoid = link_source
+        LEFT JOIN saves s
+            ON a.savename = s.savename
+            AND a.timestamp = s.timestamp
+            AND a.userid = s.userid
+            AND a.fileid = s.fileid
         WHERE a.fileid = :fileid
         AND a.timestamp = :timestamp;
     """
@@ -268,14 +286,33 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
     with sqlite3.connect(ANNOTATIONS_DB) as conn:
         if not savename:
             savename = randomname.get_name()
-        # Insert new entries
+
+        # Delete autosaves if we're about to overwrite.
         if autosave:
             conn.execute(
                 """
-                DELETE FROM annotations WHERE savename = :savename AND autosave = :autosave;
+                DELETE FROM annotations WHERE fileid = :fileid AND userid = :userid AND savename = :savename AND autosave = :autosave;
                 """,
-                dict(savename=savename, autosave=int(autosave)),
+                dict(savename=savename, autosave=int(autosave), fileid=file_id, userid=user_id),
             )
+            conn.execute(
+                """
+                DELETE FROM saves WHERE fileid = :fileid AND userid = :userid AND savename = :savename AND autosave = :autosave;
+                """,
+                dict(savename=savename, autosave=int(autosave), fileid=file_id, userid=user_id),
+            )
+
+        # Create save if needed
+        conn.execute(
+            """
+            INSERT INTO saves (fileid, userid, savename, final, autosave)
+                VALUES (:fileid, :userid, :savename, :final, :autosave)
+            ON CONFLICT(fileid, userid, savename, autosave, timestamp) DO NOTHING;
+            """,
+            dict(fileid=file_id, userid=user_id, savename=savename, autosave=int(autosave), final=0),
+        )
+
+        # Insert new entries
         for an in annotations:
             links = an["links"]
             conn.execute(
@@ -324,8 +361,24 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
         top = result.fetchone()
         # Return timestamp if it exists
         if top is not None:
-            return {'timestamp': top[0], 'savename': savename}
-        return {'timestamp': conn.execute("SELECT CURRENT_TIMESTAMP").fetchone()[0], 'savename': savename}
+            return {"timestamp": top[0], "savename": savename}
+        return {"timestamp": conn.execute("SELECT CURRENT_TIMESTAMP").fetchone()[0], "savename": savename}
+
+
+def mark_save_as_final(file_id, user_id, savename, timestamp):
+    with sqlite3.connect(ANNOTATIONS_DB) as conn:
+        conn.execute(
+            """
+            UPDATE saves
+              SET final = ((final | 1) - (final & 1))
+            WHERE fileid = :fileid
+              AND userid = :userid
+              AND savename = :savename
+              AND timestamp = :timestamp;
+            """,
+            dict(savename=savename, fileid=file_id, userid=user_id, timestamp=timestamp),
+        )
+        return True;
 
 
 def init_annotation_db():
@@ -370,9 +423,30 @@ def init_annotation_db():
             );
         """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS saves
+            (
+                saveid INTEGER PRIMARY KEY,
+                savename TEXT,
+                fileid TEXT,
+                userid TEXT,
+                final INTEGER,
+                autosave INTEGER,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (savename, fileid, userid, autosave, timestamp)
+            );
+        """
+        )
 
 
-def export_annotations(file_id, user_id, timestamp: Optional[str] = None, export_whole_file: bool = False, tokenizer: Optional[PreTrainedTokenizer] = None):
+def export_annotations(
+    file_id,
+    user_id,
+    timestamp: Optional[str] = None,
+    export_whole_file: bool = False,
+    tokenizer: Optional[PreTrainedTokenizer] = None,
+):
     # annotations is a list of dicts, each containing an annotation. We want to format this into an IOB tagged block of text.
     annotations = load_annotations(file_id, user_id, timestamp)
     tex = load_tex(file_id)
@@ -383,47 +457,52 @@ def export_annotations(file_id, user_id, timestamp: Optional[str] = None, export
 
     # # earliest begin_annotation
     for anno in annotations:
-        if anno['tag'] == 'begin_annotation':
+        if anno["tag"] == "begin_annotation":
             begin = anno
             break
     # latest end_annotation
     for anno in annotations:
-        if anno['tag'] == 'end_annotation':
+        if anno["tag"] == "end_annotation":
             end = anno
 
     if begin is None:
-        begin = min(annotations, key=lambda x: x['start'])
+        begin = min(annotations, key=lambda x: x["start"])
     if end is None:
-        end = max(annotations, key=lambda x: x['end'])
+        end = max(annotations, key=lambda x: x["end"])
 
     offset = 0
     if not export_whole_file:
-        tex = tex[begin['start']:end['end']]
-        offset = begin['start']
+        tex = tex[begin["start"] : end["end"]]
+        offset = begin["start"]
 
     # Now, we generate character-level IOB tags, which we can then merge together to create word/token level ones.
     iob_tags = [[] for _ in tex]
 
     for anno in annotations:
         # Ignore begin/end markers
-        if anno['tag'] in ['begin_annotation', 'end_annotation']:
+        if anno["tag"] in ["begin_annotation", "end_annotation"]:
             continue
 
-        for char_idx in range(anno['start'], anno['end']):
+        for char_idx in range(anno["start"], anno["end"]):
             # prefix = 'B-' if char_idx == anno['start'] else 'I-'
             # iob_tags[char_idx - offset].append(prefix + anno['tag'])
-            iob_tags[char_idx - offset].append(anno['tag'])
+            iob_tags[char_idx - offset].append(anno["tag"])
 
     for tag in iob_tags:
         if len(tag) == 0:
-            tag.append('O')
+            tag.append("O")
 
     if tokenizer:
         tokens = tokenizer(tex, add_special_tokens=False)
         token_tags = align_tags_to_tokens(tokens, char_tags=iob_tags)
-        return {'tags': token_tags, 'tex': tex, 'tokens': [tokenizer.convert_ids_to_tokens(i) for i in tokens['input_ids']]}
+        return {
+            "tags": token_tags,
+            "tex": tex,
+            "tokens": [tokenizer.convert_ids_to_tokens(i) for i in tokens["input_ids"]],
+        }
 
-    return {'tags': iob_tags, 'tex': tex}
+    return {"tags": iob_tags, "tex": tex}
+
 
 def align_tags_to_tokens(tokens: BatchEncoding, char_tags: list[list[str]]):
     aligned_tags = []
@@ -432,8 +511,8 @@ def align_tags_to_tokens(tokens: BatchEncoding, char_tags: list[list[str]]):
         if span is None:
             continue
 
-        tags_for_token = list({tag for token_tags in char_tags[span.start:span.end] for tag in token_tags})
-        if 'O' in tags_for_token and len(tags_for_token) > 1:
-            tags_for_token.remove('O')
+        tags_for_token = list({tag for token_tags in char_tags[span.start : span.end] for tag in token_tags})
+        if "O" in tags_for_token and len(tags_for_token) > 1:
+            tags_for_token.remove("O")
         aligned_tags.append(tags_for_token)
     return aligned_tags
