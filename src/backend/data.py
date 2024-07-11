@@ -16,10 +16,10 @@ from pathlib import Path
 
 session = boto3.client(
     "s3",
-    aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
-    aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+    aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", None),
+    aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", None),
 )
-ANNOTATIONS_DB = os.environ["ANNOTATIONS_DB"]
+ANNOTATIONS_DB = os.environ.get("ANNOTATIONS_DB", "annotations.db")
 
 CACHE_FILE = "/tmp/pdf_cache"
 
