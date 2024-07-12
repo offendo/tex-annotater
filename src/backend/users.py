@@ -3,7 +3,7 @@ import os
 import sqlite3
 from passlib.hash import bcrypt
 
-ANNOTATIONS_DB = os.environ["ANNOTATIONS_DB"]
+ANNOTATIONS_DB = os.environ.get("ANNOTATIONS_DB", "annotations.db")
 
 hasher = bcrypt.using(13)
 
