@@ -185,6 +185,7 @@ export function updateAnnotations(state: GlobalStateProps, annotations: TextSpan
     // Now save the annotations
     state.setAnnotations(annotations);
     saveAnnotations(state, annotations, true, state.savename);
+
 };
 
 export function undoUpdate(state: GlobalStateProps) {
@@ -230,12 +231,10 @@ export async function saveAnnotations(
 
     // POST save and ensure it saved correctly;
     try {
-        const start = Date.now()
         const response = await fetch(url, requestOptions);
         const res = await response.json();
-        console.log('total save time: ', Date.now() - start);
-        state.setTimestamp(res['timestamp'])
-        state.setSavename(res['savename'])
+        state.setTimestamp(res['timestamp']);
+        state.setSavename(res['savename']);
         console.log('Saved annotations: ', res['savename'])
         return true;
     } catch (e) {
@@ -244,12 +243,13 @@ export async function saveAnnotations(
     }
 }
 
-export const toggleLink = (state: GlobalStateProps, source: TextSpan, target: TextSpan) => {
+export const toggleLink = (state: GlobalStateProps, source: TextSpan, target: TextSpan, forceEnable: boolean = false) => {
     const link = makeLink(source, target);
     const splitIndex = source.links.findIndex((s) => s.source == link.source && s.target == link.target);
     if (splitIndex == -1) {
         source.links = [...source.links, link];
-    } else {
+    } else if (!forceEnable) {
+        // if we're force enabling, then don't remove the link
         source.links = [
             ...source.links.slice(0, splitIndex),
             ...source.links.slice(splitIndex + 1),

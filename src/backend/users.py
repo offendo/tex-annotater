@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import os
-import sqlite3
+import psycopg
 from passlib.hash import bcrypt
-
-ANNOTATIONS_DB = os.environ.get("ANNOTATIONS_DB", "annotations.db")
+from psycopg.rows import dict_row
+from .data_utils import CONN_STR
 
 hasher = bcrypt.using(13)
 
@@ -18,8 +18,7 @@ def check_password(plain_text_password, hashed_password):
 
 
 def query_db(query, params=()):
-    with sqlite3.connect(ANNOTATIONS_DB) as conn:
-        conn.row_factory = sqlite3.Row
+    with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
         results = conn.execute(query, params)
         records = [dict(r) for r in results]
     return records
@@ -27,7 +26,7 @@ def query_db(query, params=()):
 
 def authenticate_user(userid, plain_password):
     """Authenticates user password"""
-    query = "SELECT userid, password FROM users WHERE userid = :userid;"
+    query = "SELECT userid, password FROM users WHERE userid = %(userid)s;"
     params = dict(userid=userid)
     user = query_db(query, params)
     if len(user) == 0:
@@ -39,23 +38,23 @@ def authenticate_user(userid, plain_password):
 def add_user(userid, plain_password):
     """Adds new user"""
     hashed_pw = get_hashed_password(plain_password)
-    with sqlite3.connect(ANNOTATIONS_DB) as conn:
-        check = "SELECT userid FROM users WHERE userid = :userid;"
+    with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
+        check = "SELECT userid FROM users WHERE userid = %(userid)s;"
         result = conn.execute(check, dict(userid=userid))
         if len(result.fetchall()) > 0:
             return False
-        insert = "INSERT INTO users (userid, password) VALUES (:userid, :password);"
+        insert = "INSERT INTO users (userid, password) VALUES (%(userid)s, %(password)s);"
         conn.execute(insert, dict(userid=userid, password=hashed_pw))
         return True
 
 
 def init_users_db():
-    with sqlite3.connect(ANNOTATIONS_DB) as conn:
+    with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS users
             (
-                rowid INTEGER PRIMARY KEY,
+                rowid SERIAL PRIMARY KEY,
                 userid TEXT,
                 password TEXT,
                 UNIQUE (userid)

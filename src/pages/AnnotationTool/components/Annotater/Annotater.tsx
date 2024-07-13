@@ -131,7 +131,7 @@ const Annotator = (props: AnnotatorProps) => {
       }
       // If there's a possible target, add it as a link
       if (target != null) {
-        toggleLink(state, anno, target)
+        toggleLink(state, anno, target, true)
       }
     }
 
@@ -152,7 +152,7 @@ const Annotator = (props: AnnotatorProps) => {
 
       // If we have any candidates, go for it.
       if (candidates.length > 0) {
-        toggleLink(state, anno, candidates[0]);
+        toggleLink(state, anno, candidates[0], true);
       }
     }
 
@@ -177,7 +177,7 @@ const Annotator = (props: AnnotatorProps) => {
 
       // If we have any candidates, go for it.
       if (candidates.length > 0) {
-        toggleLink(state, anno, candidates[0]);
+        toggleLink(state, anno, candidates[0], true);
       }
     }
 

@@ -10,7 +10,7 @@ export default defineConfig({
     appTitle: "TeX",
   },
   server: {
-    port: 80,
+    port: 3000,
     https: true,
     cors: true,
     proxy: {

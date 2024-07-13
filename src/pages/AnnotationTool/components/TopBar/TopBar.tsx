@@ -77,6 +77,7 @@ export default function TopBar() {
 
     const doSave = async (name?: string) => {
         const didSave = await saveAnnotations(state, state.annotations, false, name != undefined ? name : state.savename);
+        setQueryParameters({ ...queryParameters, fileid: state.fileid, timestamp: state.timestamp, savename: name != undefined ? name : state.savename, anchor: state.anchor })
         setDidSave(didSave);
         setMessage(
             didSave

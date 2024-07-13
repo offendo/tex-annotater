@@ -6,6 +6,7 @@
 #   features: []
 #   all-features: false
 #   with-sources: false
+#   generate-hashes: false
 
 -e file:.
 apscheduler==3.10.4
@@ -68,6 +69,8 @@ pandas==2.2.1
     # via tex-annotater
 passlib==1.7.4
     # via tex-annotater
+psycopg==3.2.1
+    # via tex-annotater
 pysocks==1.7.1
     # via requests
 python-dateutil==2.9.0.post0
@@ -114,6 +117,7 @@ transformers==4.42.3
     # via tex-annotater
 typing-extensions==4.12.2
     # via huggingface-hub
+    # via psycopg
 tzdata==2024.1
     # via pandas
 tzlocal==5.2

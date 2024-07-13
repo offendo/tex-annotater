@@ -6,6 +6,7 @@
 #   features: []
 #   all-features: false
 #   with-sources: false
+#   generate-hashes: false
 
 -e file:.
 apscheduler==3.10.4
@@ -106,6 +107,8 @@ platformdirs==4.2.0
     # via black
 prompt-toolkit==3.0.43
     # via ipython
+psycopg==3.2.1
+    # via tex-annotater
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
@@ -173,6 +176,7 @@ transformers==4.42.3
     # via tex-annotater
 typing-extensions==4.12.2
     # via huggingface-hub
+    # via psycopg
 tzdata==2024.1
     # via pandas
 tzlocal==5.2

@@ -1,56 +1,28 @@
 #!/usr/bin/env python3
+import logging
 import os
-import sqlite3
+import re
+import psycopg
+from pathlib import Path
 from typing import Optional
+from datetime import datetime
+
 import boto3
-from gdown.download import shutil
+import gdown
 import pandas as pd
 import randomname
-import shelve
-import time
-import logging
-import gdown
-import re
 from transformers import BatchEncoding, PreTrainedTokenizer
-from pathlib import Path
+from psycopg.rows import dict_row
+from psycopg.adapt import Loader
+from .data_utils import CONN_STR, query_db
 
 session = boto3.client(
     "s3",
     aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", None),
     aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", None),
 )
-ANNOTATIONS_DB = os.environ.get("ANNOTATIONS_DB", "annotations.db")
-
-CACHE_FILE = "/tmp/pdf_cache"
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
-
-
-def filecache(maxsize=None):
-    def decorator(original_func):
-        def new_func(file_name, *args, **kwargs):
-            with shelve.open(CACHE_FILE) as cache, shelve.open(CACHE_FILE + ".lru") as times:
-                if file_name in cache:
-                    logger.debug("Cache hit!")
-                    times[file_name] = time.time()
-                    return cache[file_name]
-                elif len(cache) == maxsize:
-                    logger.debug("Cache full!")
-                    # get the filename of the earliest timestamp
-                    pop_value = sorted(list(times.items()), key=lambda x: x[1])[0][0]
-                    del cache[pop_value]
-                    del times[pop_value]
-                else:
-                    logger.debug("Cache miss!")
-                new_val = original_func(file_name, *args, **kwargs)
-                cache[file_name] = new_val
-                times[file_name] = time.time()
-                return new_val
-
-        return new_func
-
-    return decorator
 
 
 def list_s3_documents():
@@ -90,16 +62,8 @@ def load_tex(obj_key):
     return data.decode()
 
 
-def query_db(query, params=()):
-    with sqlite3.connect(ANNOTATIONS_DB) as conn:
-        conn.row_factory = sqlite3.Row
-        results = conn.execute(query, params)
-        records = [dict(r) for r in results]
-    return records
-
-
 def get_savename_from_annoid(annoid: str):
-    query = "SELECT timestamp, fileid, userid, savename FROM annotations WHERE annoid = :annoid;"
+    query = """SELECT "timestamp", fileid, userid, savename FROM annotations WHERE annoid = %(annoid)s;"""
     params = dict(annoid=annoid)
     return query_db(query, params)[0]
 
@@ -147,17 +111,21 @@ def upload_new_textbooks():
 
 def load_save_files(file_id, user_id=None):
     """Loads all the annotation save files for a particular file/user"""
-    conditions = ["a.fileid = :fileid"]
+    conditions = ["a.fileid = %(fileid)s"]
     params = dict(fileid=file_id)
 
     if user_id is not None:
-        conditions.append("a.userid = :userid")
+        conditions.append("a.userid = %(userid)s")
         params["userid"] = user_id
 
     query = (
-        "SELECT a.userid, a.fileid, a.timestamp, a.savename, a.autosave, s.final, COUNT(*) AS count FROM annotations a LEFT JOIN saves s ON a.fileid = s.fileid AND a.userid = s.userid AND a.timestamp = s.timestamp AND a.savename = s.savename WHERE "
+        """SELECT a.userid, a.fileid, a.timestamp, a.savename, a.autosave, s.final, COUNT(*) AS count
+           FROM annotations a
+           LEFT JOIN saves s
+             ON a.fileid = s.fileid AND a.userid = s.userid AND a.timestamp = s.timestamp AND a.savename = s.savename
+           WHERE """
         + " AND ".join(conditions)
-        + " GROUP BY a.userid, a.fileid, a.timestamp, a.savename, a.autosave"
+        + " GROUP BY a.userid, a.fileid, a.timestamp, a.savename, a.autosave, s.final"
         + " ORDER BY a.timestamp DESC;"
     )
     return query_db(query, params)
@@ -173,9 +141,9 @@ def load_all_annotations(fileid: str):
             l.fileid AS link_fileid, l.color AS link_color
         FROM annotations a
         LEFT JOIN links l
-        ON a.annoid = link_source
-        WHERE a.timestamp = (SELECT MAX(timestamp) FROM annotations WHERE fileid = a.fileid)
-          AND a.fileid != :fileid;
+        ON a.annoid = l.source
+        WHERE a.timestamp = (SELECT MAX("timestamp") FROM annotations WHERE fileid = a.fileid)
+          AND a.fileid != %(fileid)s;
     """
 
     # Query for annotations, but we don't care about user or file id
@@ -225,13 +193,13 @@ def load_annotations(file_id, user_id, timestamp=None):
     # use most recent save by default
     if not timestamp:
         result = query_db(
-            "SELECT MAX(timestamp) FROM annotations WHERE fileid = :fileid AND userid = :userid;",
+            """SELECT MAX("timestamp") FROM annotations WHERE fileid = %(fileid)s AND userid = %(userid)s;""",
             params=dict(fileid=file_id, userid=user_id),
         )
         result = pd.DataFrame.from_records(result)
         if len(result) == 0 or result.iloc[0] is None:
             return []
-        timestamp = result.iloc[0]["MAX(timestamp)"]
+        timestamp = result.iloc[0][result.columns[0]]
 
     query = """
         SELECT
@@ -241,14 +209,14 @@ def load_annotations(file_id, user_id, timestamp=None):
           s.final AS final
         FROM annotations a
         LEFT JOIN links l
-            ON a.annoid = link_source
+            ON a.annoid = l.source
         LEFT JOIN saves s
             ON a.savename = s.savename
             AND a.timestamp = s.timestamp
             AND a.userid = s.userid
             AND a.fileid = s.fileid
-        WHERE a.fileid = :fileid
-        AND a.timestamp = :timestamp;
+        WHERE a.fileid = %(fileid)s
+        AND a.timestamp = %(timestamp)s;
     """
     params = dict(fileid=file_id, userid=user_id, timestamp=timestamp)
 
@@ -283,7 +251,7 @@ def load_annotations(file_id, user_id, timestamp=None):
 
 
 def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename: str | None = None):
-    with sqlite3.connect(ANNOTATIONS_DB) as conn:
+    with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
         if not savename:
             savename = randomname.get_name()
 
@@ -291,13 +259,13 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
         if autosave:
             conn.execute(
                 """
-                DELETE FROM annotations WHERE fileid = :fileid AND userid = :userid AND savename = :savename AND autosave = :autosave;
+                DELETE FROM annotations WHERE fileid = %(fileid)s AND userid = %(userid)s AND savename = %(savename)s AND autosave = %(autosave)s;
                 """,
                 dict(savename=savename, autosave=int(autosave), fileid=file_id, userid=user_id),
             )
             conn.execute(
                 """
-                DELETE FROM saves WHERE fileid = :fileid AND userid = :userid AND savename = :savename AND autosave = :autosave;
+                DELETE FROM saves WHERE fileid = %(fileid)s AND userid = %(userid)s AND savename = %(savename)s AND autosave = %(autosave)s;
                 """,
                 dict(savename=savename, autosave=int(autosave), fileid=file_id, userid=user_id),
             )
@@ -306,8 +274,8 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
         conn.execute(
             """
             INSERT INTO saves (fileid, userid, savename, final, autosave)
-                VALUES (:fileid, :userid, :savename, :final, :autosave)
-            ON CONFLICT(fileid, userid, savename, autosave, timestamp) DO NOTHING;
+                VALUES (%(fileid)s, %(userid)s, %(savename)s, %(final)s, %(autosave)s)
+            ON CONFLICT(fileid, userid, savename, autosave, "timestamp") DO NOTHING;
             """,
             dict(fileid=file_id, userid=user_id, savename=savename, autosave=int(autosave), final=0),
         )
@@ -317,9 +285,9 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
             links = an["links"]
             conn.execute(
                 """
-                INSERT INTO annotations (annoid, fileid, userid, start, end, text, tag, color, savename, autosave)
-                    VALUES (:annoid, :fileid, :userid, :start, :end, :text, :tag, :color, :savename, :autosave)
-                ON CONFLICT(fileid,userid,start,end,tag,savename,timestamp,autosave) DO NOTHING;
+                INSERT INTO annotations (annoid, fileid, userid, start, "end", text, tag, color, savename, autosave)
+                    VALUES (%(annoid)s, %(fileid)s, %(userid)s, %(start)s, %(end)s, %(text)s, %(tag)s, %(color)s, %(savename)s, %(autosave)s)
+                ON CONFLICT(fileid,userid,start,"end",tag,savename,"timestamp",autosave) DO NOTHING;
                 """,
                 dict(
                     annoid=an["annoid"],
@@ -334,13 +302,14 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
                     autosave=int(autosave),
                 ),
             )
-            conn.executemany(
-                """
-                INSERT INTO links (fileid, userid, start, end, tag, color, source, target)
-                    VALUES (:fileid, :userid, :start, :end, :tag, :color, :source, :target)
-                ON CONFLICT(fileid,userid,start,end,tag,source,target) DO NOTHING;
-                """,
-                [
+            # Insert all the links
+            for ln in links:
+                conn.execute(
+                    """
+                    INSERT INTO links (fileid, userid, start, "end", tag, color, source, target)
+                        VALUES (%(fileid)s, %(userid)s, %(start)s, %(end)s, %(tag)s, %(color)s, %(source)s, %(target)s)
+                    ON CONFLICT(fileid,userid,start,"end",tag,source,target) DO NOTHING;
+                    """,
                     dict(
                         fileid=ln["fileid"],
                         userid=user_id,
@@ -350,56 +319,56 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
                         color=ln.get("color", "#d3d3d3"),
                         source=ln["source"],
                         target=ln["target"],
-                    )
-                    for ln in links
-                ],
-            )
+                    ),
+                )
         result = conn.execute(
-            "SELECT timestamp FROM annotations WHERE savename = :savename AND autosave = :autosave;",
+            """SELECT "timestamp" FROM annotations WHERE savename = %(savename)s AND autosave = %(autosave)s;""",
             dict(savename=savename, autosave=int(autosave)),
         )
         top = result.fetchone()
         # Return timestamp if it exists
         if top is not None:
-            return {"timestamp": top[0], "savename": savename}
-        return {"timestamp": conn.execute("SELECT CURRENT_TIMESTAMP").fetchone()[0], "savename": savename}
+            stamp = top['timestamp']
+        else:
+            stamp = conn.execute("SELECT CURRENT_TIMESTAMP").fetchone()['timestamp']
+        return {"timestamp": stamp, "savename": savename}
 
 
 def mark_save_as_final(file_id, user_id, savename, timestamp):
-    with sqlite3.connect(ANNOTATIONS_DB) as conn:
+    with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
         conn.execute(
             """
             UPDATE saves
               SET final = ((final | 1) - (final & 1))
-            WHERE fileid = :fileid
-              AND userid = :userid
-              AND savename = :savename
-              AND timestamp = :timestamp;
+            WHERE fileid = %(fileid)s
+              AND userid = %(userid)s
+              AND savename = %(savename)s
+              AND "timestamp" = %(timestamp)s;
             """,
             dict(savename=savename, fileid=file_id, userid=user_id, timestamp=timestamp),
         )
-        return True;
+        return True
 
 
 def init_annotation_db():
-    with sqlite3.connect(ANNOTATIONS_DB) as conn:
+    with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS annotations
             (
-                rowid INTEGER PRIMARY KEY,
+                rowid SERIAL PRIMARY KEY,
                 annoid TEXT,
                 fileid TEXT,
                 userid TEXT,
                 start INTEGER,
-                end INTEGER,
+                "end" INTEGER,
                 text TEXT,
                 tag TEXT,
                 color TEXT,
                 savename TEXT,
                 autosave INTEGER,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE (fileid, userid, start, end, tag, savename, timestamp, autosave)
+                "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (fileid, userid, start, "end", tag, savename, timestamp, autosave)
             );
         """
         )
@@ -407,19 +376,17 @@ def init_annotation_db():
             """
             CREATE TABLE IF NOT EXISTS links
             (
-                linkid INTEGER PRIMARY KEY,
+                linkid SERIAL PRIMARY KEY,
                 fileid TEXT,
                 userid TEXT,
                 start INTEGER,
-                end INTEGER,
+                "end" INTEGER,
                 tag TEXT,
                 color TEXT,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 source TEXT,
                 target TEXT,
-                UNIQUE (fileid, userid, start, end, tag, source, target),
-                FOREIGN KEY(source) REFERENCES annotations(annoid)
-                FOREIGN KEY(target) REFERENCES annotations(annoid)
+                UNIQUE (fileid, userid, start, "end", tag, source, target)
             );
         """
         )
@@ -427,13 +394,13 @@ def init_annotation_db():
             """
             CREATE TABLE IF NOT EXISTS saves
             (
-                saveid INTEGER PRIMARY KEY,
+                saveid SERIAL PRIMARY KEY,
                 savename TEXT,
                 fileid TEXT,
                 userid TEXT,
                 final INTEGER,
                 autosave INTEGER,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE (savename, fileid, userid, autosave, timestamp)
             );
         """

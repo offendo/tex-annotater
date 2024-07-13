@@ -140,6 +140,17 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
     }
 
     const makeSubSaveList = (savelist: any[], saveGroupIndex: number) => {
+        let total = savelist.length;
+        let index = 0;
+        for (const save of savelist) {
+            if (save.autosave == 0) {
+                index += 1;
+                save.saveIndex = index;
+            } else {
+                save.saveIndex = -1;
+                total -= 1;
+            }
+        }
         return (
             savelist.map((save: any, index: number) => {
                 return (
@@ -198,7 +209,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                                     </IconButton>
                                 </Grid>
                                 <Grid item xs={3}>
-                                    {save.autosave ? "autosave" : `version ${savelist.length - index}`}
+                                    {save.autosave ? "autosave" : `version ${total - save.saveIndex}`}
                                 </Grid>
                                 <Grid item xs={2}>
                                     {save.userid}

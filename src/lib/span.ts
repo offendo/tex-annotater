@@ -14,11 +14,11 @@ export interface Link extends Span {
 
 export interface TextSpan extends Span {
   tag: string
-  fileid: string
   text: string
   name: string
   color: string
   links: Link[]
+  fileid: string
   annoid: string
 }
 
