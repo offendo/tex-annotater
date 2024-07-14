@@ -350,6 +350,7 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
 
 
 def mark_save_as_final(file_id, user_id, savename, timestamp):
+    parsed = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f 00")
     with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
         conn.execute(
             """
@@ -360,7 +361,7 @@ def mark_save_as_final(file_id, user_id, savename, timestamp):
               AND savename = %(savename)s
               AND "timestamp" = %(timestamp)s;
             """,
-            dict(savename=savename, fileid=file_id, userid=user_id, timestamp=timestamp),
+            dict(savename=savename, fileid=file_id, userid=user_id, timestamp=parsed),
         )
         return True
 
