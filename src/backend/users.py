@@ -3,9 +3,10 @@ import os
 import psycopg
 from passlib.hash import bcrypt
 from psycopg.rows import dict_row
-from .data_utils import CONN_STR
+from .data_utils import CONN_STR, query_db
 
 hasher = bcrypt.using(13)
+
 
 def get_hashed_password(plain_text_password):
     hashed_password = hasher.hash(plain_text_password)
@@ -15,13 +16,6 @@ def get_hashed_password(plain_text_password):
 def check_password(plain_text_password, hashed_password):
     # Check hashed password. Using passlib, the salt is saved into the hash itself
     return hasher.verify(plain_text_password, hashed_password)
-
-
-def query_db(query, params=()):
-    with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
-        results = conn.execute(query, params)
-        records = [dict(r) for r in results]
-    return records
 
 
 def authenticate_user(userid, plain_password):

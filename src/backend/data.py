@@ -14,7 +14,7 @@ import randomname
 from transformers import BatchEncoding, PreTrainedTokenizer
 from psycopg.rows import dict_row
 from psycopg.adapt import Loader
-from .data_utils import CONN_STR
+from .data_utils import CONN_STR, query_db
 
 session = boto3.client(
     "s3",
@@ -31,12 +31,6 @@ class TimestampLoader(Loader):
 
 psycopg.adapters.register_loader("timestamp", TimestampLoader)
 psycopg.adapters.register_loader("timestamptz", TimestampLoader)
-
-def query_db(query, params=()):
-    with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
-        results = conn.execute(query, params)
-        records = [dict(r) for r in results]
-    return records
 
 def list_s3_documents():
     docs = session.list_objects(Bucket="tex-annotation")["Contents"]

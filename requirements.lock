@@ -55,11 +55,15 @@ jinja2==3.1.3
 jmespath==1.0.1
     # via boto3
     # via botocore
+joblib==1.4.2
+    # via scikit-learn
 markupsafe==2.1.5
     # via jinja2
     # via werkzeug
 numpy==1.26.4
     # via pandas
+    # via scikit-learn
+    # via scipy
     # via transformers
 packaging==24.0
     # via gunicorn
@@ -98,6 +102,10 @@ s3transfer==0.10.0
     # via boto3
 safetensors==0.4.3
     # via transformers
+scikit-learn==1.5.1
+    # via tex-annotater
+scipy==1.14.0
+    # via scikit-learn
 six==1.16.0
     # via apscheduler
     # via fire
@@ -106,6 +114,8 @@ soupsieve==2.5
     # via beautifulsoup4
 termcolor==2.4.0
     # via fire
+threadpoolctl==3.5.0
+    # via scikit-learn
 tokenizers==0.19.1
     # via transformers
 tqdm==4.66.2
