@@ -6,3 +6,4 @@ Dockerfile
 Dockerfile.backend
 annotations.db
 .flaskenv
+postgres-data/
