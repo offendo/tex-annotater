@@ -2,6 +2,7 @@
 import os
 import json
 
+from datetime import datetime
 import boto3
 import psycopg
 from botocore.exceptions import ClientError
@@ -18,6 +19,12 @@ class TimestampLoader(Loader):
 psycopg.adapters.register_loader("timestamp", TimestampLoader)
 psycopg.adapters.register_loader("timestamptz", TimestampLoader)
 
+def parse_timestamp(t_str):
+    # Yeah I know...
+    if '.' not in t_str:
+        t_str = t_str[:-3] + '.0' + ' 00'
+    timestamp = datetime.strptime(t_str, '%Y-%m-%d %H:%M:%S.%f 00')
+    return timestamp
 
 def query_db(query, params=()):
     with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:

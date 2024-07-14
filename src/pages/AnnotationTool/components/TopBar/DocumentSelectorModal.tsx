@@ -119,13 +119,15 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
     };
 
     const [tokenizerMenuAnchorEl, setTokenizerMenuAnchorEl] = React.useState<null | HTMLElement>(null);
-    const tokenizerMenuOpen = Boolean(tokenizerMenuAnchorEl);
+    const [tokenizerMenuOpen, setTokenizerMenuOpen] = React.useState<number>(-1);
 
-    const handleTokenizerMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const handleTokenizerMenuClick = (event: React.MouseEvent<HTMLButtonElement>, index: number) => {
         setTokenizerMenuAnchorEl(event.currentTarget);
+	setTokenizerMenuOpen(tokenizerMenuOpen == index ? -1 : index)
     };
     const handleTokenizerMenuClose = () => {
         setTokenizerMenuAnchorEl(null);
+	setTokenizerMenuOpen(-1);
     };
 
     const toggleIsFinal = async (timestamp, savename, userid, fileid) => {
@@ -171,7 +173,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                                         id={save.timestamp + `groupIndex:${saveGroupIndex}:${index}`}
                                         onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                                         onClick={(e) => {
-                                            handleTokenizerMenuClick(e);
+                                            handleTokenizerMenuClick(e, index);
                                             e.stopPropagation();
                                         }}
                                         style={{ padding: "0px" }}
@@ -180,19 +182,19 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                                     </IconButton>
                                     <Menu
                                         anchorEl={tokenizerMenuAnchorEl}
-                                        open={tokenizerMenuOpen}
+                                        open={tokenizerMenuOpen == index && selectedSaveGroup == saveGroupIndex}
                                         onClose={handleTokenizerMenuClose}
                                     >
                                         {
                                             tokenizers.map(({ name, id }) => {
                                                 return (
                                                     <MenuItem
-                                                        key={`name:${name}id:${id}`}
+							key={`name:${name}id:${id}:${save.timestamp}:${save.userid}:${save.fileid}`}
                                                         component="a"
                                                         href={`/api/export?fileid=${state.fileid}&userid=${save.userid}&timestamp=${save.timestamp}&tokenizer=${id}`}
                                                         onClick={handleTokenizerMenuClose}
                                                     >
-                                                        {name}
+                                                        {save.timestamp} {name}
                                                     </MenuItem>
                                                 );
                                             })

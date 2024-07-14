@@ -14,7 +14,7 @@ import randomname
 from transformers import BatchEncoding, PreTrainedTokenizer
 from psycopg.rows import dict_row
 from psycopg.adapt import Loader
-from .data_utils import CONN_STR, query_db
+from .data_utils import CONN_STR, query_db, parse_timestamp
 
 session = boto3.client(
     "s3",
@@ -232,7 +232,7 @@ def load_annotations(file_id, user_id, timestamp=None):
     # and then pass that as a parameter instead of the given timestamp. I don't
     # know why...I think the only difference is the lack of a '+' before the
     # timezone 00 at the end, which may be mangled by over HTTP.
-    parsed = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f 00")
+    parsed = parse_timestamp(timestamp)
     params = dict(fileid=file_id, userid=user_id, timestamp=parsed)
 
     # Query for annotations, but we don't care about user or file id
@@ -350,7 +350,7 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
 
 
 def mark_save_as_final(file_id, user_id, savename, timestamp):
-    parsed = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f 00")
+    parsed = parse_timestamp(timestamp)
     with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
         conn.execute(
             """
@@ -432,6 +432,9 @@ def export_annotations(
 ):
     # annotations is a list of dicts, each containing an annotation. We want to format this into an IOB tagged block of text.
     annotations = load_annotations(file_id, user_id, timestamp)
+    print(annotations)
+    print(len(annotations))
+    print(timestamp)
     tex = load_tex(file_id)
 
     # Find the begin/end annotations, otherwise use the earliest and latest annotations
@@ -440,12 +443,15 @@ def export_annotations(
 
     # # earliest begin_annotation
     for anno in annotations:
+        print(anno['tag'], flush=True)
         if anno["tag"] == "begin_annotation":
             begin = anno
+            print("Begin: ", anno, flush=True)
             break
     # latest end_annotation
     for anno in annotations:
         if anno["tag"] == "end_annotation":
+            print("End: ", anno, flush=True)
             end = anno
 
     if begin is None:
