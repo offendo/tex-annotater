@@ -432,9 +432,6 @@ def export_annotations(
 ):
     # annotations is a list of dicts, each containing an annotation. We want to format this into an IOB tagged block of text.
     annotations = load_annotations(file_id, user_id, timestamp)
-    print(annotations)
-    print(len(annotations))
-    print(timestamp)
     tex = load_tex(file_id)
 
     # Find the begin/end annotations, otherwise use the earliest and latest annotations
@@ -443,15 +440,12 @@ def export_annotations(
 
     # # earliest begin_annotation
     for anno in annotations:
-        print(anno['tag'], flush=True)
         if anno["tag"] == "begin_annotation":
             begin = anno
-            print("Begin: ", anno, flush=True)
             break
     # latest end_annotation
     for anno in annotations:
         if anno["tag"] == "end_annotation":
-            print("End: ", anno, flush=True)
             end = anno
 
     if begin is None:
