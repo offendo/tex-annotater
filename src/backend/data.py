@@ -14,7 +14,7 @@ import randomname
 from transformers import BatchEncoding, PreTrainedTokenizer
 from psycopg.rows import dict_row
 from psycopg.adapt import Loader
-from .data_utils import CONN_STR, query_db
+from .data_utils import CONN_STR
 
 session = boto3.client(
     "s3",
@@ -24,6 +24,19 @@ session = boto3.client(
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
+# Register adapter to make sure psycopg3 returns datetime strings instead of objects
+class TimestampLoader(Loader):
+    def load(self, data):
+        return bytes(data).decode();
+
+psycopg.adapters.register_loader("timestamp", TimestampLoader)
+psycopg.adapters.register_loader("timestamptz", TimestampLoader)
+
+def query_db(query, params=()):
+    with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
+        results = conn.execute(query, params)
+        records = [dict(r) for r in results]
+    return records
 
 def list_s3_documents():
     docs = session.list_objects(Bucket="tex-annotation")["Contents"]
@@ -218,7 +231,15 @@ def load_annotations(file_id, user_id, timestamp=None):
         WHERE a.fileid = %(fileid)s
         AND a.timestamp = %(timestamp)s;
     """
-    params = dict(fileid=file_id, userid=user_id, timestamp=timestamp)
+
+    # For some reason, somewhere in the process the timestamp is being mangled
+    # so it's no longer interpretable by psycopg.
+    # In order to get a proper query, we have to manually parse it like this
+    # and then pass that as a parameter instead of the given timestamp. I don't
+    # know why...I think the only difference is the lack of a '+' before the
+    # timezone 00 at the end, which may be mangled by over HTTP.
+    parsed = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f 00")
+    params = dict(fileid=file_id, userid=user_id, timestamp=parsed)
 
     # Query for annotations, but we don't care about user or file id
     annotations = query_db(query, params=params)
@@ -368,7 +389,7 @@ def init_annotation_db():
                 savename TEXT,
                 autosave INTEGER,
                 "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE (fileid, userid, start, "end", tag, savename, timestamp, autosave)
+                UNIQUE (fileid, userid, start, "end", tag, savename, "timestamp", autosave)
             );
         """
         )
@@ -401,7 +422,7 @@ def init_annotation_db():
                 final INTEGER,
                 autosave INTEGER,
                 "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE (savename, fileid, userid, autosave, timestamp)
+                UNIQUE (savename, fileid, userid, autosave, "timestamp")
             );
         """
         )
