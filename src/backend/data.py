@@ -24,13 +24,16 @@ session = boto3.client(
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
+
 # Register adapter to make sure psycopg3 returns datetime strings instead of objects
 class TimestampLoader(Loader):
     def load(self, data):
-        return bytes(data).decode();
+        return bytes(data).decode()
+
 
 psycopg.adapters.register_loader("timestamp", TimestampLoader)
 psycopg.adapters.register_loader("timestamptz", TimestampLoader)
+
 
 def list_s3_documents():
     docs = session.list_objects(Bucket="tex-annotation")["Contents"]
@@ -343,9 +346,9 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
         top = result.fetchone()
         # Return timestamp if it exists
         if top is not None:
-            stamp = top['timestamp']
+            stamp = top["timestamp"]
         else:
-            stamp = conn.execute("SELECT CURRENT_TIMESTAMP").fetchone()['timestamp']
+            stamp = conn.execute("SELECT CURRENT_TIMESTAMP").fetchone()["timestamp"]
         return {"timestamp": stamp, "savename": savename}
 
 
@@ -478,13 +481,17 @@ def export_annotations(
     if tokenizer:
         tokens = tokenizer(tex, add_special_tokens=False)
         token_tags = align_tags_to_tokens(tokens, char_tags=iob_tags)
+
+        # Returns a list of (token, [tags])
         return {
-            "tags": token_tags,
+            "iob_tags": [
+                (tokenizer.convert_ids_to_tokens(i), tags) for i, tags in zip(tokens["input_ids"], token_tags)
+            ],
+            "annotations": annotations,
             "tex": tex,
-            "tokens": [tokenizer.convert_ids_to_tokens(i) for i in tokens["input_ids"]],
         }
 
-    return {"tags": iob_tags, "tex": tex}
+    return {"iob_tags": [(char, tag) for char, tag in zip(tex, iob_tags)], "tex": tex, "annotations": annotations}
 
 
 def align_tags_to_tokens(tokens: BatchEncoding, char_tags: list[list[str]]):
