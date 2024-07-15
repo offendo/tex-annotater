@@ -16,4 +16,5 @@ COPY privkey3.pem /etc/nginx/privkey.pem
 COPY options-ssl-nginx.conf /etc/nginx/options-ssl-nginx.conf
 COPY ssl-dhparams.pem /etc/nginx/ssl-dhparams.pem
 
+EXPOSE 80
 CMD ["nginx","-g","daemon off;"]
