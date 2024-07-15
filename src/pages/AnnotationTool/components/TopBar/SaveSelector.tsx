@@ -23,8 +23,8 @@ import { MenuItemProps } from "./MenuItemProps";
 
 type SaveSelectorProps = {
     onSelectSave: (save: any, index: number) => any;
-    disableExport: boolean;
-    disableMarkFinal: boolean;
+    disableExport?: boolean;
+    disableMarkFinal?: boolean;
 }
 
 export const SaveSelector = (props: SaveSelectorProps) => {
