@@ -38,7 +38,8 @@ export const SaveSelector = (props: SaveSelectorProps) => {
     const tokenizers = [
         { name: "Llemma 7b", id: "EleutherAI/llemma_7b" },
         { name: "Llemma 34b", id: "EleutherAI/llemma_34b" },
-        // { name: "Llama-3 8b Instruct", id: "meta-llama/Meta-Llama-3-8B-Instruct" }
+        { name: "GPT-3.5", id: "Xenova/gpt-3.5" },
+        { name: "GPT-4", id: "Xenova/gpt-4" },
     ]
 
     const loadSaves = async (fileid: string) => {
