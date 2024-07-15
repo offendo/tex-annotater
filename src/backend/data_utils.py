@@ -37,7 +37,7 @@ def query_db(query, params=()):
 
 
 def get_secret(secret_name):
-    client = boto3.client("secretsmanager", region="us-west-1")
+    client = boto3.client("secretsmanager")
     get_secret_value_response = client.get_secret_value(SecretId=secret_name)
     secret = json.loads(get_secret_value_response["SecretString"])
     return secret
