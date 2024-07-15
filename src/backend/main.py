@@ -14,6 +14,8 @@ import json
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from transformers import AutoTokenizer
+
+from backend.scoring import score_and_diff
 from .search import fuzzysearch
 from .data import (
     export_annotations,
@@ -77,6 +79,28 @@ def export_save():
         json.dump(anno_json, f)
     return send_file(out_file, as_attachment=True, download_name=out_file.split("/")[-1])
 
+@app.get("/score")
+@cross_origin()
+def score_annotations():
+    userid = request.args.get("userid")
+    fileid = request.args.get("fileid")
+    timestamp = request.args.get("timestamp")
+
+    ref_userid = request.args.get("ref_userid")
+    ref_fileid = request.args.get("ref_fileid")
+    ref_timestamp = request.args.get("ref_timestamp")
+
+    tokenizer_id = request.args.get("tokenizer", "EleutherAI/llemma_7b")
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_id)
+
+    sys_json = export_annotations(file_id=fileid, user_id=userid, timestamp=timestamp, tokenizer=tokenizer)
+    ref_json = export_annotations(file_id=ref_fileid, user_id=ref_userid, timestamp=ref_timestamp, tokenizer=tokenizer)
+    scores = score_and_diff(sys_json, ref_json)
+    # out_file = f"/tmp/scores-{fileid}-{userid}-{timestamp}.txt"
+    # with open(out_file, "w") as f:
+    #     f.write(scores)
+    # return send_file(out_file, as_attachment=True, download_name=out_file.split("/")[-1])
+    return scores, 200
 
 @app.get("/annotations/all")
 @cross_origin()

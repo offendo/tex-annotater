@@ -7,15 +7,13 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import { saveAnnotations, GlobalState } from '@/lib/GlobalState';
+import { MenuItemProps } from './MenuItemProps';
 
 export type SaveAsFormProps = {
-    open: boolean
-    setOpen: (x: boolean) => any
-
     doSave: (name?: string) => any
 };
 
-export function SaveAsForm(props: SaveAsFormProps) {
+export function SaveAsForm(props: SaveAsFormProps & MenuItemProps) {
 
     const handleClose = () => {
         props.setOpen(false);

@@ -443,13 +443,14 @@ def export_annotations(
 
     # # earliest begin_annotation
     for anno in annotations:
-        if anno["tag"] == "begin_annotation":
+        if anno["tag"] == "begin annotation":
             begin = anno
             break
     # latest end_annotation
     for anno in annotations:
-        if anno["tag"] == "end_annotation":
+        if anno["tag"] == "end annotation":
             end = anno
+            break
 
     if begin is None:
         begin = min(annotations, key=lambda x: x["start"])
@@ -466,7 +467,7 @@ def export_annotations(
 
     for anno in annotations:
         # Ignore begin/end markers
-        if anno["tag"] in ["begin_annotation", "end_annotation"]:
+        if anno["tag"] in ["begin annotation", "end annotation"]:
             continue
 
         for char_idx in range(anno["start"], anno["end"]):

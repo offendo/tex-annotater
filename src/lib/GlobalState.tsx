@@ -235,8 +235,8 @@ export async function saveAnnotations(
         const res = await response.json();
         state.setTimestamp(res['timestamp']);
         state.setSavename(res['savename']);
-        console.log('Saved annotations: ', res['savename'])
-        return true;
+        console.log('Saved annotations: ', res['savename'], ' timestamp ', res['timestamp'])
+        return res['timestamp'];
     } catch (e) {
         console.error(e);
         return false;

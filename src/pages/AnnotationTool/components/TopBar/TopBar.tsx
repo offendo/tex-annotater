@@ -12,10 +12,11 @@ import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Menu from "@mui/material/Menu";
-import { Status, GlobalState, loadAnnotations, loadDocument, saveAnnotations, undoUpdate, redoUpdate } from "@/lib/GlobalState";
+import { Status, GlobalState, loadAnnotations, loadDocument, saveAnnotations, undoUpdate, redoUpdate, GlobalStateProps } from "@/lib/GlobalState";
 import ManageSearchIcon from '@mui/icons-material/ManageSearch';
 import BackspaceIcon from '@mui/icons-material/Backspace';
 import FileOpenIcon from '@mui/icons-material/FileOpen';
+import GradingIcon from '@mui/icons-material/Grading';
 import MenuIcon from '@mui/icons-material/Menu';
 import RedoIcon from '@mui/icons-material/Redo';
 import UndoIcon from '@mui/icons-material/Undo';
@@ -23,6 +24,7 @@ import { AnnotationMenu } from "./AnnotationMenu";
 import { DocumentSelectorModal } from "./DocumentSelectorModal";
 import { RegexPatternModal } from "./RegexPatternModal";
 import { SaveAsForm } from "./SaveAsForm";
+import { ScoresDialog } from "./ScoresDialog";
 
 
 export default function TopBar() {
@@ -44,6 +46,9 @@ export default function TopBar() {
     const handleRegexPatternMenuClick = (event: any) => { setRegexPatternMenuOpen(true); };
     // const handleRegexPatternMenuClose = () => { setRegexPatternMenuOpen(false); };
 
+    /* ScoresDialog */
+    const [scoresDialogOpen, setScoresDialogOpen] = React.useState<boolean>(false);
+    const handleScoresDialogClick = (event: any) => { setScoresDialogOpen(true); };
 
     /* LoadFileMenu */
     const handleLoadMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => { setLoadMenuAnchorEl(event.currentTarget); };
@@ -85,7 +90,6 @@ export default function TopBar() {
                 : "Error: please see console",
         );
     }
-
 
     // handle what happens on key press
     const handleKeyPress = React.useCallback(async (event: any) => {
@@ -230,6 +234,15 @@ export default function TopBar() {
                                 </ListItemText>
                                 <Typography variant="body2" color="text.secondary"> ⌘O </Typography>
                                 <DocumentSelectorModal isOpen={documentSelectorMenuOpen} setIsOpen={setDocumentSelectorMenuOpen} />
+                            </MenuItem>
+                            <MenuItem onClick={(e) => { handleScoresDialogClick(e) }}>
+                                <ListItemIcon>
+                                    <GradingIcon />
+                                </ListItemIcon>
+                                <ListItemText>
+                                    Get Annotation Scores
+                                </ListItemText>
+                                <ScoresDialog open={scoresDialogOpen} setOpen={setScoresDialogOpen} />
                             </MenuItem>
                             <MenuItem onClick={handleRegexPatternMenuClick} >
                                 <ListItemIcon>
