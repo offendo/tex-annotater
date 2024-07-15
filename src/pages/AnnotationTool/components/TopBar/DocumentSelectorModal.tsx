@@ -194,7 +194,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                                                         href={`/api/export?fileid=${state.fileid}&userid=${save.userid}&timestamp=${save.timestamp}&tokenizer=${id}`}
                                                         onClick={handleTokenizerMenuClose}
                                                     >
-                                                        {save.timestamp} {name}
+                                                        {name}
                                                     </MenuItem>
                                                 );
                                             })
