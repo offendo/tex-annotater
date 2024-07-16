@@ -45,10 +45,11 @@ export const SaveSelector = (props: SaveSelectorProps) => {
 
     const loadSaves = async (fileid: string, userid: string) => {
         try {
-            if (!props.allowOtherUsers) {
-                const res = await fetch(`/api/saves?fileid=${fileid}&userid=${userid}`, { mode: "cors" });
+            let res = null;
+            if (!(props.allowOtherUsers || state.isAdmin)) {
+                res = await fetch(`/api/saves?fileid=${fileid}&userid=${userid}`, { mode: "cors" });
             } else {
-                const res = await fetch(`/api/saves?fileid=${fileid}`, { mode: "cors" });
+                res = await fetch(`/api/saves?fileid=${fileid}`, { mode: "cors" });
             }
             const json = await res.json();
             // Group results by savename, which aren't unique anymore
@@ -101,7 +102,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
         };
         const response = await fetch(`/api/finalize?timestamp=${timestamp}&savename=${savename}&userid=${userid}&fileid=${fileid}`, requestOptions);
         const json = await response.json();
-        loadSaves(state.fileid);
+        loadSaves(state.fileid, state.userid);
         return;
     }
 

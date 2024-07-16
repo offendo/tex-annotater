@@ -9,7 +9,7 @@ import { defaultColorMap } from "@/lib/colors";
 import "@/style/style.css";
 import { pdfjs } from "react-pdf";
 import useAuth from "@/lib/Token";
-import { GlobalState as GlobaLContext, GlobalStateProps, Status, loadAnnotations, loadDocument, redoUpdate, saveAnnotations, undoUpdate } from "@/lib/GlobalState";
+import { GlobalState as GlobaLContext, GlobalStateProps, Status, checkIsAdmin, loadAnnotations, loadDocument, redoUpdate, saveAnnotations, undoUpdate } from "@/lib/GlobalState";
 import { ThemeOptions, ThemeProvider, createTheme } from '@mui/material/styles';
 
 
@@ -45,6 +45,7 @@ const AnnotationTool = () => {
 
     // State
     const [fileid, setFileId] = useState<string>(queryParameters.get("fileid") || "");
+    const [isAdmin, setIsAdmin] = useState<boolean>(false);
     const [anchor, setAnchor] = useState<string>(queryParameters.get("anchor") || "");
     const [tex, setTex] = useState<string>("");
     const [pdf, setPdf] = useState<string>("");
@@ -64,6 +65,8 @@ const AnnotationTool = () => {
         setUserId: () => {},
         fileid: fileid,
         setFileId: setFileId,
+        isAdmin: isAdmin,
+        setIsAdmin: setIsAdmin,
         anchor: anchor,
         setAnchor: setAnchor,
         timestamp: timestamp,
@@ -113,6 +116,8 @@ const AnnotationTool = () => {
         if (!token || token.length == 0) {
             navigate("/signin");
         }
+        // we're logged in, set admin and load document/annotations;
+        checkIsAdmin(state)
 
         if (state.fileid != "" && !state.tex) {
             loadDocument(state, fileid)

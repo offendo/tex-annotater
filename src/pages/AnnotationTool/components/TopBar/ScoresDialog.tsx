@@ -50,7 +50,7 @@ export function ScoresDialog(props: ScoresDialogProps) {
                     <DialogContentText>
                         Select a save file to use as a reference.
                     </DialogContentText>
-                    <SaveSelector onSelectSave={(save, index) => setRefSave(save)} disableExport={true} disableMarkFinal={true} />
+                    <SaveSelector onSelectSave={(save, index) => setRefSave(save)} disableExport={true} disableMarkFinal={true} allowOtherUsers={true}/>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={(e) => { getScores(state, refSave.fileid, refSave.userid, refSave.timestamp); handleClose(); }} disabled={refSave == null}>Download Scores</Button>

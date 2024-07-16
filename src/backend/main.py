@@ -51,6 +51,13 @@ sched = BackgroundScheduler(daemon=True)
 sched.add_job(upload_new_textbooks, "interval", minutes=10)
 sched.start()
 
+@app.post("/admin")
+@cross_origin()
+def get_is_admin():
+    userid = request.args.get("userid")
+    admin = userid in ['nilay', 'jeff'] # TODO move this to database
+    return {'isAdmin': admin}, 200
+
 
 @app.post("/annotations")
 @cross_origin()

@@ -34,6 +34,9 @@ export type GlobalStateProps = {
     userid: string,
     setUserId: (uid: string) => any,
 
+    isAdmin: boolean,
+    setIsAdmin: (admin: boolean) => any,
+
     editing: TextSpan | null,
     setEditing: (anno: TextSpan | null) => any,
 
@@ -80,6 +83,9 @@ const defaultState = {
     userid: "",
     setUserId: (_) => {},
 
+    isAdmin: false,
+    setIsAdmin: (_) => {},
+
     editing: null,
     setEditing: (_) => {},
 
@@ -107,6 +113,13 @@ const defaultState = {
     setUndoIndex: () => {},
 
 } as GlobalStateProps;
+
+export const checkIsAdmin = async (state: GlobalStateProps) => {
+    const url = `/api/admin?userid=${state.userid}`;
+    const response = await fetch(url, {mode: "cors"});
+    const json = await response.json();
+    state.setIsAdmin(json['isAdmin']);
+}
 
 export async function loadAnnotations(
     state: GlobalStateProps,
