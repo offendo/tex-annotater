@@ -23,6 +23,7 @@ import { MenuItemProps } from "./MenuItemProps";
 
 type SaveSelectorProps = {
     onSelectSave: (save: any, index: number) => any;
+    allowOtherUsers?: boolean;
     disableExport?: boolean;
     disableMarkFinal?: boolean;
 }
@@ -42,9 +43,13 @@ export const SaveSelector = (props: SaveSelectorProps) => {
         { name: "GPT-4", id: "Xenova/gpt-4" },
     ]
 
-    const loadSaves = async (fileid: string) => {
+    const loadSaves = async (fileid: string, userid: string) => {
         try {
-            const res = await fetch(`/api/saves?fileid=${fileid}`, { mode: "cors" });
+            if (!props.allowOtherUsers) {
+                const res = await fetch(`/api/saves?fileid=${fileid}&userid=${userid}`, { mode: "cors" });
+            } else {
+                const res = await fetch(`/api/saves?fileid=${fileid}`, { mode: "cors" });
+            }
             const json = await res.json();
             // Group results by savename, which aren't unique anymore
             const groupedSaves = Object.values(groupBy(json['saves'], "savename"));
@@ -72,7 +77,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
 
     // Load saves whenever the fileid changes
     React.useEffect(() => {
-        loadSaves(state.fileid);
+        loadSaves(state.fileid, state.userid);
     },
         [state.fileid, state.annotations, state.savename]
     )
