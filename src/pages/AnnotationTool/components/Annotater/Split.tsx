@@ -46,7 +46,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
     }
     // If it's linked to something, use the link's target color
     if (split.anno.links.length > 0) {
-      if (split.anno.tag == 'name') {
+      if (split.anno.tag == 'name' && split.anno.links[0].tag != 'name') {
         return split.anno.color + '70';
       }
       return split.anno.links[0].color + "70";

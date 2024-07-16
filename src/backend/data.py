@@ -432,25 +432,24 @@ def export_annotations(
     timestamp: Optional[str] = None,
     export_whole_file: bool = False,
     tokenizer: Optional[PreTrainedTokenizer] = None,
+    begin: Optional[dict] = None,
+    end: Optional[dict] = None,
 ):
     # annotations is a list of dicts, each containing an annotation. We want to format this into an IOB tagged block of text.
     annotations = load_annotations(file_id, user_id, timestamp)
     tex = load_tex(file_id)
 
     # Find the begin/end annotations, otherwise use the earliest and latest annotations
-    begin = None
-    end = None
-
-    # # earliest begin_annotation
-    for anno in annotations:
-        if anno["tag"] == "begin annotation":
-            begin = anno
-            break
-    # latest end_annotation
-    for anno in annotations:
-        if anno["tag"] == "end annotation":
-            end = anno
-            break
+    if begin is None:
+        for anno in annotations:
+            if anno["tag"] == "begin annotation":
+                begin = anno
+                break
+    if end is None:
+        for anno in annotations:
+            if anno["tag"] == "end annotation":
+                end = anno
+                break
 
     if begin is None:
         begin = min(annotations, key=lambda x: x["start"])
@@ -492,7 +491,7 @@ def export_annotations(
             "tex": tex,
         }
 
-    return {"iob_tags": [(char, tag) for char, tag in zip(tex, iob_tags)], "tex": tex, "annotations": annotations}
+    return {"iob_tags": [(char, tag) for char, tag in zip(tex, iob_tags)], "tex": tex, "annotations": annotations, 'begin': begin, 'end': end}
 
 
 def align_tags_to_tokens(tokens: BatchEncoding, char_tags: list[list[str]]):

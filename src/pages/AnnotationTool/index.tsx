@@ -94,10 +94,10 @@ const AnnotationTool = () => {
     const handleKeyPress = useCallback((event: any) => {
         /* Undo/Redo
            ========= */
-        if (event.ctrlKey && event.key == 'z') {
+        if ((event.ctrlKey || event.metaKey) && event.key == 'z') {
             undoUpdate(state);
         }
-        else if (event.ctrlKey && event.shiftKey && event.key == 'Z') {
+        else if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key == 'Z') {
             redoUpdate(state);
         }
     }, [state]);

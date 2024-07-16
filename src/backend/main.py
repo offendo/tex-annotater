@@ -101,12 +101,10 @@ def score_annotations():
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_id)
 
     sys_json = export_annotations(file_id=fileid, user_id=userid, timestamp=timestamp, tokenizer=tokenizer)
-    ref_json = export_annotations(file_id=ref_fileid, user_id=ref_userid, timestamp=ref_timestamp, tokenizer=tokenizer)
+    begin = sys_json['begin']
+    end = sys_json['end']
+    ref_json = export_annotations(file_id=ref_fileid, user_id=ref_userid, timestamp=ref_timestamp, tokenizer=tokenizer, begin=begin, end=end)
     scores = score_and_diff(sys_json, ref_json)
-    # out_file = f"/tmp/scores-{fileid}-{userid}-{timestamp}.txt"
-    # with open(out_file, "w") as f:
-    #     f.write(scores)
-    # return send_file(out_file, as_attachment=True, download_name=out_file.split("/")[-1])
     return scores, 200
 
 @app.get("/annotations/all")
