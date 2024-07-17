@@ -470,9 +470,9 @@ def export_annotations(
             continue
 
         for char_idx in range(anno["start"], anno["end"]):
-            # prefix = 'B-' if char_idx == anno['start'] else 'I-'
-            # iob_tags[char_idx - offset].append(prefix + anno['tag'])
-            iob_tags[char_idx - offset].append(anno["tag"])
+            prefix = 'B-' if char_idx == anno['start'] else 'I-'
+            iob_tags[char_idx - offset].append(prefix + anno['tag'])
+            # iob_tags[char_idx - offset].append(anno["tag"])
 
     for tag in iob_tags:
         if len(tag) == 0:
@@ -489,6 +489,8 @@ def export_annotations(
             ],
             "annotations": annotations,
             "tex": tex,
+            'begin': begin,
+            'end': end,
         }
 
     return {"iob_tags": [(char, tag) for char, tag in zip(tex, iob_tags)], "tex": tex, "annotations": annotations, 'begin': begin, 'end': end}

@@ -27,6 +27,7 @@ type SaveSelectorProps = {
     disableExport?: boolean;
     disableMarkFinal?: boolean;
 }
+// TODO Add MenuItem in the tokenizers which lets us type in our own name to send off
 
 export const SaveSelector = (props: SaveSelectorProps) => {
 
@@ -41,6 +42,8 @@ export const SaveSelector = (props: SaveSelectorProps) => {
         { name: "Llemma 34b", id: "EleutherAI/llemma_34b" },
         { name: "GPT-3.5", id: "Xenova/gpt-3.5" },
         { name: "GPT-4", id: "Xenova/gpt-4" },
+        { name: "BERT Base (cased)", id: "bert-base-cased" },
+        { name: "BERT Large (cased)", id: "bert-large-cased" },
     ]
 
     const loadSaves = async (fileid: string, userid: string) => {
@@ -162,7 +165,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                                                                 href={`/api/export?fileid=${state.fileid}&userid=${save.userid}&timestamp=${save.timestamp}&tokenizer=${id}`}
                                                                 onClick={handleTokenizerMenuClose}
                                                             >
-                                                                {save.timestamp} {name}
+                                                                {name}
                                                             </MenuItem>
                                                         );
                                                     })

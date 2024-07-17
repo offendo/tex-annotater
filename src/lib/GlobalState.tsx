@@ -133,7 +133,7 @@ export async function loadAnnotations(
         let res: any = {};
         if (empty) {
             console.log("Clearing annotations...");
-            res = { annotations: [], fileid: fileid, savename: "" };
+            res = { annotations: [], fileid: fileid, savename: "", timestamp: ""};
         } else {
             const url = `/api/annotations?fileid=${fileid}&userid=${userid}&timestamp=${timestamp ? timestamp : ""}&savename=${savename ? savename : ""}`
             const response = await fetch(url, { mode: "cors" });
