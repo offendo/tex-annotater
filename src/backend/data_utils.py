@@ -23,10 +23,12 @@ def parse_timestamp(t_str):
     # Yeah I know...
     if '.' not in t_str:
         t_str = t_str[:-3] + '.0' + ' 00'
-    if not t_str.endswith(' 00'):
-        timestamp = datetime.strptime(t_str, '%Y-%m-%d %H:%M:%S.%f')
-    else:
+    if t_str.endswith(' 00'):
         timestamp = datetime.strptime(t_str, '%Y-%m-%d %H:%M:%S.%f 00')
+    elif t_str.endswith('+00'):
+        timestamp = datetime.strptime(t_str, '%Y-%m-%d %H:%M:%S.%f+00')
+    else:
+        timestamp = datetime.strptime(t_str, '%Y-%m-%d %H:%M:%S.%f')
     return timestamp
 
 def query_db(query, params=()):
