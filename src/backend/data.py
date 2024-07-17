@@ -349,7 +349,7 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
             stamp = top["timestamp"]
         else:
             stamp = conn.execute("SELECT CURRENT_TIMESTAMP").fetchone()["timestamp"]
-        return {"timestamp": stamp, "savename": savename}
+        return {"timestamp": stamp, "savename": savename, 'fileid': file_id, 'userid': user_id}
 
 
 def mark_save_as_final(file_id, user_id, savename, timestamp):

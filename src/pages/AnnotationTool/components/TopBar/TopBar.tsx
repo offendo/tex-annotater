@@ -70,7 +70,7 @@ export default function TopBar() {
     }
 
     const clearAnnotations = () => {
-        loadAnnotations(state, "", "", "", "", true);
+        loadAnnotations(state, state.fileid, state.userid, "", "", true);
     }
 
     React.useEffect(() => {

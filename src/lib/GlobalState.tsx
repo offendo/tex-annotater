@@ -249,6 +249,7 @@ export async function saveAnnotations(
         const res = await response.json();
         state.setTimestamp(res['timestamp']);
         state.setSavename(res['savename']);
+        state.setFileId(res['fileid']);
         console.log('Saved annotations: ', res['savename'], ' timestamp ', res['timestamp'])
         return res['timestamp'];
     } catch (e) {
