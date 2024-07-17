@@ -240,6 +240,7 @@ export async function saveAnnotations(
         body: JSON.stringify({ annotations: annotations }),
     };
     // We handle autosaves differently
+    console.log(`Saving with fileid ${state.fileid}`);
     const url = `/api/annotations?fileid=${state.fileid}&userid=${state.userid}&autosave=${autosave}&savename=${savename}`;
 
     // POST save and ensure it saved correctly;

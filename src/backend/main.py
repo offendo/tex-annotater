@@ -51,7 +51,7 @@ sched = BackgroundScheduler(daemon=True)
 sched.add_job(upload_new_textbooks, "interval", minutes=10)
 sched.start()
 
-@app.post("/admin")
+@app.get("/admin")
 @cross_origin()
 def get_is_admin():
     userid = request.args.get("userid")
@@ -68,6 +68,10 @@ def post_annotations():
     savename = request.args.get("savename")
     autosave = 1 if autosave == "true" else 0
     annotations = request.get_json()["annotations"]
+    if not fileid:
+        return {'error': 'missing fileid'}, 400
+    if not userid:
+        return {'error': 'missing userid'}, 400
     save_info = save_annotations(fileid, userid, annotations, autosave=autosave, savename=savename)
     return save_info, 200
 
