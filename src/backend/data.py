@@ -506,5 +506,12 @@ def align_tags_to_tokens(tokens: BatchEncoding, char_tags: list[list[str]]):
         tags_for_token = list({tag for token_tags in char_tags[span.start : span.end] for tag in token_tags})
         if "O" in tags_for_token and len(tags_for_token) > 1:
             tags_for_token.remove("O")
+
+        # Ensure that we only have B- or I- but not both
+        for tag in tags_for_token:
+            b = tag.replace('I-', 'B-')
+            i = tag.replace('B-', 'I-')
+            if b in tags_for_token and i in tags_for_token:
+                tags_for_token.remove(i)
         aligned_tags.append(tags_for_token)
     return aligned_tags
