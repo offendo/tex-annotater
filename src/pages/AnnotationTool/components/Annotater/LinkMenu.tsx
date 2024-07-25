@@ -114,11 +114,20 @@ export function LinkMenu(props: LinkMenuProps) {
   allAnnos = sortBy(allAnnos, (anno) => {
     const mp1 = anno.start + (anno.start - anno.end) / 2;
     const mp2 = props.selectedAnnotation.start + (props.selectedAnnotation.start - props.selectedAnnotation.end) / 2;
-    // prioritize current file
+
+    const dist = Math.abs(mp1 - mp2)
+
+    // 1. prioritize current file
     if (anno.fileid != props.selectedAnnotation.fileid) {
-      return 1e12 + Math.abs(mp1 - mp2);
+      return 1e12 + dist;
     }
-    return Math.abs(mp1 - mp2);
+
+    // 2. prioritize names
+    if (anno.tag != "name") {
+      return 1e10 + dist;
+    }
+
+    return dist;
   })
 
   /* Split by "linked" and "non-linked" */

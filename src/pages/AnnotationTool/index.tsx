@@ -122,30 +122,29 @@ const AnnotationTool = () => {
         if (state.fileid != "" && !state.tex) {
             loadDocument(state, fileid)
         }
-        if (state.fileid != "") {
+        if (fileid != "" && timestamp != "") {
             loadAnnotations(state, fileid, userid, timestamp)
-        }
-
-        // Wait 1 second before trying to scroll, gives the DOM time to load in.
-        // Probably a better way to do this but I tried a few things and it didn't work.
-        // Retry x5
-        if (anchor.length > 0) {
-            let tries = 0;
-            var repeater = setInterval(() => {
-                if (tries < 3) {
-                    if (!isNaN(anchor)) {
-                        const percent = parseFloat(anchor);
-                        console.log(`jumping to ${percent}%, fudged by -0.0003 = ${percent - 0.0003}`)
-                        jumpToPercent(percent - 0.0003); // fudge the jump percent slightly
+            // Wait 1 second before trying to scroll, gives the DOM time to load in.
+            // Probably a better way to do this but I tried a few things and it didn't work.
+            // Retry x5
+            if (anchor.length > 0) {
+                let tries = 0;
+                var repeater = setInterval(() => {
+                    if (tries < 3) {
+                        if (!isNaN(anchor)) {
+                            const percent = parseFloat(anchor);
+                            console.log(`jumping to ${percent}%, fudged by -0.0003 = ${percent - 0.0003}`)
+                            jumpToPercent(percent - 0.0003); // fudge the jump percent slightly
+                        } else {
+                            console.log(`jumping to ${anchor}`)
+                            jumpToElement(anchor);
+                        }
+                        tries += 1;
                     } else {
-                        console.log(`jumping to ${anchor}`)
-                        jumpToElement(anchor);
+                        clearInterval(repeater);
                     }
-                    tries += 1;
-                } else {
-                    clearInterval(repeater);
-                }
-            }, 2000)
+                }, 2000)
+            }
         }
     }, []);
 
