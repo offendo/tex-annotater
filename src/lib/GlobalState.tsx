@@ -180,6 +180,9 @@ export async function loadDocument(state: GlobalStateProps, fileid: string) {
         const pdf_res = await (await pdf_response).json();
         state.setPdf(pdf_res["pdf"]);
 
+        // Force empty annotations
+        state.setAnnotations([]);
+
     } catch (e) {
         console.error(e);
     }
