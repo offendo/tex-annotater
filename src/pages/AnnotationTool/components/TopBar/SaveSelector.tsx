@@ -4,6 +4,7 @@ import TextField from "@mui/material/TextField";
 import { GlobalState, loadAnnotations, loadDocument } from "@/lib/GlobalState";
 import { Typography, Button, IconButton, Box, Dialog, DialogTitle, DialogContent, DialogActions, useTheme, Grid, ListSubheader, Collapse } from "@mui/material";
 import Menu from '@mui/material/Menu';
+import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -162,7 +163,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                                                             <MenuItem
                                                                 key={`name:${name}id:${id}:${save.timestamp}:${save.userid}:${save.fileid}`}
                                                                 component="a"
-                                                                href={`/api/export?fileid=${state.fileid}&userid=${save.userid}&timestamp=${save.timestamp}&tokenizer=${id}`}
+                                                                href={`/api/export?fileid=${state.fileid}&userid=${save.userid}&timestamp=${save.timestamp}&savename=${save.savename}&tokenizer=${id}`}
                                                                 onClick={handleTokenizerMenuClose}
                                                             >
                                                                 {name}
@@ -190,12 +191,14 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                                     {save.autosave ? "autosave" : `version ${total - save.saveIndex}`}
                                 </Grid>
                                 <Grid item xs={2}>
-                                    {save.userid}
-                                </Grid>
-                                <Grid item xs={3}>
-                                    {save.timestamp}
                                 </Grid>
                                 <Grid item xs={2}>
+                                    {save.userid}
+                                </Grid>
+                                <Grid item xs={2}>
+                                    {save.timestamp.split('.', 1)[0]}
+                                </Grid>
+                                <Grid item xs={1}>
                                     {save.count}
                                 </Grid>
                             </Grid>
@@ -208,7 +211,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
     return (
         <Box
             sx={{
-                width: 1000,
+                width: 1200,
                 maxHeight: 200,
                 height: "fit-content",
                 backgroundColor: theme.palette.background.default,
@@ -231,13 +234,16 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                                 Save Name
                             </Grid>
                             <Grid item xs={2}>
-                                Last User ID
-                            </Grid>
-                            <Grid item xs={3}>
-                                Last Timestamp
+                                Initial User ID
                             </Grid>
                             <Grid item xs={2}>
-                                Last # Annotations
+                                Last User ID
+                            </Grid>
+                            <Grid item xs={2}>
+                                Last Timestamp
+                            </Grid>
+                            <Grid item xs={1}>
+                                # Anno.
                             </Grid>
                         </Grid>
                     </ListSubheader>
@@ -251,15 +257,20 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                                                 {selectedSaveGroup == index ? <ExpandLess /> : <ExpandMore />}
                                             </Grid>
                                             <Grid item xs={3}>
-                                                {savelist[0].savename}
+                                                <Tooltip title={savelist[0].savename}>
+                                                    {savelist[0].savename.length > 20 ? savelist[0].savename.slice(0,20) + '...' : savelist[0].savename}
+                                                </Tooltip>
+                                            </Grid>
+                                            <Grid item xs={2}>
+                                                {savelist.at(-1).userid}
                                             </Grid>
                                             <Grid item xs={2}>
                                                 {savelist[0].userid}
                                             </Grid>
-                                            <Grid item xs={3}>
-                                                {savelist[0].timestamp}
-                                            </Grid>
                                             <Grid item xs={2}>
+                                                {savelist[0].timestamp.split('.', 1)[0]}
+                                            </Grid>
+                                            <Grid item xs={1}>
                                                 {savelist[0].count}
                                             </Grid>
                                         </Grid>

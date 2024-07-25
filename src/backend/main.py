@@ -82,10 +82,11 @@ def export_save():
     userid = request.args.get("userid")
     fileid = request.args.get("fileid")
     timestamp = request.args.get("timestamp")
+    savename = request.args.get("savename")
     tokenizer_id = request.args.get("tokenizer", "EleutherAI/llemma_7b")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_id)
     anno_json = export_annotations(file_id=fileid, user_id=userid, timestamp=timestamp, tokenizer=tokenizer)
-    out_file = f"/tmp/{fileid}-{userid}-{timestamp}.json"
+    out_file = f"/tmp/{fileid}-{userid}-{savename}-{tokenizer_id.replace('/', '_')}.json"
     with open(out_file, "w") as f:
         json.dump(anno_json, f)
     return send_file(out_file, as_attachment=True, download_name=out_file.split("/")[-1])
