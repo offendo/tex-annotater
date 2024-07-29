@@ -114,7 +114,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                     sx={{
                         width: 1200,
                         minWidth: 1200,
-                        maxHeight: 500,
+                        maxHeight: 400,
                         height: "fit-content",
                         backgroundColor: theme.palette.background.default,
                         overflowY: "scroll",

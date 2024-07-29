@@ -212,7 +212,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
         <Box
             sx={{
                 width: 1200,
-                maxHeight: 200,
+                maxHeight: 300,
                 height: "fit-content",
                 backgroundColor: theme.palette.background.default,
                 overflowY: "scroll",
