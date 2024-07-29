@@ -31,6 +31,8 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
     const [queryParameters, setQueryParameters] = useSearchParams();
     const [documents, setDocuments] = React.useState([]);
     const [selectedDoc, setSelectedDoc] = React.useState<number>(-1);
+    const [documentSelectorOpen, setDocumentSelectorOpen] = React.useState<boolean>(true);
+    const [saveSelectorOpen, setSaveSelectorOpen] = React.useState<boolean>(false);
 
     async function listAllDocuments() {
         try {
@@ -52,6 +54,20 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
     const handleClose = (e: any) => {
         props.setIsOpen(false);
         e.stopPropagation();
+    };
+    const handleDocumentSelectorClick = (e: any) => {
+        const isOpen = documentSelectorOpen;
+        setDocumentSelectorOpen(!isOpen);
+        if (isOpen) {
+            setSaveSelectorOpen(true);
+        }
+    };
+    const handleSaveSelectorClick = (e: any) => {
+        const isOpen = saveSelectorOpen;
+        setSaveSelectorOpen(!isOpen);
+        if (isOpen) {
+            setDocumentSelectorOpen(true);
+        }
     };
 
     const onSelectSave = (save: any, index: number) => {
@@ -78,13 +94,15 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
             sx={{ overflowX: "hidden", overflowY: "hidden" }}
         >
             <DialogActions >
+                <Button onClick={handleSaveSelectorClick}>
+                    {saveSelectorOpen ? <ExpandLess /> : <ExpandMore />} Toggle saves
+                </Button>
                 <TextField
                     autoFocus
                     size="small"
                     variant="outlined"
                     fullWidth
                     label="Search documents"
-                    sx={{ m: "10px" }}
                     onChange={(e) => { setQuery(e.target.value) }}
                 />
                 <IconButton onClick={handleClose}>
@@ -92,11 +110,11 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                 </IconButton>
             </DialogActions>
             <DialogContent>
-                <Typography variant="h6"> Open document </Typography>
                 <Box
                     sx={{
-                        width: 1000,
-                        maxHeight: 200,
+                        width: 1200,
+                        minWidth: 1200,
+                        maxHeight: 500,
                         height: "fit-content",
                         backgroundColor: theme.palette.background.default,
                         overflowY: "scroll",
@@ -128,7 +146,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                                         <ListItem
                                             key={doc.arxiv_id + doc.filename}
                                             value={doc.name}
-                                            onClick={(e) => { selectDocument(doc, index); }}
+                                            onClick={(e) => { selectDocument(doc, index); setSaveSelectorOpen(true); }}
                                         >
                                             <ListItemButton disableGutters selected={selectedDoc === index}>
                                                 <Grid container >
@@ -153,8 +171,9 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                         </List>
                     </Grid>
                 </Box>
-                <Typography variant="h6" sx={{ m: "5px" }}> Load save </Typography>
-                <SaveSelector onSelectSave={onSelectSave} />
+                <Collapse in={saveSelectorOpen} timeout="auto" >
+                    <SaveSelector onSelectSave={onSelectSave} />
+                </Collapse>
             </DialogContent>
         </Dialog >
     );

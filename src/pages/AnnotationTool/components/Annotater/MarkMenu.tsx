@@ -47,7 +47,6 @@ export function MarkMenu(props: MarkMenuProps) {
             fetch(`/api/savename?annoid=${target}`).then(res => res.json()).then((result: any) => {
                 const timestamp = result['timestamp'];
                 const savename = result['savename'];
-                console.log(result)
                 window.open(
                     `?userid=&fileid=${file}&anchor=${target}&timestamp=${timestamp}&savename=${savename}`,
                     "_blank",
@@ -136,7 +135,7 @@ export function MarkMenu(props: MarkMenuProps) {
                             }}
                         >
                             {" "}
-                            {state.editing == null ? <EditIcon /> : <CancelIcon />}{" "}
+                            {state.editing != annotation ? <EditIcon /> : <CancelIcon />}{" "}
                         </IconButton>
 
                         {/* Delete button */}

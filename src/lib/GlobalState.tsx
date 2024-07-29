@@ -152,19 +152,6 @@ export async function loadAnnotations(
     }
 }
 
-export async function loadAllAnnotations(state: GlobalStateProps, fileid: string) {
-    try {
-        const response = await fetch(`/api/annotations/all?fileid=${fileid}`);
-        const res = await response.json();
-        // Must be done like this, otherwise it calls constantly in the useEffect hook
-        // state.setOtherFileAnnotations = res["otherAnnotations"];
-        return res['otherAnnotations']
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-
 export async function loadDocument(state: GlobalStateProps, fileid: string) {
     try {
         // Fetch data
@@ -181,7 +168,7 @@ export async function loadDocument(state: GlobalStateProps, fileid: string) {
         state.setPdf(pdf_res["pdf"]);
 
         // Force empty annotations
-        state.setAnnotations([]);
+        // state.setAnnotations([]);
 
     } catch (e) {
         console.error(e);

@@ -76,7 +76,9 @@ export default function TopBar() {
     React.useEffect(() => {
         const timestamp = queryParameters.get('timestamp') || "";
         const savename = queryParameters.get('savename') || "";
-        loadAnnotations(state, state.fileid, state.userid, timestamp, savename);
+        // if (timestamp != "" && savename != "") {
+        //     loadAnnotations(state, state.fileid, state.userid, timestamp, savename);
+        // }
         setQueryParameters({ ...queryParameters, fileid: state.fileid, timestamp: state.timestamp, savename: state.savename, anchor: state.anchor })
     }, [state.fileid]);
 

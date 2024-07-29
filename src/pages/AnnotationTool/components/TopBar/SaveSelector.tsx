@@ -258,7 +258,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                                             </Grid>
                                             <Grid item xs={3}>
                                                 <Tooltip title={savelist[0].savename}>
-                                                    {savelist[0].savename.length > 20 ? savelist[0].savename.slice(0,20) + '...' : savelist[0].savename}
+                                                    <span>{savelist[0].savename.length > 20 ? savelist[0].savename.slice(0, 20) + '...' : savelist[0].savename}</span>
                                                 </Tooltip>
                                             </Grid>
                                             <Grid item xs={2}>
