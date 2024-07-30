@@ -1,7 +1,7 @@
 import React, { useContext, useRef, useState } from "react";
 import { MarkMenu } from './MarkMenu';
 import { TextSpan, Link } from "@/lib/span";
-import { SplitTagProps } from "@/lib/utils";
+import { SplitTagProps, rgbToHex, parseColor } from "@/lib/utils";
 import { GlobalState, updateMark } from "@/lib/GlobalState";
 import { sortBy } from "lodash";
 
@@ -40,6 +40,47 @@ export function Mark(props: MarkProps): React.JSX.Element {
 
   const state = useContext(GlobalState);
 
+  const [linkTargetColor, setLinkTargetColor] = useState<string>("#00000000");
+
+  const handleHover = (e, split) => {
+    if (!e.ctrlKey) {
+      return;
+    }
+    // Highlight any split where this annotation exists
+    const nodes = document.querySelectorAll(`[data-annoid='${split.anno.annoid}']`);
+    for (const n of nodes) {
+      n.style.backgroundColor = split.anno.color;
+    }
+
+    // Highlight the link target as well.
+    if (split.anno.links.length > 0) {
+      const targets = document.querySelectorAll(`[data-annoid='${split.anno.links[0].target}']`);
+      for (const t of targets) {
+        // we've already set the color, don't do it again or we'll overwrite link target color
+        // i know this is a ridiculous hack, but I don't really know how else to do it properly
+        if (linkTargetColor.slice(-1) != ')') {
+          setLinkTargetColor(t.style.backgroundColor);
+          console.log('setting to: ', t.style.backgroundColor)
+          t.style.backgroundColor = split.anno.links[0].color + '90';
+        }
+      }
+    }
+  }
+  const handleUnHover = (e, split) => {
+    const nodes = document.querySelectorAll(`[data-annoid='${split.anno.annoid}']`);
+    for (const n of nodes) {
+      n.style.backgroundColor = getSplitColor(split)
+    }
+    if (split.anno.links.length > 0) {
+      const targets = document.querySelectorAll(`[data-annoid='${split.anno.links[0].target}']`);
+      for (const t of targets) {
+        console.log('setting back to: ', linkTargetColor)
+        t.style.backgroundColor = linkTargetColor;
+        setLinkTargetColor("#00000000");
+      }
+    }
+  }
+
   const getSplitColor = (split: any) => {
     if (state.editing != null && split.anno.annoid == state.editing.annoid) {
       return "#00000080"; // faded black
@@ -59,15 +100,15 @@ export function Mark(props: MarkProps): React.JSX.Element {
 
   // Nest the tag as many times as necessary
   let final: any = props.content;
-  // const finalRef = useRef<any>(null);
 
-  sortBy(props.tags, (s) => {return -(s.end - s.start);}).forEach((split, idx) => {
+  sortBy(props.tags, (s) => { return -(s.end - s.start); }).forEach((split, idx) => {
     if (idx == props.tags.length - 1) {
       // on the last iteration, grab the bounding box
       final = (
         <span
           id={split.anno.annoid}
           data-start={props.start}
+          data-annoid={split.anno.annoid}
           data-end={props.end}
           data-uid={split.tag}
           // ref={finalRef}
@@ -79,6 +120,8 @@ export function Mark(props: MarkProps): React.JSX.Element {
             backgroundColor: getSplitColor(split),
             backgroundClip: "content-box",
           }}
+          onMouseOver={(e) => handleHover(e, split)}
+          onMouseLeave={(e) => handleUnHover(e, split)}
         >
           <MarkMenu
             anno={split.anno}
@@ -93,7 +136,6 @@ export function Mark(props: MarkProps): React.JSX.Element {
     else {
       final = (
         <span
-          // ref={finalRef}
           style={{
             borderColor: (state.colors as any)[split.tag],
             borderBottomWidth: "3px",
@@ -102,6 +144,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
             backgroundColor: getSplitColor(split),
             backgroundClip: "content-box"
           }}
+          data-annoid={split.anno.annoid}
           data-start={props.start}
           data-end={props.end}
           data-uid={split.tag}

@@ -218,3 +218,19 @@ export const shortenText = (text: string, maxLen: number, replaceLines: boolean 
   const shortened = `${text.slice(0, Math.min(maxLen, text.length)).trim()}...`;
   return replaceLines ? shortened.replaceAll("\n", " ") : shortened;
 }
+
+function componentToHex(c) {
+  var hex = c.toString(16);
+  return hex.length == 1 ? "0" + hex : hex;
+}
+
+export const rgbToHex = (r, g, b, a) => {
+  return "#" + omponentToHex(r) + componentToHex(g) + componentToHex(b) + componentToHex(a);
+}
+export const parseColor = (input) => {
+  const colors = input.split("(")[1].split(")")[0].split(",");
+  if (colors.length == 3) {
+    return [...colors, "0"];
+  }
+  return colors;
+}
