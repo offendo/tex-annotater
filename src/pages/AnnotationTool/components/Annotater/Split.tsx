@@ -49,7 +49,11 @@ export function Mark(props: MarkProps): React.JSX.Element {
     // Highlight any split where this annotation exists
     const nodes = document.querySelectorAll(`[data-annoid='${split.anno.annoid}']`);
     for (const n of nodes) {
-      n.style.backgroundColor = split.anno.color;
+      if (split.anno.links.length > 0){
+        n.style.backgroundColor = split.anno.links[0].color + '90';
+      } else {
+        n.style.backgroundColor = split.anno.color + '90';
+      }
     }
 
     // Highlight the link target as well.
@@ -60,7 +64,6 @@ export function Mark(props: MarkProps): React.JSX.Element {
         // i know this is a ridiculous hack, but I don't really know how else to do it properly
         if (linkTargetColor.slice(-1) != ')') {
           setLinkTargetColor(t.style.backgroundColor);
-          console.log('setting to: ', t.style.backgroundColor)
           t.style.backgroundColor = split.anno.links[0].color + '90';
         }
       }
@@ -69,7 +72,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
   const handleUnHover = (e, split) => {
     const nodes = document.querySelectorAll(`[data-annoid='${split.anno.annoid}']`);
     for (const n of nodes) {
-      n.style.backgroundColor = getSplitColor(split)
+      n.style.backgroundColor = getSplitColor(split);
     }
     if (split.anno.links.length > 0) {
       const targets = document.querySelectorAll(`[data-annoid='${split.anno.links[0].target}']`);
