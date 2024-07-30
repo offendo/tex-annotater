@@ -65,6 +65,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
         if (linkTargetColor.slice(-1) != ')') {
           setLinkTargetColor(t.style.backgroundColor);
           t.style.backgroundColor = split.anno.links[0].color + '90';
+          break;
         }
       }
     }
@@ -79,7 +80,8 @@ export function Mark(props: MarkProps): React.JSX.Element {
       for (const t of targets) {
         console.log('setting back to: ', linkTargetColor)
         t.style.backgroundColor = linkTargetColor;
-        setLinkTargetColor("#00000000");
+        setLinkTargetColor("var(--background-color)00");
+        break;
       }
     }
   }
