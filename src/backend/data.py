@@ -220,6 +220,7 @@ def load_annotations(file_id, user_id, timestamp=None):
         FROM annotations a
         LEFT JOIN links l
             ON a.annoid = l.source
+            AND a.timestamp = l.timestamp
         LEFT JOIN saves s
             ON a.savename = s.savename
             AND a.timestamp = s.timestamp
