@@ -25,11 +25,17 @@ export type GlobalStateProps = {
     anchor: string,
     setAnchor: (anchor: string) => any,
 
-    saveid: string,
-    setSaveId: (sid: string) => any,
+    timestamp: string,
+    setTimestamp: (time: string) => any,
+
+    savename: string,
+    setSavename: (sname: string) => any,
 
     userid: string,
     setUserId: (uid: string) => any,
+
+    isAdmin: boolean,
+    setIsAdmin: (admin: boolean) => any,
 
     editing: TextSpan | null,
     setEditing: (anno: TextSpan | null) => any,
@@ -68,11 +74,17 @@ const defaultState = {
     anchor: "",
     setAnchor: (_) => {},
 
-    saveid: "",
-    setSaveId: (_) => {},
+    timestamp: "",
+    setTimestamp: (_) => {},
+
+    savename: "",
+    setSavename: (_) => {},
 
     userid: "",
     setUserId: (_) => {},
+
+    isAdmin: false,
+    setIsAdmin: (_) => {},
 
     editing: null,
     setEditing: (_) => {},
@@ -102,25 +114,34 @@ const defaultState = {
 
 } as GlobalStateProps;
 
+export const checkIsAdmin = async (state: GlobalStateProps) => {
+    const url = `/api/admin?userid=${state.userid}`;
+    const response = await fetch(url, {mode: "cors"});
+    const json = await response.json();
+    state.setIsAdmin(json['isAdmin']);
+}
+
 export async function loadAnnotations(
     state: GlobalStateProps,
     fileid: string,
     userid: string,
     timestamp?: string,
+    savename?: string,
     empty?: boolean,
 ) {
     try {
         let res: any = {};
         if (empty) {
             console.log("Clearing annotations...");
-            res = { annotations: [], fileid: fileid };
+            res = { annotations: [], fileid: fileid, savename: "", timestamp: ""};
         } else {
-            const url = `/api/annotations?fileid=${fileid}&userid=${userid}&timestamp=${timestamp ? timestamp : ""}`
+            const url = `/api/annotations?fileid=${fileid}&userid=${userid}&timestamp=${timestamp ? timestamp : ""}&savename=${savename ? savename : ""}`
             const response = await fetch(url, { mode: "cors" });
             res = await response.json();
         }
-        // state.setFileId(res["fileid"]);
-        state.setSaveId(res['timestamp']);
+        state.setFileId(res["fileid"]);
+        state.setTimestamp(res['timestamp']);
+        state.setSavename(res['savename']);
         state.setAnnotations(res["annotations"]);
         state.setUndoBuffer([res['annotations']]);
         state.setUndoIndex(1);
@@ -131,29 +152,23 @@ export async function loadAnnotations(
     }
 }
 
-export async function loadAllAnnotations(state: GlobalStateProps, fileid: string) {
-    try {
-        const response = await fetch(`/api/annotations/all?fileid=${fileid}`);
-        const res = await response.json();
-        // Must be done like this, otherwise it calls constantly in the useEffect hook
-        // state.setOtherFileAnnotations = res["otherAnnotations"];
-        return res['otherAnnotations']
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-
 export async function loadDocument(state: GlobalStateProps, fileid: string) {
     try {
-        // URL parameters
+        // Fetch data
         const tex_response = fetch(`/api/tex?fileid=${fileid}`, { mode: "cors" });
         const pdf_response = fetch(`/api/pdf?fileid=${fileid}`, { mode: "cors" });
+
+        // Set TeX
         const tex_res = await (await tex_response).json();
         state.setTex(tex_res["tex"]);
         state.setFileId(tex_res["fileid"]);
+
+        // Set pdf
         const pdf_res = await (await pdf_response).json();
         state.setPdf(pdf_res["pdf"]);
+
+        // Force empty annotations
+        // state.setAnnotations([]);
 
     } catch (e) {
         console.error(e);
@@ -161,7 +176,7 @@ export async function loadDocument(state: GlobalStateProps, fileid: string) {
 }
 
 
-export async function updateAnnotations(state: GlobalStateProps, annotations: TextSpan[]) {
+export function updateAnnotations(state: GlobalStateProps, annotations: TextSpan[]) {
     // When we make an update, reset the undo tree. Also, we have to clone it so the in-place updates in toggleLink get tracked
     const buffer = state.undoBuffer
     buffer.push(cloneDeep(annotations));
@@ -172,7 +187,8 @@ export async function updateAnnotations(state: GlobalStateProps, annotations: Te
 
     // Now save the annotations
     state.setAnnotations(annotations);
-    saveAnnotations(state, annotations, true);
+    saveAnnotations(state, annotations, true, state.savename);
+
 };
 
 export function undoUpdate(state: GlobalStateProps) {
@@ -206,6 +222,7 @@ export async function saveAnnotations(
     state: GlobalStateProps,
     annotations: TextSpan[],
     autosave: boolean = false,
+    savename: string = "",
 ) {
     const requestOptions = {
         method: "POST",
@@ -213,28 +230,31 @@ export async function saveAnnotations(
         body: JSON.stringify({ annotations: annotations }),
     };
     // We handle autosaves differently
-    const url = `/api/annotations?fileid=${state.fileid}&userid=${state.userid}&autosave=${autosave}`;
+    console.log(`Saving with fileid ${state.fileid}`);
+    const url = `/api/annotations?fileid=${state.fileid}&userid=${state.userid}&autosave=${autosave}&savename=${savename}`;
 
     // POST save and ensure it saved correctly;
     try {
-        console.log(`Saving annotations at ${url}`);
         const response = await fetch(url, requestOptions);
         const res = await response.json();
-        console.log('Saved!')
-        state.setSaveId(res['timestamp'])
-        return annotations;
+        state.setTimestamp(res['timestamp']);
+        state.setSavename(res['savename']);
+        state.setFileId(res['fileid']);
+        console.log('Saved annotations: ', res['savename'], ' timestamp ', res['timestamp'])
+        return res['timestamp'];
     } catch (e) {
         console.error(e);
-        return null;
+        return false;
     }
 }
 
-export const toggleLink = (state: GlobalStateProps, source: TextSpan, target: TextSpan) => {
+export const toggleLink = (state: GlobalStateProps, source: TextSpan, target: TextSpan, forceEnable: boolean = false) => {
     const link = makeLink(source, target);
     const splitIndex = source.links.findIndex((s) => s.source == link.source && s.target == link.target);
     if (splitIndex == -1) {
         source.links = [...source.links, link];
-    } else {
+    } else if (!forceEnable) {
+        // if we're force enabling, then don't remove the link
         source.links = [
             ...source.links.slice(0, splitIndex),
             ...source.links.slice(splitIndex + 1),

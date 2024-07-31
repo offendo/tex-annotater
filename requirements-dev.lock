@@ -6,6 +6,7 @@
 #   features: []
 #   all-features: false
 #   with-sources: false
+#   generate-hashes: false
 
 -e file:.
 apscheduler==3.10.4
@@ -43,6 +44,8 @@ executing==2.0.1
     # via stack-data
 filelock==3.13.1
     # via gdown
+    # via huggingface-hub
+    # via transformers
 fire==0.6.0
     # via randomname
 flask==3.0.2
@@ -50,10 +53,15 @@ flask==3.0.2
     # via tex-annotater
 flask-cors==4.0.0
     # via tex-annotater
+fsspec==2024.6.1
+    # via huggingface-hub
 gdown==5.1.0
     # via tex-annotater
 gunicorn==21.2.0
     # via tex-annotater
+huggingface-hub==0.23.4
+    # via tokenizers
+    # via transformers
 idna==3.6
     # via requests
 ipython==8.22.2
@@ -66,6 +74,8 @@ jinja2==3.1.3
 jmespath==1.0.1
     # via boto3
     # via botocore
+joblib==1.4.2
+    # via scikit-learn
 markupsafe==2.1.5
     # via jinja2
     # via werkzeug
@@ -77,10 +87,15 @@ nodeenv==1.8.0
     # via pyright
 numpy==1.26.4
     # via pandas
+    # via scikit-learn
+    # via scipy
+    # via transformers
 orjson==3.9.15
 packaging==24.0
     # via black
     # via gunicorn
+    # via huggingface-hub
+    # via transformers
 pandas==2.2.1
     # via tex-annotater
 paramiko==3.4.0
@@ -96,6 +111,8 @@ platformdirs==4.2.0
     # via black
 prompt-toolkit==3.0.43
     # via ipython
+psycopg==3.2.1
+    # via tex-annotater
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
@@ -117,14 +134,27 @@ python-dotenv==1.0.1
 pytz==2024.1
     # via apscheduler
     # via pandas
+pyyaml==6.0.1
+    # via huggingface-hub
+    # via transformers
 randomname==0.2.1
     # via tex-annotater
 rapidfuzz==3.6.2
     # via tex-annotater
+regex==2024.5.15
+    # via transformers
 requests==2.31.0
     # via gdown
+    # via huggingface-hub
+    # via transformers
 s3transfer==0.10.0
     # via boto3
+safetensors==0.4.3
+    # via transformers
+scikit-learn==1.5.1
+    # via tex-annotater
+scipy==1.14.0
+    # via scikit-learn
 setuptools==69.2.0
     # via nodeenv
 sexpdata==1.0.2
@@ -140,12 +170,23 @@ stack-data==0.6.3
     # via ipython
 termcolor==2.4.0
     # via fire
+threadpoolctl==3.5.0
+    # via scikit-learn
+tokenizers==0.19.1
+    # via transformers
 tqdm==4.66.2
     # via gdown
+    # via huggingface-hub
     # via tex-annotater
+    # via transformers
 traitlets==5.14.2
     # via ipython
     # via matplotlib-inline
+transformers==4.42.3
+    # via tex-annotater
+typing-extensions==4.12.2
+    # via huggingface-hub
+    # via psycopg
 tzdata==2024.1
     # via pandas
 tzlocal==5.2

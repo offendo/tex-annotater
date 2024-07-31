@@ -46,9 +46,9 @@ export function MarkMenu(props: MarkMenuProps) {
             const target = props.anno.links[0].target;
             fetch(`/api/savename?annoid=${target}`).then(res => res.json()).then((result: any) => {
                 const timestamp = result['timestamp'];
-                console.log(result)
+                const savename = result['savename'];
                 window.open(
-                    `?userid=&fileid=${file}&anchor=${target}&saveid=${timestamp}`,
+                    `?userid=&fileid=${file}&anchor=${target}&timestamp=${timestamp}&savename=${savename}`,
                     "_blank",
                 );
             });
@@ -135,7 +135,7 @@ export function MarkMenu(props: MarkMenuProps) {
                             }}
                         >
                             {" "}
-                            {state.editing == null ? <EditIcon /> : <CancelIcon />}{" "}
+                            {state.editing != annotation ? <EditIcon /> : <CancelIcon />}{" "}
                         </IconButton>
 
                         {/* Delete button */}

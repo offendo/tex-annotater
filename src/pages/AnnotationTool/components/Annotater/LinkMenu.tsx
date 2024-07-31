@@ -33,7 +33,8 @@ export function LinkMenu(props: LinkMenuProps) {
   const [expandedIndex, setExpandedIndex] = useState<number>(-1);
 
   // Auto show links if tag == reference and length of tag is at least 4
-  const [otherFileAnnotations, setOtherFileAnnotations] = useState<TextSpan[]>([]);
+  const [linkedAnnos, setLinkedAnnos] = useState<TextSpan[]>([]);
+  const [nonLinkedAnnos, setNonLinkedAnnos] = useState<TextSpan[]>([]);
   const [autoLinkSuggestions, setAutoLinkSuggestions] = useState<TextSpan[]>([]);
   const [query, setQuery] = useState("");
   const [autolinkQuery, setAutolinkQuery] = useState(props.selectedAnnotation.text);
@@ -66,15 +67,86 @@ export function LinkMenu(props: LinkMenuProps) {
     );
   };
 
+  const processAnnos = (annos: TextSpan[]) => {
+    let annos_processed = annos.filter((anno) => anno != props.selectedAnnotation);
+    if (filterTag != "") {
+      annos_processed = annos_processed.filter((anno) => anno.tag == filterTag);
+    }
+    if (filterFileId != "") {
+      annos_processed = annos_processed.filter((anno) => anno.fileid == filterFileId);
+    }
+
+    annos_processed = sortBy(annos_processed, (anno) => {
+      const mp1 = anno.start + (anno.start - anno.end) / 2;
+      const mp2 = props.selectedAnnotation.start + (props.selectedAnnotation.start - props.selectedAnnotation.end) / 2;
+
+      const dist = Math.abs(mp1 - mp2)
+
+      // 1. prioritize current file
+      if (anno.fileid != props.selectedAnnotation.fileid) {
+        return 1e12 + dist;
+      }
+
+      // 2. prioritize names
+      if (anno.tag != "name") {
+        return 1e10 + dist;
+      }
+
+      return dist;
+    })
+
+    /* Split by "linked" and "non-linked" */
+    const both = partition(annos_processed, (candidate) => {
+      const anno = props.selectedAnnotation;
+      const lookup = {
+        source: candidate.annoid,
+      };
+
+      // Filter only links which are in the list
+      return (
+        anno.links.findIndex(
+          (item) =>
+            lookup.source == item.target
+        ) != -1
+      );
+    });
+
+    return both;
+  }
+
   async function loadAllAnnotations() {
+    const response = await fetch(`/api/annotations/all?fileid=${props.selectedAnnotation.fileid}`);
+    const res = await response.json();
+    const otherAnnos = res["otherAnnotations"];
+    return otherAnnos;
+  }
+
+  async function showAllAnnotations() {
     try {
-      const response = await fetch(`/api/annotations/all?fileid=${props.selectedAnnotation.fileid}`);
-      const res = await response.json();
-      setOtherFileAnnotations(res["otherAnnotations"]);
+      const otherAnnos = await loadAllAnnotations();
+      const [linked, non] = processAnnos([...state.annotations, ...otherAnnos]);
+      setLinkedAnnos(linked)
+      setNonLinkedAnnos(non)
     } catch (e) {
       console.error(e);
     }
   }
+  async function showThisFileAnnotations() {
+    try {
+      const [linked, non] = processAnnos(state.annotations);
+      setLinkedAnnos(linked)
+      setNonLinkedAnnos(non)
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  useEffect(() => {
+    if (state.showAllAnnotations) {
+      showAllAnnotations();
+    } else {
+      showThisFileAnnotations();
+    }
+  }, [state.showAllAnnotations, filterFileId, filterTag])
 
   async function queryAutoLinks(text: string, fileid: string, topk: number = 20, extraPatterns: string[] = []) {
     try {
@@ -97,46 +169,7 @@ export function LinkMenu(props: LinkMenuProps) {
       console.error(e);
     }
   }
-
   /* Full list of all annotations. If we're showing all annotations, include the ones from other files. */
-  let allAnnos = [
-    ...state.annotations,
-    ...(state.showAllAnnotations ? otherFileAnnotations : []),
-  ];
-  allAnnos = allAnnos.filter((anno) => anno != props.selectedAnnotation);
-  if (filterTag != "") {
-    allAnnos = allAnnos.filter((anno) => anno.tag == filterTag);
-  }
-  if (filterFileId != "") {
-    allAnnos = allAnnos.filter((anno) => anno.fileid == filterFileId);
-  }
-
-  allAnnos = sortBy(allAnnos, (anno) => {
-    const mp1 = anno.start + (anno.start - anno.end) / 2;
-    const mp2 = props.selectedAnnotation.start + (props.selectedAnnotation.start - props.selectedAnnotation.end) / 2;
-    // prioritize current file
-    if (anno.fileid != props.selectedAnnotation.fileid) {
-      return 1e12 + Math.abs(mp1 - mp2);
-    }
-    return Math.abs(mp1 - mp2);
-  })
-
-  /* Split by "linked" and "non-linked" */
-  const [linkedAnnos, nonLinkedAnnos] = partition(allAnnos, (candidate) => {
-    const anno = props.selectedAnnotation;
-    const lookup = {
-      source: candidate.annoid,
-    };
-
-    // Filter only links which are in the list
-    return (
-      anno.links.findIndex(
-        (item) =>
-          lookup.source == item.target
-      ) != -1
-    );
-  });
-
   const filterSearch = (annotations: TextSpan[], query: string) => {
     return query.length == 0
       ? annotations
@@ -298,9 +331,10 @@ export function LinkMenu(props: LinkMenuProps) {
               <Switch
                 checked={state.showAllAnnotations}
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                  state.setShowAllAnnotations(!state.showAllAnnotations);
                   if (event.target.checked) {
-                    loadAllAnnotations();
+                    state.setShowAllAnnotations(true)
+                  } else {
+                    state.setShowAllAnnotations(false);
                   }
                 }}
               />

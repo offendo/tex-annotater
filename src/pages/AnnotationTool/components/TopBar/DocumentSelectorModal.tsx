@@ -2,7 +2,8 @@ import * as React from "react";
 import { useSearchParams } from "react-router-dom";
 import TextField from "@mui/material/TextField";
 import { GlobalState, loadAnnotations, loadDocument } from "@/lib/GlobalState";
-import { Typography, Button, IconButton, Box, Dialog, DialogTitle, DialogContent, DialogActions, useTheme, Grid, ListSubheader } from "@mui/material";
+import { Typography, Button, IconButton, Box, Dialog, DialogTitle, DialogContent, DialogActions, useTheme, Grid, ListSubheader, Collapse } from "@mui/material";
+import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -11,10 +12,16 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import fuzzysort from "fuzzysort";
 import FileOpenIcon from '@mui/icons-material/FileOpen';
+import DownloadIcon from '@mui/icons-material/Download';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import ExpandLess from '@mui/icons-material/ExpandLess';
 import CloseIcon from '@mui/icons-material/Close';
-import { orderBy } from "lodash";
-import { SaveFileSelector } from "./SaveFileSelector";
+import { orderBy, groupBy, sortBy, maxBy, minBy } from "lodash";
 import { MenuItemProps } from "./MenuItemProps";
+import { SaveSelector } from "./SaveSelector";
+
 
 export const DocumentSelectorModal = (props: MenuItemProps) => {
     const state = React.useContext(GlobalState);
@@ -23,35 +30,19 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
     const [query, setQuery] = React.useState("");
     const [queryParameters, setQueryParameters] = useSearchParams();
     const [documents, setDocuments] = React.useState([]);
-    const [saves, setSaves] = React.useState<any[]>([]);
-    const [selectedSave, setSelectedSave] = React.useState<number>(-1);
     const [selectedDoc, setSelectedDoc] = React.useState<number>(-1);
+    const [documentSelectorOpen, setDocumentSelectorOpen] = React.useState<boolean>(true);
+    const [saveSelectorOpen, setSaveSelectorOpen] = React.useState<boolean>(false);
 
     async function listAllDocuments() {
         try {
-            const response = await fetch("/api/document/all", { mode: "cors" });
+            const response = await fetch("/api/documents", { mode: "cors" });
             const res = await response.json();
             setDocuments(res["documents"]);
         } catch (e) {
             console.error(e);
         }
     }
-    const loadSaves = async (fileid: string) => {
-        try {
-            const res = await fetch(`/api/saves?fileid=${fileid}`, { mode: "cors" });
-            const json = await res.json();
-            setSaves(json["saves"]);
-        } catch (e) {
-            console.error(e)
-            setSaves([])
-        }
-    };
-
-    const selectSave = (save: any, index: number) => {
-        setSelectedSave(index);
-        loadAnnotations(state, save["fileid"], save["userid"], save["timestamp"]);
-        setQueryParameters({ fileid: save['fileid'], saveid: save['timestamp'] })
-    };
     const selectDocument = (doc: any, index: number) => {
         setSelectedDoc(index);
         if (doc.name == null) { return; }
@@ -60,16 +51,32 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
         state.setFileId(doc.name);
     };
 
-    const handleClose = (e) => {
+    const handleClose = (e: any) => {
         props.setIsOpen(false);
         e.stopPropagation();
+    };
+    const handleDocumentSelectorClick = (e: any) => {
+        const isOpen = documentSelectorOpen;
+        setDocumentSelectorOpen(!isOpen);
+        if (isOpen) {
+            setSaveSelectorOpen(true);
+        }
+    };
+    const handleSaveSelectorClick = (e: any) => {
+        const isOpen = saveSelectorOpen;
+        setSaveSelectorOpen(!isOpen);
+        if (isOpen) {
+            setDocumentSelectorOpen(true);
+        }
+    };
+
+    const onSelectSave = (save: any, index: number) => {
+        loadAnnotations(state, save["fileid"], save["userid"], save["timestamp"], save["savename"]);
+        setQueryParameters({ fileid: save['fileid'], timestamp: save['timestamp'], savename: save['savename'] })
     };
 
     // Load documents immediately
     React.useEffect(() => { listAllDocuments(); }, []);
-
-    // Load saves whenever the fileid changes
-    React.useEffect(() => { loadSaves(state.fileid); }, [state.fileid, state.annotations])
 
     const filterSearch = (docs: any[], query: string) => {
         return query.length == 0
@@ -87,13 +94,15 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
             sx={{ overflowX: "hidden", overflowY: "hidden" }}
         >
             <DialogActions >
+                <Button onClick={handleSaveSelectorClick}>
+                    {saveSelectorOpen ? <ExpandLess /> : <ExpandMore />} Toggle saves
+                </Button>
                 <TextField
                     autoFocus
                     size="small"
                     variant="outlined"
                     fullWidth
                     label="Search documents"
-                    sx={{ m: "10px" }}
                     onChange={(e) => { setQuery(e.target.value) }}
                 />
                 <IconButton onClick={handleClose}>
@@ -101,11 +110,11 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                 </IconButton>
             </DialogActions>
             <DialogContent>
-                <Typography variant="h6"> Open document </Typography>
                 <Box
                     sx={{
-                        width: 1000,
-                        maxHeight: 300,
+                        width: 1200,
+                        minWidth: 1200,
+                        maxHeight: 400,
                         height: "fit-content",
                         backgroundColor: theme.palette.background.default,
                         overflowY: "scroll",
@@ -116,7 +125,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                     <Grid container>
                         <List dense sx={{ width: "100%" }}>
                             <ListSubheader >
-                                <Grid container key={crypto.randomUUID()}>
+                                <Grid container>
                                     <Grid item xs={2}>
                                         Arxiv ID
                                     </Grid>
@@ -137,7 +146,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                                         <ListItem
                                             key={doc.arxiv_id + doc.filename}
                                             value={doc.name}
-                                            onClick={(e) => { selectDocument(doc, index); }}
+                                            onClick={(e) => { selectDocument(doc, index); setSaveSelectorOpen(true); }}
                                         >
                                             <ListItemButton disableGutters selected={selectedDoc === index}>
                                                 <Grid container >
@@ -162,70 +171,10 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                         </List>
                     </Grid>
                 </Box>
-                <Typography variant="h6" sx={{ m: "5px" }}> Load save </Typography>
-                <Box
-                    sx={{
-                        width: 1000,
-                        maxHeight: 200,
-                        height: "fit-content",
-                        backgroundColor: theme.palette.background.default,
-                        overflowY: "scroll",
-                        fontFamily: theme.typography.fontFamily,
-                        fontSize: "12pt",
-                    }}
-                >
-                    <Grid container>
-                        <List dense sx={{ width: "100%" }}>
-                            <ListSubheader >
-                                <Grid container key={crypto.randomUUID()}>
-                                    <Grid item xs={3}>
-                                        User ID
-                                    </Grid>
-                                    <Grid item xs={4}>
-                                        Save Name
-                                    </Grid>
-                                    <Grid item xs={3}>
-                                        Timestamp
-                                    </Grid>
-                                    <Grid item xs={2}>
-                                        # Annotations
-                                    </Grid>
-                                </Grid>
-                            </ListSubheader>
-                            {
-                                orderBy(saves, ['timestamp'], 'desc').map((save: any, index: number) => {
-                                    return (
-                                        <ListItem
-                                            key={save.timestamp + `index:${index}`}
-                                            value={save.timestamp}
-                                            onClick={(e) => {
-                                                selectSave(save, index);
-                                            }}
-                                        >
-                                            <ListItemButton disableGutters selected={selectedSave === index}>
-                                                <Grid container >
-                                                    <Grid item xs={3}>
-                                                        {save.userid}
-                                                    </Grid>
-                                                    <Grid item xs={4}>
-                                                        {save.savename}
-                                                    </Grid>
-                                                    <Grid item xs={3}>
-                                                        {save.timestamp}
-                                                    </Grid>
-                                                    <Grid item xs={2}>
-                                                        {save.count}
-                                                    </Grid>
-                                                </Grid>
-                                            </ListItemButton>
-                                        </ListItem>
-                                    );
-                                })
-                            }
-                        </List>
-                    </Grid>
-                </Box>
+                <Collapse in={saveSelectorOpen} timeout="auto" >
+                    <SaveSelector onSelectSave={onSelectSave} />
+                </Collapse>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

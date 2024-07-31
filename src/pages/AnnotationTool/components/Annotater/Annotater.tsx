@@ -122,7 +122,7 @@ const Annotator = (props: AnnotatorProps) => {
         return anno.start >= defOrThm.start && anno.end <= defOrThm.end;
       }
       for (const anno_b of state.annotations) {
-        if ((anno_b.tag == "definition" || anno_b.tag == "theorem" || anno_b.tag == "reference") && isInside(anno, anno_b)) {
+        if ((anno_b.tag == "definition" || anno_b.tag == "theorem" || anno_b.tag == "example") && isInside(anno, anno_b)) {
           // we want the most-inner definition
           if (target == null || (target.end - target.start) > (anno_b.end - anno_b.start)) {
             target = anno_b;
@@ -131,7 +131,7 @@ const Annotator = (props: AnnotatorProps) => {
       }
       // If there's a possible target, add it as a link
       if (target != null) {
-        toggleLink(state, anno, target)
+        toggleLink(state, anno, target, true)
       }
     }
 
@@ -139,6 +139,23 @@ const Annotator = (props: AnnotatorProps) => {
      *  If it's a reference, link it to any exact-match names
      * -------------------------------------------------------------------
      */
+    const _nameMatch = (name: string, ref: string) => {
+      console.log('Checking: ', name, ' vs ', ref)
+      // 1. Check exact match
+      if (name == ref) {
+        return true;
+      }
+      // 2. Check if it matches a plural
+      if (ref == name + 's' || ref == name + 'es') {
+        return true;
+      }
+      // 3. Check if any of the individual words match
+      for (const token of name.split(' ')) {
+        if (token == ref) {
+          return true;
+        }
+      }
+    }
     if (anno.tag == 'reference') {
       // filter
       // 1. names
@@ -146,13 +163,13 @@ const Annotator = (props: AnnotatorProps) => {
       // 3. with the same text as the reference
       // and then sort by start (in reverse order)
       const candidates: TextSpan[] = sortBy(
-        state.annotations.filter((a) => a.tag == 'name' && a.end <= anno.start && a.text == anno.text),
+        state.annotations.filter((a) => a.tag == 'name' && a.end <= anno.start && _nameMatch(a.text, anno.text)),
         (o: TextSpan) => -o.start
       )
 
       // If we have any candidates, go for it.
       if (candidates.length > 0) {
-        toggleLink(state, anno, candidates[0]);
+        toggleLink(state, anno, candidates[0], true);
       }
     }
 
@@ -177,7 +194,7 @@ const Annotator = (props: AnnotatorProps) => {
 
       // If we have any candidates, go for it.
       if (candidates.length > 0) {
-        toggleLink(state, anno, candidates[0]);
+        toggleLink(state, anno, candidates[0], true);
       }
     }
 
@@ -185,8 +202,6 @@ const Annotator = (props: AnnotatorProps) => {
 
   const handleContextMenuButtonPress = (start: number, end: number, label: string, name: string) => {
     // if we're editing something, just update the mark instead
-    console.log('selected: ', state.editing)
-    console.log('new: ', label, ' ', start, '-', end)
     let newAnno = null;
     if (state.editing != null) {
       newAnno = { ...state.editing, start: start, end: end, tag: label, text: state.tex.slice(start, end) };

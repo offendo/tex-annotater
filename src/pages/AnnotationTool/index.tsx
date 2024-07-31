@@ -9,7 +9,7 @@ import { defaultColorMap } from "@/lib/colors";
 import "@/style/style.css";
 import { pdfjs } from "react-pdf";
 import useAuth from "@/lib/Token";
-import { GlobalState as GlobaLContext, GlobalStateProps, Status, loadAnnotations, loadDocument, redoUpdate, saveAnnotations, undoUpdate } from "@/lib/GlobalState";
+import { GlobalState as GlobaLContext, GlobalStateProps, Status, checkIsAdmin, loadAnnotations, loadDocument, redoUpdate, saveAnnotations, undoUpdate } from "@/lib/GlobalState";
 import { ThemeOptions, ThemeProvider, createTheme } from '@mui/material/styles';
 
 
@@ -45,10 +45,12 @@ const AnnotationTool = () => {
 
     // State
     const [fileid, setFileId] = useState<string>(queryParameters.get("fileid") || "");
+    const [isAdmin, setIsAdmin] = useState<boolean>(false);
     const [anchor, setAnchor] = useState<string>(queryParameters.get("anchor") || "");
     const [tex, setTex] = useState<string>("");
     const [pdf, setPdf] = useState<string>("");
-    const [saveid, setSaveId] = useState<string>(queryParameters.get("saveid") || "");
+    const [timestamp, setTimestamp] = useState<string>(queryParameters.get("timestamp") || "");
+    const [savename, setSavename] = useState<string>(queryParameters.get("savename") || "");
     const [annotations, setAnnotations] = useState<TextSpan[]>([]);
     const [editing, setEditing] = useState<TextSpan | null>(null);
     const [showAllAnnotations, setShowAllAnnotations] = useState(false);
@@ -63,10 +65,14 @@ const AnnotationTool = () => {
         setUserId: () => {},
         fileid: fileid,
         setFileId: setFileId,
+        isAdmin: isAdmin,
+        setIsAdmin: setIsAdmin,
         anchor: anchor,
         setAnchor: setAnchor,
-        saveid: saveid,
-        setSaveId: setSaveId,
+        timestamp: timestamp,
+        setTimestamp: setTimestamp,
+        savename: savename,
+        setSavename: setSavename,
         pdf: pdf,
         setPdf: setPdf,
         tex: tex,
@@ -88,10 +94,10 @@ const AnnotationTool = () => {
     const handleKeyPress = useCallback((event: any) => {
         /* Undo/Redo
            ========= */
-        if (event.ctrlKey && event.key == 'z') {
+        if ((event.ctrlKey || event.metaKey) && event.key == 'z') {
             undoUpdate(state);
         }
-        else if (event.ctrlKey && event.shiftKey && event.key == 'Z') {
+        else if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key == 'Z') {
             redoUpdate(state);
         }
     }, [state]);
@@ -110,33 +116,36 @@ const AnnotationTool = () => {
         if (!token || token.length == 0) {
             navigate("/signin");
         }
+        // we're logged in, set admin and load document/annotations;
+        checkIsAdmin(state)
 
-        if (fileid != "") {
-            loadAnnotations(state, fileid, userid, saveid)
+        if (state.fileid != "" && !state.tex) {
             loadDocument(state, fileid)
         }
-
-        // Wait 1 second before trying to scroll, gives the DOM time to load in.
-        // Probably a better way to do this but I tried a few things and it didn't work.
-        // Retry x5
-        let tries = 0;
-        var repeater = setInterval(() => {
-            if (tries < 3) {
-                if (anchor.length > 0) {
-                    if (!isNaN(anchor)) {
-                        const percent = parseFloat(anchor);
-                        console.log(`jumping to ${percent}%, fudged by -0.0003 = ${percent - 0.0003}`)
-                        jumpToPercent(percent - 0.0003); // fudge the jump percent slightly
+        if (fileid != "" && timestamp != "") {
+            loadAnnotations(state, fileid, userid, timestamp)
+            // Wait 1 second before trying to scroll, gives the DOM time to load in.
+            // Probably a better way to do this but I tried a few things and it didn't work.
+            // Retry x5
+            if (anchor.length > 0) {
+                let tries = 0;
+                var repeater = setInterval(() => {
+                    if (tries < 3) {
+                        if (!isNaN(anchor)) {
+                            const percent = parseFloat(anchor);
+                            console.log(`jumping to ${percent}%, fudged by -0.0003 = ${percent - 0.0003}`)
+                            jumpToPercent(percent - 0.0003); // fudge the jump percent slightly
+                        } else {
+                            console.log(`jumping to ${anchor}`)
+                            jumpToElement(anchor);
+                        }
+                        tries += 1;
                     } else {
-                        console.log(`jumping to ${anchor}`)
-                        jumpToElement(anchor);
+                        clearInterval(repeater);
                     }
-                }
-                tries += 1;
-            } else {
-                clearInterval(repeater);
+                }, 2000)
             }
-        }, 2000)
+        }
     }, []);
 
     return (

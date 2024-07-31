@@ -6,6 +6,7 @@
 #   features: []
 #   all-features: false
 #   with-sources: false
+#   generate-hashes: false
 
 -e file:.
 apscheduler==3.10.4
@@ -27,6 +28,8 @@ click==8.1.7
     # via flask
 filelock==3.13.1
     # via gdown
+    # via huggingface-hub
+    # via transformers
 fire==0.6.0
     # via randomname
 flask==3.0.2
@@ -34,10 +37,15 @@ flask==3.0.2
     # via tex-annotater
 flask-cors==4.0.0
     # via tex-annotater
+fsspec==2024.6.1
+    # via huggingface-hub
 gdown==5.1.0
     # via tex-annotater
 gunicorn==21.2.0
     # via tex-annotater
+huggingface-hub==0.23.4
+    # via tokenizers
+    # via transformers
 idna==3.6
     # via requests
 itsdangerous==2.1.2
@@ -47,16 +55,25 @@ jinja2==3.1.3
 jmespath==1.0.1
     # via boto3
     # via botocore
+joblib==1.4.2
+    # via scikit-learn
 markupsafe==2.1.5
     # via jinja2
     # via werkzeug
 numpy==1.26.4
     # via pandas
+    # via scikit-learn
+    # via scipy
+    # via transformers
 packaging==24.0
     # via gunicorn
+    # via huggingface-hub
+    # via transformers
 pandas==2.2.1
     # via tex-annotater
 passlib==1.7.4
+    # via tex-annotater
+psycopg==3.2.1
     # via tex-annotater
 pysocks==1.7.1
     # via requests
@@ -68,14 +85,27 @@ python-dotenv==1.0.1
 pytz==2024.1
     # via apscheduler
     # via pandas
+pyyaml==6.0.1
+    # via huggingface-hub
+    # via transformers
 randomname==0.2.1
     # via tex-annotater
 rapidfuzz==3.6.2
     # via tex-annotater
+regex==2024.5.15
+    # via transformers
 requests==2.31.0
     # via gdown
+    # via huggingface-hub
+    # via transformers
 s3transfer==0.10.0
     # via boto3
+safetensors==0.4.3
+    # via transformers
+scikit-learn==1.5.1
+    # via tex-annotater
+scipy==1.14.0
+    # via scikit-learn
 six==1.16.0
     # via apscheduler
     # via fire
@@ -84,9 +114,20 @@ soupsieve==2.5
     # via beautifulsoup4
 termcolor==2.4.0
     # via fire
+threadpoolctl==3.5.0
+    # via scikit-learn
+tokenizers==0.19.1
+    # via transformers
 tqdm==4.66.2
     # via gdown
+    # via huggingface-hub
     # via tex-annotater
+    # via transformers
+transformers==4.42.3
+    # via tex-annotater
+typing-extensions==4.12.2
+    # via huggingface-hub
+    # via psycopg
 tzdata==2024.1
     # via pandas
 tzlocal==5.2

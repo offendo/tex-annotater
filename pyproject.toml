@@ -18,6 +18,9 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "passlib>=1.7.4",
     "apscheduler>=3.10.4",
+    "transformers>=4.42.3",
+    "psycopg>=3.2.1",
+    "scikit-learn>=1.5.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
