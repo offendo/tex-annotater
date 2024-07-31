@@ -1,16 +1,16 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import Annotater from "./components/Annotater/Annotater";
-import PDFViewer from "./components/PDFViewer";
-import TopBar from "./components/TopBar/TopBar";
+import { GlobalState as GlobaLContext, GlobalStateProps, Status, checkIsAdmin, loadAnnotations, loadDocument, redoUpdate, saveAnnotations, undoUpdate } from "@/lib/GlobalState";
+import useAuth from "@/lib/Token";
+import { defaultColorMap } from "@/lib/colors";
+import Annotater from "@/lib/components/Annotater/Annotater";
+import PDFViewer from "@/lib/components/PDFViewer";
+import TopBar from "@/lib/components/TopBar/TopBar";
 import { TextSpan } from "@/lib/span";
 import { jumpToElement, jumpToPercent } from "@/lib/utils";
-import { defaultColorMap } from "@/lib/colors";
 import "@/style/style.css";
-import { pdfjs } from "react-pdf";
-import useAuth from "@/lib/Token";
-import { GlobalState as GlobaLContext, GlobalStateProps, Status, checkIsAdmin, loadAnnotations, loadDocument, redoUpdate, saveAnnotations, undoUpdate } from "@/lib/GlobalState";
 import { ThemeOptions, ThemeProvider, createTheme } from '@mui/material/styles';
+import React, { useCallback, useEffect, useState } from "react";
+import { pdfjs } from "react-pdf";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 
 pdfjs.GlobalWorkerOptions.workerSrc =
@@ -177,6 +177,7 @@ const AnnotationTool = () => {
                                     lineHeight: 3,
                                     margin: "10px",
                                 }}
+                                editMode={true}
                                 getSpan={(span: TextSpan) => ({ ...span })}
                             />
                         </div>

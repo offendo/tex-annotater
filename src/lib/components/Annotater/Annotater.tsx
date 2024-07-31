@@ -17,6 +17,7 @@ import { GlobalState, toggleLink, updateAnnotations, updateMark } from "@/lib/Gl
 type AnnotatorProps = {
   getSpan: (span: TextSpan) => TextSpan;
   style: any;
+  editMode?: boolean;
 };
 
 const getNextColor = function (start_color: string = "") {
@@ -232,6 +233,7 @@ const Annotator = (props: AnnotatorProps) => {
 
   const splits = displaySplits(state.tex, state.annotations);
 
+  console.log('Here', state.tex.length)
   // Return the formatted code
   return (
     <div>
@@ -245,7 +247,7 @@ const Annotator = (props: AnnotatorProps) => {
           </div>
         </pre>
       </div>
-      {selectionClicked && (
+      {selectionClicked && props.editMode && (
         <LabelMenu
           top={cursorPos.y - 10}
           left={cursorPos.x - 10}

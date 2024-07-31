@@ -67,12 +67,14 @@ export function Mark(props: MarkProps): React.JSX.Element {
       }
     }
   }
+
   const handleUnHover = (e, anno: TextSpan) => {
     const nodes = document.querySelectorAll(`[data-annoid='${anno.annoid}']`);
     for (const n of nodes) {
       n.style.backgroundColor = getAnnoColor(anno);
     }
-    if (linkTargetColor == null){
+    // no need to unhover, already unhovered
+    if (linkTargetColor == null) {
       return;
     }
     if (anno.links.length > 0) {
