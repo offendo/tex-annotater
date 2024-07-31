@@ -39,7 +39,6 @@ export function Split(props: SplitProps): React.JSX.Element {
 export function Mark(props: MarkProps): React.JSX.Element {
 
   const state = useContext(GlobalState);
-
   const [linkTargetColor, setLinkTargetColor] = useState<string | null>(null);
 
   const handleHover = (e, anno) => {
@@ -85,7 +84,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
     }
   }
 
-  const getAnnoColor = (anno: any) => {
+  const getAnnoColor = (anno: TextSpan) => {
     if (state.editing != null && anno.annoid == state.editing.annoid) {
       return "#00000080"; // faded black
     }
