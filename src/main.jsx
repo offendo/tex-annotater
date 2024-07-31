@@ -5,6 +5,7 @@ import * as ReactDOM from "react-dom/client";
 import SignIn from "@/pages/SignIn"
 import SignUp from "@/pages/SignUp"
 import AnnotationTool from "@/pages/AnnotationTool"
+import ComparisonTool from "@/pages/ComparisonTool"
 
 import {
   createBrowserRouter,
@@ -18,6 +19,10 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <AnnotationTool />,
+  },
+  {
+    path: "/comparison",
+    element: <ComparisonTool />,
   },
   {
     path: "/signin",
