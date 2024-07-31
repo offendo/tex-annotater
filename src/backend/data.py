@@ -327,7 +327,7 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
                     """
                     INSERT INTO links (fileid, userid, start, "end", tag, color, source, target)
                         VALUES (%(fileid)s, %(userid)s, %(start)s, %(end)s, %(tag)s, %(color)s, %(source)s, %(target)s)
-                    ON CONFLICT(fileid,userid,start,"end",tag,source,target) DO NOTHING;
+                    ON CONFLICT(fileid,userid,start,"end",tag,source,target,"timestamp") DO NOTHING;
                     """,
                     dict(
                         fileid=ln["fileid"],
@@ -406,7 +406,7 @@ def init_annotation_db():
                 "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 source TEXT,
                 target TEXT,
-                UNIQUE (fileid, userid, start, "end", tag, source, target)
+                UNIQUE (fileid, userid, start, "end", tag, source, target, "timestamp")
             );
         """
         )
