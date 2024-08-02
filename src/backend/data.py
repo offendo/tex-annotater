@@ -78,6 +78,12 @@ def get_savename_from_annoid(annoid: str):
     return query_db(query, params)[0]
 
 
+def get_save_info_from_timestamp(timestamp: str):
+    query = """SELECT * FROM saves WHERE "timestamp" = %(timestamp)s;"""
+    params = dict(timestamp=timestamp)
+    return query_db(query, params)[0]
+
+
 def list_all_textbooks():
     """Load the textbooks from the excel sheet."""
     sheet_id = "1XCkPQo__bxACu2dWUgCuRoH4FUeNc2ODCI1dpBO-n3U"
@@ -344,7 +350,7 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
             stamp = top["timestamp"]
         else:
             stamp = conn.execute("SELECT CURRENT_TIMESTAMP").fetchone()["timestamp"]
-        return {"timestamp": stamp, "savename": savename, 'fileid': file_id, 'userid': user_id}
+        return {"timestamp": stamp, "savename": savename, "fileid": file_id, "userid": user_id}
 
 
 def mark_save_as_final(file_id, user_id, savename, timestamp):
@@ -465,8 +471,8 @@ def export_annotations(
             continue
 
         for char_idx in range(anno["start"], anno["end"]):
-            prefix = 'B-' if char_idx == anno['start'] else 'I-'
-            iob_tags[char_idx - offset].append(prefix + anno['tag'])
+            prefix = "B-" if char_idx == anno["start"] else "I-"
+            iob_tags[char_idx - offset].append(prefix + anno["tag"])
             # iob_tags[char_idx - offset].append(anno["tag"])
 
     for tag in iob_tags:
@@ -484,11 +490,17 @@ def export_annotations(
             ],
             "annotations": annotations,
             "tex": tex,
-            'begin': begin,
-            'end': end,
+            "begin": begin,
+            "end": end,
         }
 
-    return {"iob_tags": [(char, tag) for char, tag in zip(tex, iob_tags)], "tex": tex, "annotations": annotations, 'begin': begin, 'end': end}
+    return {
+        "iob_tags": [(char, tag) for char, tag in zip(tex, iob_tags)],
+        "tex": tex,
+        "annotations": annotations,
+        "begin": begin,
+        "end": end,
+    }
 
 
 def align_tags_to_tokens(tokens: BatchEncoding, char_tags: list[list[str]]):
@@ -504,8 +516,8 @@ def align_tags_to_tokens(tokens: BatchEncoding, char_tags: list[list[str]]):
 
         # Ensure that we only have B- or I- but not both
         for tag in tags_for_token:
-            b = tag.replace('I-', 'B-')
-            i = tag.replace('B-', 'I-')
+            b = tag.replace("I-", "B-")
+            i = tag.replace("B-", "I-")
             if b in tags_for_token and i in tags_for_token:
                 tags_for_token.remove(i)
         aligned_tags.append(tags_for_token)

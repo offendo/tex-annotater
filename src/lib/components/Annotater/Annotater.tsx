@@ -18,6 +18,7 @@ type AnnotatorProps = {
   getSpan: (span: TextSpan) => TextSpan;
   style: any;
   editMode?: boolean;
+  annotations?: TextSpan[];
 };
 
 const getNextColor = function (start_color: string = "") {
@@ -231,9 +232,8 @@ const Annotator = (props: AnnotatorProps) => {
     }
   }
 
-  const splits = displaySplits(state.tex, state.annotations);
+  const splits = displaySplits(state.tex, props.annotations ? props.annotations : state.annotations);
 
-  console.log('Here', state.tex.length)
   // Return the formatted code
   return (
     <div>

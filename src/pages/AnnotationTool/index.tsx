@@ -1,14 +1,15 @@
-import { GlobalState as GlobaLContext, GlobalStateProps, Status, checkIsAdmin, loadAnnotations, loadDocument, redoUpdate, saveAnnotations, undoUpdate } from "@/lib/GlobalState";
+import { GlobalState as GlobalContext, GlobalState, GlobalStateProps, Status, checkIsAdmin, loadAnnotations, loadDocument, redoUpdate, saveAnnotations, undoUpdate } from "@/lib/GlobalState";
 import useAuth from "@/lib/Token";
 import { defaultColorMap } from "@/lib/colors";
 import Annotater from "@/lib/components/Annotater/Annotater";
 import PDFViewer from "@/lib/components/PDFViewer";
 import TopBar from "@/lib/components/TopBar/TopBar";
 import { TextSpan } from "@/lib/span";
+import { theme } from "@/lib/theme";
 import { jumpToElement, jumpToPercent } from "@/lib/utils";
 import "@/style/style.css";
-import { ThemeOptions, ThemeProvider, createTheme } from '@mui/material/styles';
-import React, { useCallback, useEffect, useState } from "react";
+import { ThemeProvider } from '@mui/material/styles';
+import React, { useCallback, useEffect, useState, useContext } from "react";
 import { pdfjs } from "react-pdf";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -16,80 +17,22 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 pdfjs.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-export const themeOptions: ThemeOptions = {
-    palette: {
-        mode: 'light',
-        primary: {
-            main: '#003c6c',
-            contrastText: '#fffce6',
-        },
-        secondary: {
-            main: '#fdc700',
-        },
-    },
-    typography: {
-        fontFamily: 'Roboto',
-    },
-};
-const theme = createTheme(themeOptions);
-
-
 const AnnotationTool = () => {
 
     // Login stuff
     const { token, userid, setAuth } = useAuth();
     const navigate = useNavigate();
 
+    // State
+    const state = useContext(GlobalState);
+
     // URL parameters
     const [queryParameters, setQueryParameters] = useSearchParams();
 
-    // State
-    const [fileid, setFileId] = useState<string>(queryParameters.get("fileid") || "");
-    const [isAdmin, setIsAdmin] = useState<boolean>(false);
-    const [anchor, setAnchor] = useState<string>(queryParameters.get("anchor") || "");
-    const [tex, setTex] = useState<string>("");
-    const [pdf, setPdf] = useState<string>("");
-    const [timestamp, setTimestamp] = useState<string>(queryParameters.get("timestamp") || "");
-    const [savename, setSavename] = useState<string>(queryParameters.get("savename") || "");
-    const [annotations, setAnnotations] = useState<TextSpan[]>([]);
-    const [editing, setEditing] = useState<TextSpan | null>(null);
-    const [showAllAnnotations, setShowAllAnnotations] = useState(false);
-    const [status, setStatus] = useState<Status>(Status.Ready);
-    const [undoBuffer, setUndoBuffer] = useState<TextSpan[][]>([]);
-    const [undoIndex, setUndoIndex] = useState<number>(0);
+    const fileid = queryParameters.get("fileid") || state.fileid
+    const timestamp = queryParameters.get("timestamp") || state.timestamp
+    const savename = queryParameters.get("savename") || state.savename
 
-    const state: GlobalStateProps = {
-        colors: defaultColorMap,
-        labels: Object.keys(defaultColorMap),
-        userid: userid,
-        setUserId: () => {},
-        fileid: fileid,
-        setFileId: setFileId,
-        isAdmin: isAdmin,
-        setIsAdmin: setIsAdmin,
-        anchor: anchor,
-        setAnchor: setAnchor,
-        timestamp: timestamp,
-        setTimestamp: setTimestamp,
-        savename: savename,
-        setSavename: setSavename,
-        pdf: pdf,
-        setPdf: setPdf,
-        tex: tex,
-        setTex: setTex,
-        editing: editing,
-        setEditing: setEditing,
-        annotations: annotations,
-        setAnnotations: setAnnotations,
-        showAllAnnotations: showAllAnnotations,
-        setShowAllAnnotations: setShowAllAnnotations,
-        status: status,
-        setStatus: setStatus,
-        undoBuffer: undoBuffer,
-        setUndoBuffer: setUndoBuffer,
-        undoIndex: undoIndex,
-        setUndoIndex: setUndoIndex,
-    }
     // handle what happens on key press
     const handleKeyPress = useCallback((event: any) => {
         /* Undo/Redo
@@ -119,10 +62,10 @@ const AnnotationTool = () => {
         // we're logged in, set admin and load document/annotations;
         checkIsAdmin(state)
 
-        if (state.fileid != "" && !state.tex) {
+        if (fileid != "" && !state.tex) {
             loadDocument(state, fileid)
         }
-        if (fileid != "" && timestamp != "") {
+        if (state.fileid != "" && timestamp != "") {
             loadAnnotations(state, fileid, userid, timestamp)
             // Wait 1 second before trying to scroll, gives the DOM time to load in.
             // Probably a better way to do this but I tried a few things and it didn't work.
@@ -151,41 +94,39 @@ const AnnotationTool = () => {
     return (
         <ThemeProvider theme={theme}>
             <div>
-                <GlobaLContext.Provider value={state}>
-                    <TopBar />
+                <TopBar />
+                <div
+                    style={{
+                        display: "flex",
+                        alignContent: "center",
+                        width: "98vw",
+                        margin: "10px",
+                    }}
+                >
                     <div
+                        id="scroll-box"
                         style={{
-                            display: "flex",
-                            alignContent: "center",
-                            width: "98vw",
-                            margin: "10px",
+                            flexGrow: 1,
+                            resize: "horizontal",
+                            overflow: "scroll",
+                            width: "49vw",
+                            height: "90vh",
                         }}
                     >
-                        <div
-                            id="scroll-box"
+                        <Annotater
                             style={{
-                                flexGrow: 1,
-                                resize: "horizontal",
-                                overflow: "scroll",
-                                width: "49vw",
-                                height: "90vh",
+                                paddingBottom: "8px",
+                                lineHeight: 3,
+                                margin: "10px",
                             }}
-                        >
-                            <Annotater
-                                style={{
-                                    paddingBottom: "8px",
-                                    lineHeight: 3,
-                                    margin: "10px",
-                                }}
-                                editMode={true}
-                                getSpan={(span: TextSpan) => ({ ...span })}
-                            />
-                        </div>
-                        <div style={{ flexGrow: 3 }}>
-                            <PDFViewer />
-                        </div>
+                            editMode={true}
+                            getSpan={(span: TextSpan) => ({ ...span })}
+                        />
                     </div>
-                </GlobaLContext.Provider>
+                    <div style={{ flexGrow: 3 }}>
+                        <PDFViewer />
+                    </div>
+                </div>
             </div>
         </ThemeProvider>
     );
