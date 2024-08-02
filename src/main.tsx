@@ -14,6 +14,8 @@ import {
 
 import "@/style/globals.css"
 import "@/style/style.css"
+import App from "./App";
+
 
 const router = createBrowserRouter([
   {
@@ -35,7 +37,5 @@ const router = createBrowserRouter([
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode >
-    <RouterProvider router={router} />
-  </React.StrictMode>
+  <App />
 );

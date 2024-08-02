@@ -225,7 +225,7 @@ function componentToHex(c) {
 }
 
 export const rgbToHex = (r, g, b, a) => {
-  return "#" + omponentToHex(r) + componentToHex(g) + componentToHex(b) + componentToHex(a);
+  return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b) + componentToHex(a);
 }
 export const parseColor = (input) => {
   const colors = input.split("(")[1].split(")")[0].split(",");
@@ -233,4 +233,19 @@ export const parseColor = (input) => {
     return [...colors, "0"];
   }
   return colors;
+}
+
+export const contains = (xs: any[], x: any) => {
+  const idx = xs.findIndex((val) => val == x);
+  return idx != -1;
+}
+
+
+export const toggle = (xs: any[], x: any) => {
+  const idx = xs.findIndex((val) => val == x);
+  if (idx == -1) {
+    return [...xs, x];
+  } else {
+    return [...xs.slice(0, idx), ...xs.slice(idx + 1)];
+  }
 }

@@ -21,9 +21,11 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import CloseIcon from '@mui/icons-material/Close';
 import { orderBy, groupBy, sortBy, maxBy, minBy } from "lodash";
 import { MenuItemProps } from "./MenuItemProps";
+import { contains, toggle } from "@/lib/utils";
 
 type SaveSelectorProps = {
     onSelectSave: (save: any, index: number) => any;
+    allowMultipleSelections?: boolean;
     allowOtherUsers?: boolean;
     disableExport?: boolean;
     disableMarkFinal?: boolean;
@@ -34,10 +36,9 @@ export const SaveSelector = (props: SaveSelectorProps) => {
 
     const theme = useTheme();
     const state = React.useContext(GlobalState);
-    const [queryParameters, setQueryParameters] = useSearchParams();
-    const [selectedSaveGroup, setSelectedSaveGroup] = React.useState(-1);
+    const [selectedSaveGroup, setSelectedSaveGroup] = React.useState<string[]>([]);
     const [saves, setSaves] = React.useState<any[]>([]);
-    const [selectedSave, setSelectedSave] = React.useState<number>(-1);
+    const [selectedSave, setSelectedSave] = React.useState<number[]>([-1]);
     const tokenizers = [
         { name: "Llemma 7b", id: "EleutherAI/llemma_7b" },
         { name: "Llemma 34b", id: "EleutherAI/llemma_34b" },
@@ -66,17 +67,21 @@ export const SaveSelector = (props: SaveSelectorProps) => {
         }
     };
 
-    const handleSaveGroupClick = (index: number) => {
-        if (selectedSaveGroup != index) {
-            setSelectedSaveGroup(index);
+    const handleSaveGroupClick = (savename: string) => {
+        if (props.allowMultipleSelections) {
+            setSelectedSaveGroup(toggle(selectedSaveGroup, savename));
         } else {
-            setSelectedSaveGroup(-1);
+            setSelectedSaveGroup([savename]);
         }
     }
 
 
     const onSelectSave = (save: any, index: number) => {
-        setSelectedSave(index);
+        if (props.allowMultipleSelections) {
+            setSelectedSave(toggle(selectedSave, save.timestamp));
+        } else {
+            setSelectedSave([save.timestamp]);
+        }
         props.onSelectSave(save, index);
     };
 
@@ -135,7 +140,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                         disableGutters
                         disablePadding
                     >
-                        <ListItemButton selected={selectedSave === index && selectedSaveGroup === saveGroupIndex}>
+                        <ListItemButton selected={contains(selectedSave, save.timestamp) && contains(selectedSaveGroup, save.savename)}>
                             <Grid container >
                                 <Grid item xs={1}>
                                     {
@@ -154,7 +159,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                                             </IconButton>
                                             <Menu
                                                 anchorEl={tokenizerMenuAnchorEl}
-                                                open={tokenizerMenuOpen == index && selectedSaveGroup == saveGroupIndex}
+                                                open={tokenizerMenuOpen == index && contains(selectedSaveGroup, save.savename)}
                                                 onClose={handleTokenizerMenuClose}
                                             >
                                                 {
@@ -212,7 +217,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
         <Box
             sx={{
                 width: 1200,
-                maxHeight: 300,
+                maxHeight: 600,
                 height: "fit-content",
                 backgroundColor: theme.palette.background.default,
                 overflowY: "scroll",
@@ -251,10 +256,10 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                         saves.map((savelist: any[], index: number) => {
                             return (
                                 <div key={index}>
-                                    <ListItemButton selected={selectedSaveGroup == index} onClick={(e) => handleSaveGroupClick(index)}>
+                                    <ListItemButton selected={contains(selectedSaveGroup, savelist[0].savename)} onClick={(e) => handleSaveGroupClick(savelist[0].savename)}>
                                         <Grid container >
                                             <Grid item xs={2}>
-                                                {selectedSaveGroup == index ? <ExpandLess /> : <ExpandMore />}
+                                                {contains(selectedSaveGroup, savelist[0].savename) ? <ExpandLess /> : <ExpandMore />}
                                             </Grid>
                                             <Grid item xs={3}>
                                                 <Tooltip title={savelist[0].savename}>
@@ -275,7 +280,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                                             </Grid>
                                         </Grid>
                                     </ListItemButton>
-                                    <Collapse in={selectedSaveGroup == index} timeout="auto" unmountOnExit>
+                                    <Collapse in={contains(selectedSaveGroup, savelist[0].savename)} timeout="auto" unmountOnExit>
                                         <List disablePadding>
                                             {makeSubSaveList(savelist, index)}
                                         </List>

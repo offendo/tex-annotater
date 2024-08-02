@@ -20,14 +20,20 @@ import GradingIcon from '@mui/icons-material/Grading';
 import MenuIcon from '@mui/icons-material/Menu';
 import RedoIcon from '@mui/icons-material/Redo';
 import UndoIcon from '@mui/icons-material/Undo';
+import CompareIcon from '@mui/icons-material/Compare';
 import { AnnotationMenu } from "./AnnotationMenu";
 import { DocumentSelectorModal } from "./DocumentSelectorModal";
 import { RegexPatternModal } from "./RegexPatternModal";
 import { SaveAsForm } from "./SaveAsForm";
 import { ScoresDialog } from "./ScoresDialog";
+import { CompareDialog } from "./CompareDialog";
 
 
-export default function TopBar() {
+type TopBarProps = {
+    disableKeybinds?: boolean;
+}
+
+export default function TopBar(props: TopBarProps) {
     const theme = useTheme();
     const state = React.useContext(GlobalState);
 
@@ -49,6 +55,10 @@ export default function TopBar() {
     /* ScoresDialog */
     const [scoresDialogOpen, setScoresDialogOpen] = React.useState<boolean>(false);
     const handleScoresDialogClick = (event: any) => { setScoresDialogOpen(true); };
+
+    /* CompareDialog */
+    const [compareDialogOpen, setCompareDialogOpen] = React.useState<boolean>(false);
+    const handleCompareDialogClick = (event: any) => { setCompareDialogOpen(true); };
 
     /* LoadFileMenu */
     const handleLoadMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => { setLoadMenuAnchorEl(event.currentTarget); };
@@ -74,17 +84,22 @@ export default function TopBar() {
     }
 
     React.useEffect(() => {
-        const timestamp = queryParameters.get('timestamp') || "";
-        const savename = queryParameters.get('savename') || "";
-        // if (timestamp != "" && savename != "") {
-        //     loadAnnotations(state, state.fileid, state.userid, timestamp, savename);
-        // }
-        setQueryParameters({ ...queryParameters, fileid: state.fileid, timestamp: state.timestamp, savename: state.savename, anchor: state.anchor })
+        queryParameters.set("fileid", state.fileid || (queryParameters.get('fileid') || ""));
+        if (state.anchor) {
+            queryParameters.set("anchor", state.anchor);
+        }
+        setQueryParameters(queryParameters)
     }, [state.fileid]);
 
     const doSave = async (name?: string) => {
         const didSave = await saveAnnotations(state, state.annotations, false, name != undefined ? name : state.savename);
-        setQueryParameters({ ...queryParameters, fileid: state.fileid, timestamp: state.timestamp, savename: name != undefined ? name : state.savename, anchor: state.anchor })
+        queryParameters.set("fileid", state.fileid);
+        queryParameters.set("timestamp", state.timestamp);
+        queryParameters.set("savename", name != undefined ? name : state.savename);
+        if (state.anchor) {
+            queryParameters.set("anchor", state.anchor);
+        }
+        setQueryParameters(queryParameters)
         setDidSave(didSave);
         setMessage(
             didSave
@@ -95,6 +110,9 @@ export default function TopBar() {
 
     // handle what happens on key press
     const handleKeyPress = React.useCallback(async (event: any) => {
+        if (props.disableKeybinds){
+            return;
+        }
         /* Menu items
            ========= */
         if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key == 's') {
@@ -197,7 +215,7 @@ export default function TopBar() {
                                 <Typography variant="body2" color="text.secondary">
                                     ⇧⌘S
                                 </Typography>
-                                <SaveAsForm open={saveAsMenuOpen} setOpen={setSaveAsMenuOpen} doSave={doSave} />
+                                <SaveAsForm isOpen={saveAsMenuOpen} setIsOpen={setSaveAsMenuOpen} doSave={doSave} />
                             </MenuItem>
                             <MenuItem
                                 onClick={async (e) => {
@@ -244,7 +262,16 @@ export default function TopBar() {
                                 <ListItemText>
                                     Get Annotation Scores
                                 </ListItemText>
-                                <ScoresDialog open={scoresDialogOpen} setOpen={setScoresDialogOpen} />
+                                <ScoresDialog isOpen={scoresDialogOpen} setIsOpen={setScoresDialogOpen} />
+                            </MenuItem>
+                            <MenuItem onClick={(e) => { handleCompareDialogClick(e) }}>
+                                <ListItemIcon>
+                                    <CompareIcon />
+                                </ListItemIcon>
+                                <ListItemText>
+                                    Compare Annotations
+                                </ListItemText>
+                                <CompareDialog isOpen={compareDialogOpen} setIsOpen={setCompareDialogOpen} />
                             </MenuItem>
                             <MenuItem onClick={handleRegexPatternMenuClick} >
                                 <ListItemIcon>

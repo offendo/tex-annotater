@@ -47,7 +47,8 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
         setSelectedDoc(index);
         if (doc.name == null) { return; }
         loadDocument(state, doc.name);
-        setQueryParameters({ fileid: doc.name })
+        queryParameters.set("fileid", doc.name);
+        setQueryParameters(queryParameters)
         state.setFileId(doc.name);
     };
 
@@ -72,7 +73,10 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
 
     const onSelectSave = (save: any, index: number) => {
         loadAnnotations(state, save["fileid"], save["userid"], save["timestamp"], save["savename"]);
-        setQueryParameters({ fileid: save['fileid'], timestamp: save['timestamp'], savename: save['savename'] })
+        queryParameters.set("fileid", save.fileid);
+        queryParameters.set("timestamp", save.timestamp);
+        queryParameters.set("savename", save.savename);
+        setQueryParameters(queryParameters)
     };
 
     // Load documents immediately
@@ -95,7 +99,8 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
         >
             <DialogActions >
                 <Button onClick={handleSaveSelectorClick}>
-                    {saveSelectorOpen ? <ExpandLess /> : <ExpandMore />} Toggle saves
+                    {saveSelectorOpen ? <ExpandLess /> : <ExpandMore />}
+                    {saveSelectorOpen ? "Show files" : "Show saves"}
                 </Button>
                 <TextField
                     autoFocus
@@ -110,68 +115,70 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                 </IconButton>
             </DialogActions>
             <DialogContent>
-                <Box
-                    sx={{
-                        width: 1200,
-                        minWidth: 1200,
-                        maxHeight: 400,
-                        height: "fit-content",
-                        backgroundColor: theme.palette.background.default,
-                        overflowY: "scroll",
-                        fontFamily: theme.typography.fontFamily,
-                        fontSize: "12pt",
-                    }}
-                >
-                    <Grid container>
-                        <List dense sx={{ width: "100%" }}>
-                            <ListSubheader >
-                                <Grid container>
-                                    <Grid item xs={2}>
-                                        Arxiv ID
+                <Collapse collapsedSize={200} in={!saveSelectorOpen} timeout="auto" >
+                    <Box
+                        sx={{
+                            width: 1200,
+                            minWidth: 1200,
+                            maxHeight: 400,
+                            height: "fit-content",
+                            backgroundColor: theme.palette.background.default,
+                            overflowY: "scroll",
+                            fontFamily: theme.typography.fontFamily,
+                            fontSize: "12pt",
+                        }}
+                    >
+                        <Grid container>
+                            <List dense sx={{ width: "100%" }}>
+                                <ListSubheader >
+                                    <Grid container>
+                                        <Grid item xs={2}>
+                                            Arxiv ID
+                                        </Grid>
+                                        <Grid item xs={5}>
+                                            File name
+                                        </Grid>
+                                        <Grid item xs={3}>
+                                            Upload date
+                                        </Grid>
+                                        <Grid item xs={2}>
+                                            Size
+                                        </Grid>
                                     </Grid>
-                                    <Grid item xs={5}>
-                                        File name
-                                    </Grid>
-                                    <Grid item xs={3}>
-                                        Upload date
-                                    </Grid>
-                                    <Grid item xs={2}>
-                                        Size
-                                    </Grid>
-                                </Grid>
-                            </ListSubheader>
-                            {
-                                filterSearch(orderBy(documents, ['arxiv_id', 'filename'], 'asc'), query).map((doc: any, index: number) => {
-                                    return (
-                                        <ListItem
-                                            key={doc.arxiv_id + doc.filename}
-                                            value={doc.name}
-                                            onClick={(e) => { selectDocument(doc, index); setSaveSelectorOpen(true); }}
-                                        >
-                                            <ListItemButton disableGutters selected={selectedDoc === index}>
-                                                <Grid container >
-                                                    <Grid item xs={2}>
-                                                        {doc.arxiv_id}
+                                </ListSubheader>
+                                {
+                                    filterSearch(orderBy(documents, ['arxiv_id', 'filename'], 'asc'), query).map((doc: any, index: number) => {
+                                        return (
+                                            <ListItem
+                                                key={doc.arxiv_id + doc.filename}
+                                                value={doc.name}
+                                                onClick={(e) => { selectDocument(doc, index); setSaveSelectorOpen(true); }}
+                                            >
+                                                <ListItemButton disableGutters selected={selectedDoc === index}>
+                                                    <Grid container >
+                                                        <Grid item xs={2}>
+                                                            {doc.arxiv_id}
+                                                        </Grid>
+                                                        <Grid item xs={5} style={{ overflowX: "scroll" }}>
+                                                            {doc.filename}
+                                                        </Grid>
+                                                        <Grid item xs={3}>
+                                                            {doc.modified}
+                                                        </Grid>
+                                                        <Grid item xs={2}>
+                                                            {doc.size} kb
+                                                        </Grid>
                                                     </Grid>
-                                                    <Grid item xs={5} style={{ overflowX: "scroll" }}>
-                                                        {doc.filename}
-                                                    </Grid>
-                                                    <Grid item xs={3}>
-                                                        {doc.modified}
-                                                    </Grid>
-                                                    <Grid item xs={2}>
-                                                        {doc.size} kb
-                                                    </Grid>
-                                                </Grid>
-                                            </ListItemButton>
-                                        </ListItem>
-                                    );
-                                })
-                            }
-                        </List>
-                    </Grid>
-                </Box>
-                <Collapse in={saveSelectorOpen} timeout="auto" >
+                                                </ListItemButton>
+                                            </ListItem>
+                                        );
+                                    })
+                                }
+                            </List>
+                        </Grid>
+                    </Box>
+                </Collapse>
+                <Collapse id={"save-selector-collapse"} in={saveSelectorOpen} timeout="auto" >
                     <SaveSelector onSelectSave={onSelectSave} />
                 </Collapse>
             </DialogContent>

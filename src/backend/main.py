@@ -19,6 +19,7 @@ from backend.scoring import score_and_diff
 from .search import fuzzysearch
 from .data import (
     export_annotations,
+    get_save_info_from_timestamp,
     load_tex,
     list_all_textbooks,
     load_all_annotations,
@@ -135,12 +136,15 @@ def get_annotations():
     if userid is None or fileid is None or timestamp is None:
         return "Bad request: need userid, fileid, and timestamp!", 400
     annotations = load_annotations(fileid, userid, timestamp if len(timestamp) else None)
+    if not savename:
+        save_info = get_save_info_from_timestamp(timestamp)
 
     return {
         "fileid": fileid,
+        "userid": save_info['userid'],
         "annotations": annotations,
         "timestamp": timestamp,
-        "savename": savename,
+        "savename": save_info['savename'],
     }, 200
 
 

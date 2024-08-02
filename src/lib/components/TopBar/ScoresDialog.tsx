@@ -11,13 +11,10 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import { saveAnnotations, GlobalState, GlobalStateProps } from '@/lib/GlobalState';
 import { SaveSelector } from './SaveSelector';
+import { MenuItemProps } from './MenuItemProps';
+import { Grid } from '@mui/material';
 
-export type ScoresDialogProps = {
-    open: boolean
-    setOpen: (x: boolean) => any
-};
-
-export function ScoresDialog(props: ScoresDialogProps) {
+export function ScoresDialog(props: MenuItemProps) {
 
     const state = React.useContext(GlobalState);
 
@@ -25,7 +22,7 @@ export function ScoresDialog(props: ScoresDialogProps) {
     const [tags, setTags] = React.useState<string[]>(["definition", "theorem", "proof", "example", "reference", "name"])
 
     const handleClose = () => {
-        props.setOpen(false);
+        props.setIsOpen(false);
     };
     const handleToggle = (s) => {
         const splitIndex = tags.findIndex((t) => s == t);
@@ -42,7 +39,6 @@ export function ScoresDialog(props: ScoresDialogProps) {
         fetch(url).then((res) => {
             return res.blob()
         }).then((blob) => {
-            console.log(blob);
             var a = document.createElement("a");
             var file = new Blob([blob], { type: 'application/text' });
             a.href = URL.createObjectURL(file);
@@ -54,7 +50,7 @@ export function ScoresDialog(props: ScoresDialogProps) {
     return (
         <React.Fragment>
             <Dialog
-                open={props.open}
+                open={props.isOpen}
                 onClose={handleClose}
                 maxWidth="xl"
             >
@@ -68,12 +64,26 @@ export function ScoresDialog(props: ScoresDialogProps) {
                         Select tags to score against
                     </DialogContentText>
                     <FormGroup>
-                        <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("definition") }} />} label="definition" />
-                        <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("theorem") }} />} label="theorem" />
-                        <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("proof") }} />} label="proof" />
-                        <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("name") }} />} label="name" />
-                        <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("reference") }} />} label="reference" />
-                        <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("example") }} />} label="example" />
+                        <Grid container style={{width: "50%"}}>
+                            <Grid item xs={4}>
+                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("definition") }} />} label="definition" />
+                            </Grid>
+                            <Grid item xs={4}>
+                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("theorem") }} />} label="theorem" />
+                            </Grid>
+                            <Grid item xs={4}>
+                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("proof") }} />} label="proof" />
+                            </Grid>
+                            <Grid item xs={4}>
+                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("name") }} />} label="name" />
+                            </Grid>
+                            <Grid item xs={4}>
+                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("reference") }} />} label="reference" />
+                            </Grid>
+                            <Grid item xs={4}>
+                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("example") }} />} label="example" />
+                            </Grid>
+                        </Grid>
                     </FormGroup>
                 </DialogContent>
                 <DialogActions>

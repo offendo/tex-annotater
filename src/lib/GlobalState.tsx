@@ -116,7 +116,7 @@ const defaultState = {
 
 export const checkIsAdmin = async (state: GlobalStateProps) => {
     const url = `/api/admin?userid=${state.userid}`;
-    const response = await fetch(url, {mode: "cors"});
+    const response = await fetch(url, { mode: "cors" });
     const json = await response.json();
     state.setIsAdmin(json['isAdmin']);
 }
@@ -133,7 +133,7 @@ export async function loadAnnotations(
         let res: any = {};
         if (empty) {
             console.log("Clearing annotations...");
-            res = { annotations: [], fileid: fileid, savename: "", timestamp: ""};
+            res = { annotations: [], fileid: fileid, savename: "", timestamp: "" };
         } else {
             const url = `/api/annotations?fileid=${fileid}&userid=${userid}&timestamp=${timestamp ? timestamp : ""}&savename=${savename ? savename : ""}`
             const response = await fetch(url, { mode: "cors" });
@@ -146,32 +146,33 @@ export async function loadAnnotations(
         state.setUndoBuffer([res['annotations']]);
         state.setUndoIndex(1);
         console.log(`Loaded ${res["annotations"].length} annotations`);
-        return res["annotations"];
+        return res;
     } catch (e) {
         console.error(e);
     }
 }
 
-export async function loadDocument(state: GlobalStateProps, fileid: string) {
+export async function loadDocument(state: GlobalStateProps, fileid: string, loadPdf: boolean = true) {
     try {
-        // Fetch data
-        const tex_response = fetch(`/api/tex?fileid=${fileid}`, { mode: "cors" });
-        const pdf_response = fetch(`/api/pdf?fileid=${fileid}`, { mode: "cors" });
-
         // Set TeX
+        const tex_response = fetch(`/api/tex?fileid=${fileid}`, { mode: "cors" });
         const tex_res = await (await tex_response).json();
         state.setTex(tex_res["tex"]);
         state.setFileId(tex_res["fileid"]);
 
         // Set pdf
-        const pdf_res = await (await pdf_response).json();
-        state.setPdf(pdf_res["pdf"]);
+        let pdf_res = null;
+        if (loadPdf) {
+            const pdf_response = fetch(`/api/pdf?fileid=${fileid}`, { mode: "cors" });
+            pdf_res = await (await pdf_response).json();
+            state.setPdf(pdf_res["pdf"]);
+        }
 
-        // Force empty annotations
-        // state.setAnnotations([]);
+        return { tex: tex_res['tex'], pdf: loadPdf ? pdf_res['pdf'] : null }
 
     } catch (e) {
         console.error(e);
+        return { tex: null, pdf: null }
     }
 }
 

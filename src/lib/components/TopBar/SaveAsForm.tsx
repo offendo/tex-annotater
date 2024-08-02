@@ -6,7 +6,6 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-import { saveAnnotations, GlobalState } from '@/lib/GlobalState';
 import { MenuItemProps } from './MenuItemProps';
 
 export type SaveAsFormProps = {
@@ -16,13 +15,13 @@ export type SaveAsFormProps = {
 export function SaveAsForm(props: SaveAsFormProps & MenuItemProps) {
 
     const handleClose = () => {
-        props.setOpen(false);
+        props.setIsOpen(false);
     };
 
     return (
         <React.Fragment>
             <Dialog
-                open={props.open}
+                open={props.isOpen}
                 onClose={handleClose}
                 PaperProps={{
                     component: 'form',
