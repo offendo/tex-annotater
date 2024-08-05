@@ -157,10 +157,11 @@ export async function loadAnnotationDiff(
     fileid: string,
     userid: string,
     timestamps: string[],
+    tags: string[],
 ) {
     try {
         let res: any = {};
-        const url = `/api/annotations/diff?fileid=${fileid}&userid=${userid}&timestamps=${timestamps.join(';')}`
+        const url = `/api/annotations/diff?fileid=${fileid}&userid=${userid}&timestamps=${timestamps.join(';')}&tags=${tags.join(';')}`
         const response = await fetch(url, { mode: "cors" });
         res = await response.json();
         console.log(`Loaded diffs of ${res.length} save files.`);

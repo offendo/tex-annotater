@@ -158,6 +158,7 @@ def get_annotations_diff():
     userid = request.args.get("userid")
     fileid = request.args.get("fileid")
     timestamps = request.args.get("timestamps").split(";")
+    tags = request.args.get("tags").split(";")
     if userid is None or fileid is None or timestamps is None:
         return "Bad request: need userid, fileid, and timestamp!", 400
 
@@ -165,13 +166,12 @@ def get_annotations_diff():
     result = []
     for timestamp in timestamps:
         save_info = get_save_info_from_timestamp(timestamp)
-        # anno = load_annotations(fileid, save_info["userid"], timestamp, add_timestamp_to_ids=True)
         anno = load_annotations(fileid, save_info["userid"], timestamp, add_timestamp_to_ids=True)
         annos.append(anno)
         result.append({"annotations": anno, **save_info})
 
     tex = load_tex(fileid)
-    diff = load_annotation_diff(tex, annos)
+    diff = load_annotation_diff(tex, annos, tags)
 
     return jsonify([dict(diff=d, **r) for d, r in zip(diff, result)]), 200
 

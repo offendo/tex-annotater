@@ -551,7 +551,7 @@ def _find_annos_at_index(annos: list[dict], index: int) -> set[str]:
     return result
 
 
-def load_annotation_diff(tex: str, annos_list: list[list[dict]]):
+def load_annotation_diff(tex: str, annos_list: list[list[dict]], tags: list[str]):
     N = len(annos_list)
 
     # Initialize the diffs, empty list for each character index
@@ -566,9 +566,9 @@ def load_annotation_diff(tex: str, annos_list: list[list[dict]]):
         # now compute the diffs
         intersection = set.intersection(*(annos_at_index[i][idx] for i in range(N)))
         for a in range(N):
-            annos = list(annos_at_index[a][idx].difference(intersection))
-            for triple in annos:
-                diffs[a].add(triple)
+            # only add diffs for those things that are in the tags
+            annos = [i for i in annos_at_index[a][idx].difference(intersection) if i[-1] in tags]
+            diffs[a].update(annos)
 
     # Return a list of annotations which are part of the diff
     return [

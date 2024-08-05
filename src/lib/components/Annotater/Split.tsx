@@ -89,16 +89,12 @@ export function Mark(props: MarkProps): React.JSX.Element {
     }
   }
 
-<<<<<<< HEAD
-  const getAnnoColor = (anno: TextSpan) => {
-=======
   const getAnnoColor = (anno: any, light?: boolean) => {
     let alpha = DARK;
     if (light) {
       console.log(`anno`, anno, `  is light ? ${light}`)
       alpha = LIGHT;
     }
->>>>>>> 906124f (Highlight diffs)
     if (state.editing != null && anno.annoid == state.editing.annoid) {
       return "#00000080"; // faded black
     }

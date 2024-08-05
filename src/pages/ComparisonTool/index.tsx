@@ -58,7 +58,7 @@ const ComparisonTool = () => {
             loadDocument(state, fileid, false);
 
             // load each of the annotations
-            loadAnnotationsDiff(state, fileid, userid, timestamps).then((annos) => {
+            loadAnnotationsDiff(state, fileid, userid, timestamps, tags).then((annos) => {
                 setComparison(annos);
                 console.log('Got diff: ', annos);
             })
