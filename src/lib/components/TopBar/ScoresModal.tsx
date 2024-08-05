@@ -35,7 +35,7 @@ const MenuProps = {
     },
 };
 
-export function ScoresDialog(props: MenuItemProps) {
+export function ScoresModal(props: MenuItemProps) {
 
     const state = React.useContext(GlobalState);
 

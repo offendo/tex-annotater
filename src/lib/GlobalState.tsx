@@ -263,7 +263,7 @@ export async function saveAnnotations(
         state.setSavename(res['savename']);
         state.setFileId(res['fileid']);
         console.log('Saved annotations: ', res['savename'], ' timestamp ', res['timestamp'])
-        return res['timestamp'];
+        return res;
     } catch (e) {
         console.error(e);
         return false;

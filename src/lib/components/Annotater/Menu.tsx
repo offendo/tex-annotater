@@ -4,7 +4,7 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import { GlobalState, Status, toggleEditStatus } from "@/lib/GlobalState";
 import { useTheme } from "@mui/material";
 
-export interface MenuProps {
+export interface LabelMenuProps {
   left: number;
   top: number;
   range: number[];
@@ -12,7 +12,7 @@ export interface MenuProps {
   onMouseLeave: (e: any) => any
 }
 
-export const LabelMenu = (props: MenuProps) => {
+export const LabelMenu = (props: LabelMenuProps) => {
   const theme = useTheme();
   const state = useContext(GlobalState);
   const [name, setName] = useState("")

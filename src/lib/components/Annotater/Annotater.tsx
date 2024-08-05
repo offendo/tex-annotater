@@ -250,7 +250,7 @@ const Annotator = (props: AnnotatorProps) => {
           </div>
         </pre>
       </div>
-      {selectionClicked && props.editMode && (
+      {selectionClicked && state.annotations.length > 0 && props.editMode && (
         <LabelMenu
           top={cursorPos.y - 10}
           left={cursorPos.x - 10}

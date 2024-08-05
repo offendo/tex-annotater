@@ -38,7 +38,7 @@ const MenuProps = {
     },
 };
 
-export function CompareDialog(props: MenuItemProps) {
+export function CompareModal(props: MenuItemProps) {
 
     const state = React.useContext(GlobalState);
     const navigate = useNavigate()

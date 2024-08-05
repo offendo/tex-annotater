@@ -21,12 +21,15 @@ import MenuIcon from '@mui/icons-material/Menu';
 import RedoIcon from '@mui/icons-material/Redo';
 import UndoIcon from '@mui/icons-material/Undo';
 import CompareIcon from '@mui/icons-material/Compare';
+import AddIcon from '@mui/icons-material/Add';
 import { AnnotationMenu } from "./AnnotationMenu";
 import { DocumentSelectorModal } from "./DocumentSelectorModal";
 import { RegexPatternModal } from "./RegexPatternModal";
 import { SaveAsForm } from "./SaveAsForm";
-import { ScoresDialog } from "./ScoresDialog";
-import { CompareDialog } from "./CompareDialog";
+import { NewAnnotationForm } from "./NewAnnotationForm";
+import { ScoresModal } from "./ScoresModal";
+import { CompareModal } from "./CompareModal";
+import { parseSelection } from "@/lib/utils";
 
 
 type TopBarProps = {
@@ -37,9 +40,13 @@ export default function TopBar(props: TopBarProps) {
     const theme = useTheme();
     const state = React.useContext(GlobalState);
 
-    /* SaveAsMenu */
-    const [saveAsMenuOpen, setSaveAsMenuOpen] = React.useState<boolean>(false);
-    const handleSaveAsMenuClick = (event: any) => { setSaveAsMenuOpen(true); };
+    /* NewAnnotationMenu */
+    const [newAnnotationFormOpen, setNewAnnotationFormOpen] = React.useState<boolean>(false);
+    const handleNewAnnotationFormClick = (event: any) => { setNewAnnotationFormOpen(true); };
+
+    /* SaveAsForm */
+    const [saveAsFormOpen, setSaveAsFormOpen] = React.useState<boolean>(false);
+    const handleSaveAsFormClick = (event: any) => { setSaveAsFormOpen(true); };
 
     /* DocumentSelectorMenu */
     const [documentSelectorMenuOpen, setDocumentSelectorMenuOpen] = React.useState<boolean>(false);
@@ -50,12 +57,12 @@ export default function TopBar(props: TopBarProps) {
     const handleRegexPatternMenuClick = (event: any) => { setRegexPatternMenuOpen(true); };
 
     /* ScoresDialog */
-    const [scoresDialogOpen, setScoresDialogOpen] = React.useState<boolean>(false);
-    const handleScoresDialogClick = (event: any) => { setScoresDialogOpen(true); };
+    const [scoresModalOpen, setScoresModalOpen] = React.useState<boolean>(false);
+    const handleScoresModalClick = (event: any) => { setScoresModalOpen(true); };
 
-    /* CompareDialog */
-    const [compareDialogOpen, setCompareDialogOpen] = React.useState<boolean>(false);
-    const handleCompareDialogClick = (event: any) => { setCompareDialogOpen(true); };
+    /* CompareModal */
+    const [compareModalOpen, setCompareModalOpen] = React.useState<boolean>(false);
+    const handleCompareModalClick = (event: any) => { setCompareModalOpen(true); };
 
     /* LoadFileMenu */
     const handleLoadMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => { setLoadMenuAnchorEl(event.currentTarget); };
@@ -90,9 +97,9 @@ export default function TopBar(props: TopBarProps) {
 
     const doSave = async (name?: string) => {
         const didSave = await saveAnnotations(state, state.annotations, false, name != undefined ? name : state.savename);
-        queryParameters.set("fileid", state.fileid);
-        queryParameters.set("timestamp", state.timestamp);
-        queryParameters.set("savename", name != undefined ? name : state.savename);
+        queryParameters.set("fileid", didSave.fileid);
+        queryParameters.set("timestamp", didSave.timestamp);
+        queryParameters.set("savename", name != undefined ? name : didSave.savename);
         if (state.anchor) {
             queryParameters.set("anchor", state.anchor);
         }
@@ -103,24 +110,34 @@ export default function TopBar(props: TopBarProps) {
                 ? "Successfully saved"
                 : "Error: please see console",
         );
+        return didSave;
     }
 
     // handle what happens on key press
     const handleKeyPress = React.useCallback(async (event: any) => {
-        if (props.disableKeybinds){
+        if (props.disableKeybinds) {
             return;
         }
         /* Menu items
            ========= */
         if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key == 's') {
+            if (state.annotations.length == 0) {
+                console.log("Can't save empty annotations!");
+                setMessage("Can't save empty annotations!");
+                return;
+            }
             // save annotations with name on ctrl+shift+s
-            handleSaveAsMenuClick(event);
+            handleSaveAsFormClick(event);
             event.preventDefault();
         } else if ((event.ctrlKey || event.metaKey) && event.key == 's') {
-            // save annotations on ctrl+s
+            if (state.annotations.length == 0) {
+                console.log("Can't save empty annotations!");
+                setMessage("Can't save empty annotations!");
+                return;
+            }
             // if we're not supplied a name or save name,
             if (!state.savename) {
-                handleSaveAsMenuClick(event);
+                handleSaveAsFormClick(event);
             } else {
                 doSave();
             }
@@ -198,10 +215,29 @@ export default function TopBar(props: TopBarProps) {
                                 </Typography>
                             </MenuItem>
                             <MenuItem
+                                onClick={(e) => {
+                                    handleNewAnnotationFormClick(e);
+                                    handleLoadMenuClose()
+                                }}
+                                disabled={parseSelection(window.getSelection())[1] == 0}
+                            >
+                                <ListItemIcon>
+                                    <AddIcon />
+                                </ListItemIcon>
+                                <ListItemText>
+                                    New Annotation Set
+                                </ListItemText>
+                                <Typography variant="body2" color="text.secondary">
+                                    ⌘N
+                                </Typography>
+                                <NewAnnotationForm isOpen={newAnnotationFormOpen} setIsOpen={setNewAnnotationFormOpen} doSave={doSave} range={parseSelection(window.getSelection())} />
+                            </MenuItem>
+                            <MenuItem
                                 onClick={async (e) => {
-                                    handleSaveAsMenuClick(e);
+                                    handleSaveAsFormClick(e);
                                     handleLoadMenuClose();
                                 }}
+                                disabled={state.annotations.length == 0}
                             >
                                 <ListItemIcon>
                                     <SaveIcon />
@@ -212,17 +248,18 @@ export default function TopBar(props: TopBarProps) {
                                 <Typography variant="body2" color="text.secondary">
                                     ⇧⌘S
                                 </Typography>
-                                <SaveAsForm isOpen={saveAsMenuOpen} setIsOpen={setSaveAsMenuOpen} doSave={doSave} />
+                                <SaveAsForm isOpen={saveAsFormOpen} setIsOpen={setSaveAsFormOpen} doSave={doSave} />
                             </MenuItem>
                             <MenuItem
                                 onClick={async (e) => {
                                     if (!state.savename) {
-                                        handleSaveAsMenuClick(event);
+                                        handleSaveAsFormClick(e);
                                     } else {
                                         doSave();
                                     }
                                     handleLoadMenuClose();
                                 }}
+                                disabled={state.annotations.length == 0}
                             >
                                 <ListItemIcon>
                                     <SaveIcon />
@@ -252,23 +289,23 @@ export default function TopBar(props: TopBarProps) {
                                 <Typography variant="body2" color="text.secondary"> ⌘O </Typography>
                                 <DocumentSelectorModal isOpen={documentSelectorMenuOpen} setIsOpen={setDocumentSelectorMenuOpen} />
                             </MenuItem>
-                            <MenuItem onClick={(e) => { handleScoresDialogClick(e) }}>
+                            <MenuItem onClick={(e) => { handleScoresModalClick(e) }} disabled={state.annotations.length == 0}>
                                 <ListItemIcon>
                                     <GradingIcon />
                                 </ListItemIcon>
                                 <ListItemText>
                                     Get Annotation Scores
                                 </ListItemText>
-                                <ScoresDialog isOpen={scoresDialogOpen} setIsOpen={setScoresDialogOpen} />
+                                <ScoresModal isOpen={scoresModalOpen} setIsOpen={setScoresModalOpen} />
                             </MenuItem>
-                            <MenuItem onClick={(e) => { handleCompareDialogClick(e) }}>
+                            <MenuItem onClick={(e) => { handleCompareModalClick(e) }} disabled={state.fileid == ""} >
                                 <ListItemIcon>
                                     <CompareIcon />
                                 </ListItemIcon>
                                 <ListItemText>
                                     Compare Annotations
                                 </ListItemText>
-                                <CompareDialog isOpen={compareDialogOpen} setIsOpen={setCompareDialogOpen} />
+                                <CompareModal isOpen={compareModalOpen} setIsOpen={setCompareModalOpen} />
                             </MenuItem>
                             <MenuItem onClick={handleRegexPatternMenuClick} >
                                 <ListItemIcon>
