@@ -56,9 +56,13 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
         if (doc.name != state.fileid){
             console.log('Swapping files; clearing annotations...');
             state.setAnnotations([]);
+            state.setSavename("");
+            state.setTimestamp("");
         }
         loadDocument(state, doc.name);
         queryParameters.set("fileid", doc.name);
+        queryParameters.set("savename", "");
+        queryParameters.set("timestamp", "");
         setQueryParameters(queryParameters)
     };
 
