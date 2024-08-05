@@ -70,6 +70,8 @@ export const SaveSelector = (props: SaveSelectorProps) => {
     const handleSaveGroupClick = (savename: string) => {
         if (props.allowMultipleSelections) {
             setSelectedSaveGroup(toggle(selectedSaveGroup, savename));
+        } else if (contains(selectedSaveGroup, savename)) {
+            setSelectedSaveGroup([]);
         } else {
             setSelectedSaveGroup([savename]);
         }
