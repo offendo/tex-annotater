@@ -92,7 +92,6 @@ export function Mark(props: MarkProps): React.JSX.Element {
   const getAnnoColor = (anno: any, light?: boolean) => {
     let alpha = DARK;
     if (light) {
-      console.log(`anno`, anno, `  is light ? ${light}`)
       alpha = LIGHT;
     }
     if (state.editing != null && anno.annoid == state.editing.annoid) {

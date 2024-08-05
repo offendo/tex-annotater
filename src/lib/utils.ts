@@ -13,7 +13,6 @@ export type SplitTagProps = {
 
 export const displaySplitsWithDiff = (content: string, annotations: TextSpan[], diff: TextSpan[]) => {
   const both = [...annotations, ...diff];
-  console.log('Diff: ', diff);
   const splits: { start: number, end: number, content: string, tags: SplitTagProps[], hasLink: boolean }[] = [];
 
   let offsetStart = 0;
@@ -73,7 +72,7 @@ export const displaySplitsWithDiff = (content: string, annotations: TextSpan[], 
             end: end,
             fileid: fileid,
             anno: anno,
-            light: diff.findIndex((a) => {return makeKey(a) == key}) == -1, // light if it's not in diff
+            light: diff.findIndex((a) => { return makeKey(a) == key }) == -1, // light if it's not in diff
           } as SplitTagProps);
           height += 1;
         }
@@ -343,17 +342,19 @@ export const parseColor = (input) => {
   return colors;
 }
 
-export const contains = (xs: any[], x: any) => {
-  const idx = xs.findIndex((val) => val == x);
+export function contains<T>(xs: T[], x: T, key?: (a: T, b: T) => boolean) {
+  const idx = key ? xs.findIndex((val) => key(val, x)) : xs.findIndex((val) => val == x);
   return idx != -1;
 }
 
 
-export const toggle = (xs: any[], x: any) => {
-  const idx = xs.findIndex((val) => val == x);
+export function toggle<T>(xs: T[], x: T, key?: (a: T, b: T) => boolean, forceEnable: boolean = false) {
+  const idx = key ? xs.findIndex((val) => key(val, x)) : xs.findIndex((val) => val == x);
   if (idx == -1) {
     return [...xs, x];
-  } else {
+  } else if (!forceEnable) {
+    // only delete the item if forceEnable is false
     return [...xs.slice(0, idx), ...xs.slice(idx + 1)];
   }
+  return xs;
 }

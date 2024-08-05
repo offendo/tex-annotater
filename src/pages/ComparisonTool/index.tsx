@@ -61,6 +61,9 @@ const ComparisonTool = () => {
             loadAnnotationsDiff(state, fileid, userid, timestamps, tags).then((annos) => {
                 setComparison(annos);
                 console.log('Got diff: ', annos);
+                if (annos.length > 0) {
+                    state.setAnnotations(annos[0].annotations)
+                }
             })
         }
     }, []);

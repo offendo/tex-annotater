@@ -144,7 +144,6 @@ const Annotator = (props: AnnotatorProps) => {
      * -------------------------------------------------------------------
      */
     const _nameMatch = (name: string, ref: string) => {
-      console.log('Checking: ', name, ' vs ', ref)
       // 1. Check exact match
       if (name == ref) {
         return true;

@@ -40,17 +40,14 @@ export default function TopBar(props: TopBarProps) {
     /* SaveAsMenu */
     const [saveAsMenuOpen, setSaveAsMenuOpen] = React.useState<boolean>(false);
     const handleSaveAsMenuClick = (event: any) => { setSaveAsMenuOpen(true); };
-    // const handleDocumentSelectorMenuClose = () => { setDocumentSelectorMenuOpen(false); };
 
     /* DocumentSelectorMenu */
     const [documentSelectorMenuOpen, setDocumentSelectorMenuOpen] = React.useState<boolean>(false);
     const handleDocumentSelectorMenuClick = (event: any) => { setDocumentSelectorMenuOpen(true); };
-    // const handleDocumentSelectorMenuClose = () => { setDocumentSelectorMenuOpen(false); };
 
     /* RegexPatternMenu */
     const [regexPatternMenuOpen, setRegexPatternMenuOpen] = React.useState<boolean>(false);
     const handleRegexPatternMenuClick = (event: any) => { setRegexPatternMenuOpen(true); };
-    // const handleRegexPatternMenuClose = () => { setRegexPatternMenuOpen(false); };
 
     /* ScoresDialog */
     const [scoresDialogOpen, setScoresDialogOpen] = React.useState<boolean>(false);

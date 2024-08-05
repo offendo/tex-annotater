@@ -2,6 +2,7 @@ import { createContext, useContext, useState } from "react";
 import ColorMap, { defaultColorMap } from "@/lib/colors";
 import { Link, TextSpan, makeLink } from "@/lib/span";
 import { cloneDeep } from "lodash";
+import { toggle } from "./utils";
 
 
 const UNDO_BUF_MAXLEN = 15;
@@ -271,25 +272,14 @@ export async function saveAnnotations(
 
 export const toggleLink = (state: GlobalStateProps, source: TextSpan, target: TextSpan, forceEnable: boolean = false) => {
     const link = makeLink(source, target);
-    const splitIndex = source.links.findIndex((s) => s.source == link.source && s.target == link.target);
-    if (splitIndex == -1) {
-        source.links = [...source.links, link];
-    } else if (!forceEnable) {
-        // if we're force enabling, then don't remove the link
-        source.links = [
-            ...source.links.slice(0, splitIndex),
-            ...source.links.slice(splitIndex + 1),
-        ]
-    }
+    source.links = toggle(source.links, link, (a, b) => a.source == b.source && a.target == b.target, forceEnable);
     updateMark(state, source);
     return source;
 }
 
 export const removeMark = (state: GlobalStateProps, ts: TextSpan) => {
-    const splitIndex = state.annotations.findIndex((s) => s.end == ts.end && s.start == ts.start && s.tag == ts.tag && ts.fileid == s.fileid);
-    if (splitIndex >= 0) {
-        updateAnnotations(state, [...state.annotations.slice(0, splitIndex), ...state.annotations.slice(splitIndex + 1)]);
-    }
+    const newAnnos = toggle(state.annotations, ts, (a, b) => a.end == b.end && a.start == b.start && a.tag == b.tag && a.fileid == b.fileid);
+    updateAnnotations(state, newAnnos);
 };
 
 export const toggleEditStatus = (state: GlobalStateProps, anno: TextSpan | null) => {
@@ -301,18 +291,8 @@ export const toggleEditStatus = (state: GlobalStateProps, anno: TextSpan | null)
 }
 
 export const updateMark = (state: GlobalStateProps, anno: TextSpan) => {
-    const splitIndex = state.annotations.findIndex((s) => s.annoid == anno.annoid);
-
-    // If it doesn't already exist in the annotations, add it
-    if (splitIndex == -1) {
-        updateAnnotations(state, [...state.annotations, anno]);
-    } else {
-        updateAnnotations(state, [
-            ...state.annotations.slice(0, splitIndex),
-            anno,
-            ...state.annotations.slice(splitIndex + 1),
-        ]);
-    }
+    const newAnnos = toggle(state.annotations, anno, (a, b) => a.annoid == b.annoid)
+    updateAnnotations(state, newAnnos);
     state.setEditing(null);
 }
 
