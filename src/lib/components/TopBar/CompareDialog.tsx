@@ -1,20 +1,42 @@
-import * as React from 'react';
+import { GlobalState, GlobalStateProps, saveAnnotations } from '@/lib/GlobalState';
+import { toggle } from '@/lib/utils';
+import { Grid } from '@mui/material';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
+import Checkbox from '@mui/material/Checkbox';
+import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-import FormGroup from '@mui/material/FormGroup';
+import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import { saveAnnotations, GlobalState, GlobalStateProps } from '@/lib/GlobalState';
-import { SaveSelector } from './SaveSelector';
+import FormGroup from '@mui/material/FormGroup';
+import InputLabel from '@mui/material/InputLabel';
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import OutlinedInput from '@mui/material/OutlinedInput';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import TextField from '@mui/material/TextField';
+import * as React from 'react';
+import { redirect, useNavigate, useSearchParams, createSearchParams, Link } from "react-router-dom";
 import { MenuItemProps } from './MenuItemProps';
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Grid } from '@mui/material';
-import { toggle } from '@/lib/utils';
+import { SaveSelector } from './SaveSelector';
+
+const allTags = ["definition", "theorem", "proof", "example", "reference", "name"];
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+    PaperProps: {
+        style: {
+            maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+            width: 250,
+            minWidth: 250,
+            maxWidth: 250,
+        },
+    },
+};
 
 export function CompareDialog(props: MenuItemProps) {
 
@@ -22,22 +44,38 @@ export function CompareDialog(props: MenuItemProps) {
     const navigate = useNavigate()
 
     const [saves, setSaves] = React.useState<string[]>([]);
-    const [tags, setTags] = React.useState<string[]>(["definition", "theorem", "proof", "example", "reference", "name"])
+    const [tags, setTags] = React.useState<string[]>(allTags);
 
-    const handleClose = () => {
+    const handleClose = (e) => {
         props.setIsOpen(false);
+        e.stopPropagation();
     };
-    const handleTagToggle = (s: string) => {
-        setTags(toggle(tags, s))
-    }
+    const handleTagChange = (event: SelectChangeEvent<string[]>) => {
+        const {
+            target: { value },
+        } = event;
+        setTags(
+            // On autofill we get a stringified value.
+            typeof value === 'string' ? value.split(',') : value,
+        );
+    };
+
+
     const handleSaveToggle = (s: string) => {
         const t = toggle(saves, s)
         setSaves(t);
-        console.log('saves: ', t);
     }
 
     const openComparison = (fileid: string, timestamps: string[], tags: string[]) => {
-        navigate(`/comparison?fileid=${fileid}&timestampA=${timestamps[0]}&timestampB=${timestamps[1]}&tags=${tags.join(';')}`);
+        console.log('comparing: ', fileid, timestamps, tags)
+        const params = createSearchParams({
+            fileid: fileid,
+            timestamps: timestamps,
+            tags: tags,
+        }).toString()
+        console.log(params);
+        navigate({ pathname: `/comparison`, search: params });
+        navigate(0);
     }
 
     return (
@@ -53,36 +91,48 @@ export function CompareDialog(props: MenuItemProps) {
                         Select saves to compare
                     </DialogContentText>
                     <SaveSelector onSelectSave={(save, index) => handleSaveToggle(save.timestamp)} disableExport={true} disableMarkFinal={true} allowMultipleSelections={true} allowOtherUsers={true} />
-                    <FormGroup>
-                        <Grid container style={{ width: "50%" }}>
-                            <Grid item xs={4}>
-                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleTagToggle("definition") }} />} label="definition" />
-                            </Grid>
-                            <Grid item xs={4}>
-                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleTagToggle("theorem") }} />} label="theorem" />
-                            </Grid>
-                            <Grid item xs={4}>
-                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleTagToggle("proof") }} />} label="proof" />
-                            </Grid>
-                            <Grid item xs={4}>
-                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleTagToggle("name") }} />} label="name" />
-                            </Grid>
-                            <Grid item xs={4}>
-                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleTagToggle("reference") }} />} label="reference" />
-                            </Grid>
-                            <Grid item xs={4}>
-                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleTagToggle("example") }} />} label="example" />
-                            </Grid>
-                        </Grid>
-                    </FormGroup>
                 </DialogContent>
                 <DialogActions>
+                    <div style={{ width: "100%" }}>
+                        <FormControl sx={{ m: 1, width: 500 }}>
+                            <InputLabel id="select-tags-menu-label">Select tags</InputLabel>
+                            <Select
+                                labelId="select-tags-menu-label"
+                                id="select-tags-menu"
+                                multiple
+                                value={tags}
+                                onChange={handleTagChange}
+                                input={<OutlinedInput id="select-tags-label-input" label="Select tags" />}
+                                renderValue={(selected) => (
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                        {selected.map((value) => (
+                                            <Chip key={value} label={value} />
+                                        ))}
+                                    </Box>
+                                )}
+                                MenuProps={MenuProps}
+                            >
+                                {allTags.map((name) => (
+                                    <MenuItem
+                                        id={`select-tags-menu-item-${name}`}
+                                        key={name}
+                                        value={name}
+                                    >
+                                        {name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </div>
+                    <Button type="submit" onClick={handleClose}>
+                        Cancel
+                    </Button>
                     <Button type="submit" onClick={
                         (e) => {
-                            openComparison(state.fileid, saves, tags); handleClose();
+                            openComparison(state.fileid, saves, tags); handleClose(e);
                         }}
                         disabled={saves.length == 0}>
-                        Open comparisons
+                        Compare
                     </Button>
                 </DialogActions>
             </Dialog>

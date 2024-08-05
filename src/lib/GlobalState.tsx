@@ -152,6 +152,25 @@ export async function loadAnnotations(
     }
 }
 
+export async function loadAnnotationDiff(
+    state: GlobalStateProps,
+    fileid: string,
+    userid: string,
+    timestamps: string[],
+) {
+    try {
+        let res: any = {};
+        const url = `/api/annotations/diff?fileid=${fileid}&userid=${userid}&timestamps=${timestamps.join(';')}`
+        const response = await fetch(url, { mode: "cors" });
+        res = await response.json();
+        console.log(`Loaded diffs of ${res.length} save files.`);
+        return res;
+    } catch (e) {
+        console.error(e);
+        return {};
+    }
+}
+
 export async function loadDocument(state: GlobalStateProps, fileid: string, loadPdf: boolean = true) {
     try {
         // Set TeX

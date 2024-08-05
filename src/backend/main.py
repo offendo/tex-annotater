@@ -20,6 +20,7 @@ from .search import fuzzysearch
 from .data import (
     export_annotations,
     get_save_info_from_timestamp,
+    load_annotation_diff,
     load_tex,
     list_all_textbooks,
     load_all_annotations,
@@ -52,12 +53,13 @@ sched = BackgroundScheduler(daemon=True)
 sched.add_job(upload_new_textbooks, "interval", minutes=10)
 sched.start()
 
+
 @app.get("/admin")
 @cross_origin()
 def get_is_admin():
     userid = request.args.get("userid")
-    admin = userid in ['nilay', 'jeff'] # TODO move this to database
-    return {'isAdmin': admin}, 200
+    admin = userid in ["nilay", "jeff"]  # TODO move this to database
+    return {"isAdmin": admin}, 200
 
 
 @app.post("/annotations")
@@ -70,9 +72,9 @@ def post_annotations():
     autosave = 1 if autosave == "true" else 0
     annotations = request.get_json()["annotations"]
     if not fileid:
-        return {'error': 'missing fileid'}, 400
+        return {"error": "missing fileid"}, 400
     if not userid:
-        return {'error': 'missing userid'}, 400
+        return {"error": "missing userid"}, 400
     save_info = save_annotations(fileid, userid, annotations, autosave=autosave, savename=savename)
     return save_info, 200
 
@@ -92,6 +94,7 @@ def export_save():
         json.dump(anno_json, f)
     return send_file(out_file, as_attachment=True, download_name=out_file.split("/")[-1])
 
+
 @app.get("/score")
 @cross_origin()
 def score_annotations():
@@ -106,14 +109,17 @@ def score_annotations():
     tokenizer_id = request.args.get("tokenizer", "EleutherAI/llemma_7b")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_id)
 
-    tags = request.args.get("tags").split(';')
+    tags = request.args.get("tags").split(";")
 
     sys_json = export_annotations(file_id=fileid, user_id=userid, timestamp=timestamp, tokenizer=tokenizer)
-    begin = sys_json['begin']
-    end = sys_json['end']
-    ref_json = export_annotations(file_id=ref_fileid, user_id=ref_userid, timestamp=ref_timestamp, tokenizer=tokenizer, begin=begin, end=end)
+    begin = sys_json["begin"]
+    end = sys_json["end"]
+    ref_json = export_annotations(
+        file_id=ref_fileid, user_id=ref_userid, timestamp=ref_timestamp, tokenizer=tokenizer, begin=begin, end=end
+    )
     scores = score_and_diff(sys_json, ref_json, tags)
     return scores, 200
+
 
 @app.get("/annotations/all")
 @cross_origin()
@@ -132,20 +138,42 @@ def get_annotations():
     userid = request.args.get("userid")
     fileid = request.args.get("fileid")
     timestamp = request.args.get("timestamp")
-    savename = request.args.get("savename")
     if userid is None or fileid is None or timestamp is None:
         return "Bad request: need userid, fileid, and timestamp!", 400
     annotations = load_annotations(fileid, userid, timestamp if len(timestamp) else None)
-    if not savename:
-        save_info = get_save_info_from_timestamp(timestamp)
+    save_info = get_save_info_from_timestamp(timestamp)
 
     return {
         "fileid": fileid,
-        "userid": save_info['userid'],
+        "userid": save_info["userid"],
         "annotations": annotations,
         "timestamp": timestamp,
-        "savename": save_info['savename'],
+        "savename": save_info["savename"],
     }, 200
+
+
+@app.get("/annotations/diff")
+@cross_origin()
+def get_annotations_diff():
+    userid = request.args.get("userid")
+    fileid = request.args.get("fileid")
+    timestamps = request.args.get("timestamps").split(";")
+    if userid is None or fileid is None or timestamps is None:
+        return "Bad request: need userid, fileid, and timestamp!", 400
+
+    annos = []
+    result = []
+    for timestamp in timestamps:
+        save_info = get_save_info_from_timestamp(timestamp)
+        # anno = load_annotations(fileid, save_info["userid"], timestamp, add_timestamp_to_ids=True)
+        anno = load_annotations(fileid, save_info["userid"], timestamp, add_timestamp_to_ids=True)
+        annos.append(anno)
+        result.append({"annotations": anno, **save_info})
+
+    tex = load_tex(fileid)
+    diff = load_annotation_diff(tex, annos)
+
+    return jsonify([dict(diff=d, **r) for d, r in zip(diff, result)]), 200
 
 
 @app.post("/finalize")

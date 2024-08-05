@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import TextField from "@mui/material/TextField";
 import { GlobalState, loadAnnotations, loadDocument } from "@/lib/GlobalState";
 import { Typography, Button, IconButton, Box, Dialog, DialogTitle, DialogContent, DialogActions, useTheme, Grid, ListSubheader, Collapse } from "@mui/material";
@@ -27,6 +27,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
     const state = React.useContext(GlobalState);
     const theme = useTheme();
 
+    const navigate = useNavigate();
     const [query, setQuery] = React.useState("");
     const [queryParameters, setQueryParameters] = useSearchParams();
     const [documents, setDocuments] = React.useState([]);
@@ -54,6 +55,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
 
     const handleClose = (e: any) => {
         props.setIsOpen(false);
+        navigate({pathname: '/', search: queryParameters.toString()});
         e.stopPropagation();
     };
     const handleDocumentSelectorClick = (e: any) => {

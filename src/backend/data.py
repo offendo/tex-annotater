@@ -199,7 +199,7 @@ def load_all_annotations(fileid: str):
     return grouped.to_dict(orient="records")
 
 
-def load_annotations(file_id, user_id, timestamp=None):
+def load_annotations(file_id, user_id, timestamp=None, add_timestamp_to_ids: bool = False):
     # use most recent save by default
     if not timestamp:
         result = query_db(
@@ -266,7 +266,23 @@ def load_annotations(file_id, user_id, timestamp=None):
         )
     )
     # assign the annotations to the current state
-    return grouped.reset_index().to_dict(orient="records")
+    grouped = grouped.reset_index()
+    if add_timestamp_to_ids:
+        grouped['annoid'] = timestamp + grouped['annoid']
+        def _update_link_with_timestamp(links):
+            result = []
+            for link in links:
+                new = {}
+                for key, val in link.items():
+                    if key == 'source' or key == 'target':
+                        new[key] = timestamp + val
+                    else:
+                        new[key] = val
+                result.append(new)
+            return result
+
+        grouped['links'] = grouped['links'].apply(lambda links: _update_link_with_timestamp(links))
+    return grouped.to_dict(orient="records")
 
 
 def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename: str | None = None):
@@ -522,3 +538,40 @@ def align_tags_to_tokens(tokens: BatchEncoding, char_tags: list[list[str]]):
                 tags_for_token.remove(i)
         aligned_tags.append(tags_for_token)
     return aligned_tags
+
+
+def _find_annos_at_index(annos: list[dict], index: int) -> set[str]:
+    result = set()
+    for anno in annos:
+        start = anno['start']
+        end = anno['end']
+        tag = anno['tag']
+        if start <= index <= end:
+            result.add((start, end, tag))
+    return result
+
+
+def load_annotation_diff(tex: str, annos_list: list[list[dict]]):
+    N = len(annos_list)
+
+    # Initialize the diffs, empty list for each character index
+    annos_at_index = [[set() for _ in tex] for _ in annos_list]
+    diffs = [set() for _ in annos_list]
+
+    # for each character, add all the annotations that exist at that index
+    for idx, char in enumerate(tex):
+        for anno_idx, annos in enumerate(annos_list):
+            annos_at_index[anno_idx][idx] = _find_annos_at_index(annos, idx)
+
+        # now compute the diffs
+        intersection = set.intersection(*(annos_at_index[i][idx] for i in range(N)))
+        for a in range(N):
+            annos = list(annos_at_index[a][idx].difference(intersection))
+            for triple in annos:
+                diffs[a].add(triple)
+
+    # Return a list of annotations which are part of the diff
+    return [
+        [a for a in annos_list[idx] if (a['start'], a['end'], a['tag']) in d]
+        for idx, d in enumerate(diffs)
+    ]
