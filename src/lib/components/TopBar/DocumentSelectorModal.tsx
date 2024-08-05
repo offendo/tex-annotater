@@ -46,11 +46,20 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
     }
     const selectDocument = (doc: any, index: number) => {
         setSelectedDoc(index);
-        if (doc.name == null) { return; }
+
+        // On bugged selection, just quit
+        if (doc.name == null) {
+            console.error("Tried to select an empty doc: ", doc);
+            return;
+        }
+
+        if (doc.name != state.fileid){
+            console.log('Swapping files; clearing annotations...');
+            state.setAnnotations([]);
+        }
         loadDocument(state, doc.name);
         queryParameters.set("fileid", doc.name);
         setQueryParameters(queryParameters)
-        state.setFileId(doc.name);
     };
 
     const handleClose = (e: any) => {
