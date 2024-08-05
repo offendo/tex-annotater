@@ -79,6 +79,7 @@ def get_savename_from_annoid(annoid: str):
 
 
 def get_save_info_from_timestamp(timestamp: str):
+    timestamp = parse_timestamp(timestamp)
     query = """SELECT * FROM saves WHERE "timestamp" = %(timestamp)s;"""
     params = dict(timestamp=timestamp)
     return query_db(query, params)[0]
