@@ -1,4 +1,4 @@
-import { GlobalState as GlobaLContext, GlobalState, GlobalStateProps, Status, checkIsAdmin, loadAnnotations, loadDocument, redoUpdate, saveAnnotations, undoUpdate } from "@/lib/GlobalState";
+import { GlobalState as GlobaLContext, GlobalState, GlobalStateProps, Status, checkIsAdmin, loadAnnotations, loadAnnotationDiff as loadAnnotationsDiff, loadDocument, redoUpdate, saveAnnotations, undoUpdate } from "@/lib/GlobalState";
 import useAuth from "@/lib/Token";
 import { defaultColorMap } from "@/lib/colors";
 import Annotater from "@/lib/components/Annotater/Annotater";
@@ -20,13 +20,12 @@ const ComparisonTool = () => {
 
     // URL parameters
     const [queryParameters, setQueryParameters] = useSearchParams();
-    const [annotationsList, setAnnotationsList] = useState<any[]>([]);
+    const [comparison, setComparison] = useState<any[]>([]);
     const [tags, setTags] = useState<string[]>([]);
 
     const handleScroll = (e) => {
         const id = parseInt(e.target.id.slice(-1));
-        annotationsList.forEach((annos, index) => {
-
+        comparison.forEach((annos: any, index: number) => {
             // don't bother scrolling the original div
             if (index == id) {
                 return;
@@ -35,7 +34,6 @@ const ComparisonTool = () => {
             if (div != null) {
                 div.scrollTop = e.target.scrollTop;
             }
-            // console.log('scrolling in ', div);
         });
     }
 
@@ -43,29 +41,26 @@ const ComparisonTool = () => {
     const state = useContext(GlobalState);
 
     useEffect(() => {
-        if (!token || token.length == 0) {
-            navigate("/signin");
-        }
+        // if (!token || token.length == 0) {
+        //     navigate("/signin");
+        // }
         // we're logged in, set admin and load document/annotations;
         checkIsAdmin(state)
 
         // which tags to compare
-        const tags = (queryParameters.get('tags') || "").split(';');
+        const tags = queryParameters.getAll('tags') || []
         setTags(tags);
 
         const fileid = queryParameters.get('fileid');
-        const timestamps = queryParameters.getAll('timestamps');
+        const timestamps = queryParameters.getAll('timestamps') || []
         if (timestamps.length != 0 && fileid != null) {
             // load tex
             loadDocument(state, fileid, false);
 
             // load each of the annotations
-            Promise.all(timestamps.map(async (stamp) => {
-                const annos = await loadAnnotations(state, fileid, userid, stamp);
-                return annos;
-            })
-            ).then((annosList) => {
-                setAnnotationsList(annosList)
+            loadAnnotationsDiff(state, fileid, userid, timestamps).then((annos) => {
+                setComparison(annos);
+                console.log('Got diff: ', annos);
             })
         }
     }, []);
@@ -84,9 +79,13 @@ const ComparisonTool = () => {
                     }}
                 >
                     {
-                        annotationsList.map((annotations: any, index: number) => {
+                        comparison.map((annotations: any, index: number) => {
                             return (
-                                <div style={{minWidth: "50%", height: "90vh"}}>
+                                <div
+                                    id={`annotation-window-${index}`}
+                                    key={`annotation-window-${index}`}
+                                    style={{ minWidth: "50%", height: "90vh" }}
+                                >
                                     <div>
                                         <h3> {annotations.savename} @ {annotations.timestamp} [{annotations.userid}]</h3>
                                     </div>
@@ -100,6 +99,7 @@ const ComparisonTool = () => {
                                         onScroll={handleScroll}
                                     >
                                         <Annotater
+                                            key={`viewer-${index}`}
                                             style={{
                                                 paddingBottom: "8px",
                                                 lineHeight: 2.5,
@@ -108,6 +108,7 @@ const ComparisonTool = () => {
                                             editMode={false}
                                             getSpan={(span: TextSpan) => ({ ...span })}
                                             annotations={annotations.annotations}
+                                            diff={annotations.diff}
                                         />
                                     </div>
                                 </div>

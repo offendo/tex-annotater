@@ -7,6 +7,13 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import FormGroup from '@mui/material/FormGroup';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import OutlinedInput from '@mui/material/OutlinedInput';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import { saveAnnotations, GlobalState, GlobalStateProps } from '@/lib/GlobalState';
@@ -14,24 +21,40 @@ import { SaveSelector } from './SaveSelector';
 import { MenuItemProps } from './MenuItemProps';
 import { Grid } from '@mui/material';
 
+const allTags = ["definition", "theorem", "proof", "example", "reference", "name"];
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+    PaperProps: {
+        style: {
+            maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+            width: 250,
+            minWidth: 250,
+            maxWidth: 250,
+        },
+    },
+};
+
 export function ScoresDialog(props: MenuItemProps) {
 
     const state = React.useContext(GlobalState);
 
     const [refSave, setRefSave] = React.useState(null);
-    const [tags, setTags] = React.useState<string[]>(["definition", "theorem", "proof", "example", "reference", "name"])
+    const [tags, setTags] = React.useState<string[]>(allTags)
 
-    const handleClose = () => {
+    const handleClose = (e) => {
         props.setIsOpen(false);
+        e.stopPropagation();
     };
-    const handleToggle = (s) => {
-        const splitIndex = tags.findIndex((t) => s == t);
-        if (splitIndex == -1) {
-            setTags([...tags, s])
-        } else {
-            setTags([...tags.slice(0, splitIndex), ...tags.slice(splitIndex + 1)])
-        }
-    }
+    const handleTagChange = (event: SelectChangeEvent<string[]>) => {
+        const {
+            target: { value },
+        } = event;
+        setTags(
+            // On autofill we get a stringified value.
+            typeof value === 'string' ? value.split(',') : value,
+        );
+    };
 
     const getScores = (state: GlobalStateProps, ref_fileid: string, ref_userid: string, ref_timestamp: string, tags: string[]) => {
         const tag_str = tags.join(";")
@@ -63,33 +86,42 @@ export function ScoresDialog(props: MenuItemProps) {
                     <DialogContentText>
                         Select tags to score against
                     </DialogContentText>
-                    <FormGroup>
-                        <Grid container style={{width: "50%"}}>
-                            <Grid item xs={4}>
-                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("definition") }} />} label="definition" />
-                            </Grid>
-                            <Grid item xs={4}>
-                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("theorem") }} />} label="theorem" />
-                            </Grid>
-                            <Grid item xs={4}>
-                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("proof") }} />} label="proof" />
-                            </Grid>
-                            <Grid item xs={4}>
-                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("name") }} />} label="name" />
-                            </Grid>
-                            <Grid item xs={4}>
-                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("reference") }} />} label="reference" />
-                            </Grid>
-                            <Grid item xs={4}>
-                                <FormControlLabel control={<Checkbox defaultChecked onChange={(e) => { handleToggle("example") }} />} label="example" />
-                            </Grid>
-                        </Grid>
-                    </FormGroup>
                 </DialogContent>
                 <DialogActions>
+                    <div style={{ width: "100%" }}>
+                        <FormControl sx={{ m: 1, width: 500 }}>
+                            <InputLabel id="select-tags-menu-label">Select tags</InputLabel>
+                            <Select
+                                labelId="select-tags-menu-label"
+                                id="select-tags-menu"
+                                multiple
+                                value={tags}
+                                onChange={handleTagChange}
+                                input={<OutlinedInput id="select-tags-label-input" label="Select tags" />}
+                                renderValue={(selected) => (
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                        {selected.map((value) => (
+                                            <Chip key={value} label={value} />
+                                        ))}
+                                    </Box>
+                                )}
+                                MenuProps={MenuProps}
+                            >
+                                {allTags.map((name) => (
+                                    <MenuItem
+                                        id={`select-tags-menu-item-${name}`}
+                                        key={name}
+                                        value={name}
+                                    >
+                                        {name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </div>
                     <Button type="submit" onClick={
                         (e) => {
-                            getScores(state, refSave.fileid, refSave.userid, refSave.timestamp, tags); handleClose();
+                            getScores(state, refSave.fileid, refSave.userid, refSave.timestamp, tags); handleClose(e);
                         }}
                         disabled={refSave == null}>
                         Download Scores

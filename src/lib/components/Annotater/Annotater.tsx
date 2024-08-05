@@ -9,6 +9,7 @@ import {
   displaySplits,
   parseSelection,
   getViewerWidthInChars,
+  displaySplitsWithDiff,
 } from "@/lib/utils";
 import { ColorMap, colors } from "@/lib/colors"
 import sortBy from "lodash.sortby";
@@ -19,6 +20,7 @@ type AnnotatorProps = {
   style: any;
   editMode?: boolean;
   annotations?: TextSpan[];
+  diff?: TextSpan[];
 };
 
 const getNextColor = function (start_color: string = "") {
@@ -232,7 +234,9 @@ const Annotator = (props: AnnotatorProps) => {
     }
   }
 
-  const splits = displaySplits(state.tex, props.annotations ? props.annotations : state.annotations);
+  const splits = props.diff && props.annotations
+    ? displaySplitsWithDiff(state.tex, props.annotations, props.diff)
+    : displaySplits(state.tex, props.annotations ? props.annotations : state.annotations);
 
   // Return the formatted code
   return (
