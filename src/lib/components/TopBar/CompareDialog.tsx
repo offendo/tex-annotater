@@ -67,13 +67,11 @@ export function CompareDialog(props: MenuItemProps) {
     }
 
     const openComparison = (fileid: string, timestamps: string[], tags: string[]) => {
-        console.log('comparing: ', fileid, timestamps, tags)
         const params = createSearchParams({
             fileid: fileid,
             timestamps: timestamps,
             tags: tags,
         }).toString()
-        console.log(params);
         navigate({ pathname: `/comparison`, search: params });
         navigate(0);
     }
