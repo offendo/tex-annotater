@@ -14,8 +14,6 @@ Path('/tmp/log/gunicorn').mkdir(exist_ok=True, parents=True)
 
 # gunicorn files
 loglevel = 'debug'
-#accesslog = '/tmp/log/gunicorn/access_log_tex'
+accesslog = '/tmp/log/gunicorn/access_log_tex'
 acceslogformat ="%(h)s %(l)s %(u)s %(t)s %(r)s %(s)s %(b)s %(f)s %(a)s"
-#errorlog =  '/tmp/log/gunicorn/error_log_tex'
-errorlog = '-'
-accesslog = '-'
+errorlog =  '/tmp/log/gunicorn/error_log_tex'
