@@ -164,14 +164,21 @@ def get_annotations_diff():
 
     annos = []
     result = []
+    begin = 999999999999
+    end = -1
     for timestamp in timestamps:
         save_info = get_save_info_from_timestamp(timestamp)
         anno = load_annotations(fileid, save_info["userid"], timestamp, add_timestamp_to_ids=True)
+        for a in anno:
+            if a['start'] < begin:
+                begin = a['start']
+            if a['end'] > end:
+                end = a['end']
         annos.append(anno)
         result.append({"annotations": anno, **save_info})
 
     tex = load_tex(fileid)
-    diff = load_annotation_diff(tex, annos, tags)
+    diff = load_annotation_diff(tex, annos, tags, begin, end)
 
     return jsonify([dict(diff=d, **r) for d, r in zip(diff, result)]), 200
 

@@ -104,7 +104,7 @@ export function Mark(props: MarkProps): React.JSX.Element {
       }
       return anno.links[0].color + alpha;
     } else if (light == false){
-      return '#ee0000' + '90';
+      return state.colors[anno.tag] + '50';
     }
     // otherwise, set it to transparent
     else {
