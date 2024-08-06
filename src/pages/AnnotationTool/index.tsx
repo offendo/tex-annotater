@@ -32,6 +32,7 @@ const AnnotationTool = () => {
     const fileid = queryParameters.get("fileid") || state.fileid
     const timestamp = queryParameters.get("timestamp") || state.timestamp
     const savename = queryParameters.get("savename") || state.savename
+    const anchor = queryParameters.get("anchor") || state.anchor
 
     // handle what happens on key press
     const handleKeyPress = useCallback((event: any) => {
@@ -65,12 +66,13 @@ const AnnotationTool = () => {
         if (fileid != "" && !state.tex) {
             loadDocument(state, fileid)
         }
-        if (state.fileid != "" && timestamp != "") {
+        if (fileid != "" && timestamp != "") {
             loadAnnotations(state, fileid, userid, timestamp)
             // Wait 1 second before trying to scroll, gives the DOM time to load in.
             // Probably a better way to do this but I tried a few things and it didn't work.
             // Retry x5
             if (anchor.length > 0) {
+		state.setAnchor(anchor);
                 let tries = 0;
                 var repeater = setInterval(() => {
                     if (tries < 3) {
