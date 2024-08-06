@@ -71,7 +71,7 @@ export const AnnotationMenu = () => {
                 ) : (
                     <ExpandMoreIcon style={{ padding: "5px" }} />
                 )}
-                {"Go to annotation "}
+                {"Jump to annotation "}
             </Button>
             <Menu
                 anchorEl={annotationMenuAnchorEl}

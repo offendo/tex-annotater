@@ -16,7 +16,6 @@ import sortBy from "lodash.sortby";
 import { GlobalState, toggleLink, updateAnnotations, updateMark } from "@/lib/GlobalState";
 
 type AnnotatorProps = {
-  getSpan: (span: TextSpan) => TextSpan;
   style: any;
   editMode?: boolean;
   annotations?: TextSpan[];
@@ -47,34 +46,27 @@ const Annotator = (props: AnnotatorProps) => {
   const [currentColor, setCurrentColor] = useState<string>("");
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
 
-  const getSpan = (span: TextSpan): TextSpan => {
-    if (props.getSpan) {
-      return props.getSpan(span);
-    }
-    return { start: span.start, end: span.end } as TextSpan;
-  };
 
   /** Add annotation to document */
   const addMark = (start: number, end: number, label: string, name: string) => {
     if (start == end) return null;
 
-    const splitIndex = state.annotations.findIndex((s) => s.end == end && s.start == start && s.tag == label);
-
     // If it doesn't already exist in the annotations, add it
     const nextColor = getNextColor(currentColor);
     setCurrentColor(nextColor)
-    const newSpan = getSpan(
-      {
-        annoid: crypto.randomUUID(),
-        start: start,
-        end: end,
-        text: state.tex.slice(start, end),
-        tag: label,
-        name: name,
-        fileid: state.fileid,
-        links: [],
-        color: nextColor
-      });
+    const newSpan = {
+      annoid: crypto.randomUUID(),
+      start: start,
+      end: end,
+      text: state.tex.slice(start, end),
+      tag: label,
+      name: name,
+      fileid: state.fileid,
+      links: [],
+      color: nextColor
+    } as TextSpan;
+
+    const splitIndex = state.annotations.findIndex((s) => s.end == end && s.start == start && s.tag == label);
     if (splitIndex == -1) {
       updateAnnotations(state, [...state.annotations, newSpan]);
     }

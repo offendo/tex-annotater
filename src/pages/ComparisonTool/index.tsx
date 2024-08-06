@@ -109,7 +109,6 @@ const ComparisonTool = () => {
                                                 margin: "10px",
                                             }}
                                             editMode={false}
-                                            getSpan={(span: TextSpan) => ({ ...span })}
                                             annotations={annotations.annotations}
                                             diff={annotations.diff}
                                         />

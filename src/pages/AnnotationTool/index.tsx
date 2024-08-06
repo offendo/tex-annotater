@@ -29,10 +29,10 @@ const AnnotationTool = () => {
     // URL parameters
     const [queryParameters, setQueryParameters] = useSearchParams();
 
-    const fileid = queryParameters.get("fileid") || state.fileid
-    const timestamp = queryParameters.get("timestamp") || state.timestamp
-    const savename = queryParameters.get("savename") || state.savename
-    const anchor = queryParameters.get("anchor") || state.anchor
+    const fileid = queryParameters.get("fileid") || state.fileid;
+    const timestamp = queryParameters.get("timestamp") || state.timestamp;
+    const savename = queryParameters.get("savename") || state.savename;
+    const anchor = queryParameters.get("anchor") || state.anchor;
 
     // handle what happens on key press
     const handleKeyPress = useCallback((event: any) => {
@@ -122,7 +122,6 @@ const AnnotationTool = () => {
                                 margin: "10px",
                             }}
                             editMode={true}
-                            getSpan={(span: TextSpan) => ({ ...span })}
                         />
                     </div>
                     <div style={{ flexGrow: 3 }}>
