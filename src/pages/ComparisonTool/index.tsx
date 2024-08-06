@@ -96,7 +96,6 @@ const ComparisonTool = () => {
                                         id={`scroll-box-${index}`}
                                         style={{
                                             minWidth: "50%",
-                                            height: "100%",
                                             overflowY: "scroll",
                                         }}
                                         onScroll={handleScroll}
