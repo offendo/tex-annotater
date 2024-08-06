@@ -79,7 +79,9 @@ const Annotator = (props: AnnotatorProps) => {
       updateAnnotations(state, [...state.annotations, newSpan]);
     }
     const selection = window.getSelection();
-    if (selection != null) selection.empty();
+    if (selection != null) {
+      selection.empty();
+    }
     return newSpan;
   };
 
