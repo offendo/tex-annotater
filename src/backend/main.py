@@ -49,9 +49,9 @@ app.config["CORS_HEADERS"] = "Content-Type"
 init_annotation_db()
 init_users_db()
 
-sched = BackgroundScheduler(daemon=True)
-sched.add_job(upload_new_textbooks, "interval", minutes=10)
-sched.start()
+# sched = BackgroundScheduler(daemon=True)
+# sched.add_job(upload_new_textbooks, "interval", minutes=10)
+# sched.start()
 
 
 @app.get("/admin")
