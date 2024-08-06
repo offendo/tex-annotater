@@ -13,5 +13,5 @@ S3_FILE="s3://$BUCKET_NAME/database-backup/backup-$TIMESTAMP"
 docker-compose run postgres pg_dump -Fc --no-acl -h postgres -U $DB_USER $DB_NAME > $TEMP_FILE
 aws s3 cp $TEMP_FILE $S3_FILE --sse
 
-sleep(30)
+sleep 30
 rm "$TEMP_FILE"
