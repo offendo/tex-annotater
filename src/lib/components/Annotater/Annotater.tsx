@@ -15,7 +15,7 @@ import { ColorMap, colors } from "@/lib/colors"
 import sortBy from "lodash.sortby";
 import { GlobalState, toggleLink, updateAnnotations, updateMark } from "@/lib/GlobalState";
 
-type AnnotatorProps = {
+type AnnotaterProps = {
   style: any;
   editMode?: boolean;
   annotations?: TextSpan[];
@@ -34,9 +34,9 @@ const getNextColor = function (start_color: string = "") {
 }
 
 /**
- * Annotator element which houses the source code and handles the highlight event (handleMouseUp).
+ * Annotater element which houses the source code and handles the highlight event (handleMouseUp).
  **/
-const Annotator = (props: AnnotatorProps) => {
+const Annotater = (props: AnnotaterProps) => {
   /*  Context Menu stuff */
   const [selectionClicked, setSelectionClicked] = useState(false);
 
@@ -257,4 +257,4 @@ const Annotator = (props: AnnotatorProps) => {
   );
 };
 
-export default Annotator;
+export default Annotater;

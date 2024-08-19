@@ -88,7 +88,9 @@ export default function TopBar(props: TopBarProps) {
     }
 
     React.useEffect(() => {
-        queryParameters.set("fileid", state.fileid || (queryParameters.get('fileid') || ""));
+        if (state.fileid) {
+            queryParameters.set("fileid", state.fileid);
+        }
         if (state.anchor) {
             queryParameters.set("anchor", state.anchor);
         }
