@@ -82,7 +82,7 @@ export function ScoresModal(props: MenuItemProps) {
                     <DialogContentText>
                         Select a save file to use as a reference.
                     </DialogContentText>
-                    <SaveSelector onSelectSave={(save, index) => setRefSave(save)} disableExport={true} disableMarkFinal={true} allowOtherUsers={true} />
+                    <SaveSelector onSelectSave={(save, index) => setRefSave(save)} allowExport={false} allowMarkFinal={false} allowOtherUsers={true} />
                     <DialogContentText>
                         Select tags to score against
                     </DialogContentText>

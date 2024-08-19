@@ -22,7 +22,6 @@ from .data import (
     get_save_info_from_timestamp,
     load_annotation_diff,
     load_tex,
-    list_all_textbooks,
     load_all_annotations,
     load_pdf,
     load_save_files,
@@ -32,7 +31,7 @@ from .data import (
     get_savename_from_annoid,
     list_s3_documents,
     init_annotation_db,
-    upload_new_textbooks,
+    delete_save_file,
 )
 from .users import (
     add_user,
@@ -195,6 +194,18 @@ def finalize_save():
     finalized = mark_save_as_final(fileid, userid, savename, timestamp)
 
     return {"finalized": finalized}, 200
+
+@app.post("/delete")
+@cross_origin()
+def delete_save():
+    userid = request.args.get("userid")
+    fileid = request.args.get("fileid")
+    timestamp = request.args.get("timestamp")
+    savename = request.args.get("savename")
+    if userid is None or fileid is None or timestamp is None:
+        return "Bad request: need userid, fileid, and timestamp!", 400
+    delete_save_file(fileid, userid, savename, timestamp)
+    return dict(timestamp=timestamp, userid=userid, fileid=fileid, savename=savename), 200
 
 
 @app.get("/saves")

@@ -53,7 +53,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
             return;
         }
 
-        if (doc.name != state.fileid){
+        if (doc.name != state.fileid) {
             console.log('Swapping files; clearing annotations...');
             state.setAnnotations([]);
             state.setSavename("");
@@ -68,7 +68,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
 
     const handleClose = (e: any) => {
         props.setIsOpen(false);
-        navigate({pathname: '/', search: queryParameters.toString()});
+        navigate({ pathname: '/', search: queryParameters.toString() });
         e.stopPropagation();
     };
     const handleDocumentSelectorClick = (e: any) => {
@@ -194,7 +194,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
                     </Box>
                 </Collapse>
                 <Collapse id={"save-selector-collapse"} in={saveSelectorOpen} timeout="auto" >
-                    <SaveSelector onSelectSave={onSelectSave} />
+                    <SaveSelector onSelectSave={onSelectSave} allowExport={true} allowMarkFinal={true} allowDelete={true} />
                 </Collapse>
             </DialogContent>
         </Dialog >

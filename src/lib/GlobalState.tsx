@@ -270,6 +270,28 @@ export async function saveAnnotations(
         return false;
     }
 }
+export async function deleteSave(
+    state: GlobalStateProps,
+    fileid: string,
+    savename: string,
+    timestamp: string,
+    userid: string,
+) {
+    const url = `/api/delete?fileid=${fileid}&userid=${userid}&savename=${savename}&timestamp=${timestamp}`;
+    const requestOptions = {
+        method: "POST",
+    };
+    try {
+        const response = await fetch(url, requestOptions);
+        const res = await response.json();
+        console.log('Deleted annotations: ', res['savename'], ' timestamp ', res['timestamp'])
+        return res;
+    } catch (e) {
+        console.error(e);
+        return false;
+    }
+}
+
 
 export const toggleLink = (state: GlobalStateProps, source: TextSpan, target: TextSpan, forceEnable: boolean = false) => {
     const link = makeLink(source, target);

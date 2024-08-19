@@ -88,7 +88,7 @@ export function CompareModal(props: MenuItemProps) {
                     <DialogContentText>
                         Select saves to compare
                     </DialogContentText>
-                    <SaveSelector onSelectSave={(save, index) => handleSaveToggle(save.timestamp)} disableExport={true} disableMarkFinal={true} allowMultipleSelections={true} allowOtherUsers={true} />
+                    <SaveSelector onSelectSave={(save, index) => handleSaveToggle(save.timestamp)} allowMultipleSelections={true} allowOtherUsers={true} />
                 </DialogContent>
                 <DialogActions>
                     <div style={{ width: "100%" }}>

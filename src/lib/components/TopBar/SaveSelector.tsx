@@ -1,8 +1,8 @@
 import * as React from "react";
 import { useSearchParams } from "react-router-dom";
 import TextField from "@mui/material/TextField";
-import { GlobalState, loadAnnotations, loadDocument } from "@/lib/GlobalState";
-import { Typography, Button, IconButton, Box, Dialog, DialogTitle, DialogContent, DialogActions, useTheme, Grid, ListSubheader, Collapse } from "@mui/material";
+import { GlobalState, loadAnnotations, loadDocument, deleteSave } from "@/lib/GlobalState";
+import { Typography, Button, IconButton, Box, Dialog, DialogTitle, DialogContent, DialogActions, useTheme, Grid, ListSubheader, Collapse, InputAdornment } from "@mui/material";
 import Menu from '@mui/material/Menu';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
@@ -10,10 +10,12 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
+import MenuIcon from '@mui/icons-material/Menu';
 import ListItemText from '@mui/material/ListItemText';
 import fuzzysort from "fuzzysort";
 import FileOpenIcon from '@mui/icons-material/FileOpen';
 import DownloadIcon from '@mui/icons-material/Download';
+import DeleteIcon from '@mui/icons-material/Delete';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import ExpandMore from '@mui/icons-material/ExpandMore';
@@ -22,32 +24,218 @@ import CloseIcon from '@mui/icons-material/Close';
 import { orderBy, groupBy, sortBy, maxBy, minBy } from "lodash";
 import { MenuItemProps } from "./MenuItemProps";
 import { contains, toggle } from "@/lib/utils";
+import { ConfirmationModal } from "./ConfirmationModal";
 
 type SaveSelectorProps = {
     onSelectSave: (save: any, index: number) => any;
     allowMultipleSelections?: boolean;
     allowOtherUsers?: boolean;
-    disableExport?: boolean;
-    disableMarkFinal?: boolean;
+    allowExport?: boolean;
+    allowMarkFinal?: boolean;
+    allowDelete?: boolean;
 }
-// TODO Add MenuItem in the tokenizers which lets us type in our own name to send off
+
+const tokenizers = [
+    { name: "Llemma 7b", id: "EleutherAI/llemma_7b" },
+    { name: "Llemma 34b", id: "EleutherAI/llemma_34b" },
+    { name: "GPT-3.5", id: "Xenova/gpt-3.5" },
+    { name: "GPT-4", id: "Xenova/gpt-4" },
+    { name: "BERT Base (cased)", id: "bert-base-cased" },
+    { name: "BERT Large (cased)", id: "bert-large-cased" },
+]
+
+type ExportMenuProps = {
+    save: any;
+    anchor: any | null;
+}
+
+const ExportMenu = (props: ExportMenuProps & MenuItemProps) => {
+    const state = React.useContext(GlobalState);
+    const [tokenizer, setTokenizer] = React.useState<string>("");
+
+    const handleTokenizerMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        props.setIsOpen(!props.isOpen);
+    };
+    const handleTokenizerMenuClose = () => {
+        props.setIsOpen(false);
+    };
+
+    const save = props.save;
+
+    return (
+        <Menu
+            anchorEl={props.anchor}
+            open={props.isOpen}
+            onClose={handleTokenizerMenuClose}
+        >
+            {
+                tokenizers.map(({ name, id }) => {
+                    return (
+                        <MenuItem
+                            key={`name:${name}id:${id}:${save.timestamp}:${save.userid}:${save.fileid}`}
+                            component="a"
+                            href={`/api/export?fileid=${state.fileid}&userid=${save.userid}&timestamp=${save.timestamp}&savename=${save.savename}&tokenizer=${id}`}
+                            onClick={handleTokenizerMenuClose}
+                        >
+                            {name}
+                        </MenuItem>
+                    );
+                })
+            }
+            <MenuItem
+                key={"custom-tokenizer-name"}
+            >
+                <span>
+                    <TextField
+                        id="custom-tokenizer-text-field"
+                        label="Custom tokenizer"
+                        variant={"outlined"}
+                        onMouseDown={(e) => { e.stopPropagation() }}
+                        onClick={(e) => { e.stopPropagation() }}
+                        onKeyDown={(e) => {
+                            if (e.key != "Escape") { e.stopPropagation() };
+                        }}
+                        onChange={(e) => { setTokenizer(e.target.value) }}
+                        InputProps={{
+                            endAdornment:
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        onMouseDown={(e) => { e.stopPropagation() }}
+                                        href={`/api/export?fileid=${state.fileid}&userid=${save.userid}&timestamp=${save.timestamp}&savename=${save.savename}&tokenizer=${tokenizer}`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleTokenizerMenuClose();
+                                        }}
+                                    >
+                                        <DownloadIcon />
+                                    </IconButton>
+                                </InputAdornment>,
+                        }}
+                    />
+
+                </span>
+            </MenuItem>
+        </Menu>
+    );
+}
+
+type SaveOptionsMenuProps = {
+    save: any;
+    loadSaves: (fileid: string, userid: string) => void;
+
+}
+
+const SaveOptionsMenu = (props: SaveOptionsMenuProps) => {
+
+    const state = React.useContext(GlobalState);
+
+    // This (SaveOptions) menu
+    const [saveOptionsMenuAnchorEl, setSaveOptionsMenuAnchorEl] = React.useState<null | HTMLElement>(null);
+    const [saveOptionsMenuOpen, setSaveOptionsMenuOpen] = React.useState<boolean>(false);
+
+    const handleSaveOptionsMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setSaveOptionsMenuAnchorEl(event.currentTarget);
+        setSaveOptionsMenuOpen(!saveOptionsMenuOpen)
+    };
+    const handleSaveOptionsMenuClose = () => {
+        setSaveOptionsMenuAnchorEl(null);
+        setSaveOptionsMenuOpen(false);
+    };
+
+    // Export Menu
+    const [exportMenuAnchorEl, setExportMenuAnchorEl] = React.useState<null | HTMLElement>(null);
+    const [exportMenuOpen, setExportMenuOpen] = React.useState<boolean>(false);
+    const handleExportMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setExportMenuAnchorEl(event.currentTarget);
+        setExportMenuOpen(!exportMenuOpen)
+    };
+    const handleExportMenuClose = () => {
+        setExportMenuAnchorEl(null);
+        setExportMenuOpen(false);
+    };
+
+    // Delete modal
+    const [deleteModalOpen, setDeleteModalOpen] = React.useState<boolean>(false);
+    const handleDeleteModalClick = (event: React.MouseEvent<HTMLButtonElement>) => { setDeleteModalOpen(!deleteModalOpen) };
+    const handleDeleteModalClose = () => { setDeleteModalOpen(false); };
+
+    return (
+        <React.Fragment>
+            <IconButton
+                onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                onClick={(e) => {
+                    handleSaveOptionsMenuClick(e);
+                    e.stopPropagation();
+                }}
+                style={{ padding: "0px" }}
+            >
+                <MenuIcon />
+            </IconButton>
+            <Menu
+                anchorEl={saveOptionsMenuAnchorEl}
+                open={saveOptionsMenuOpen}
+                onClose={handleSaveOptionsMenuClose}
+            >
+                <MenuItem
+                    key={"export-menu"}
+                    onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                    onClick={(e) => {
+                        handleExportMenuClick(e);
+                        e.stopPropagation();
+                    }}
+                >
+                    <ListItemIcon style={{marginRight: 10}}> <DownloadIcon /> </ListItemIcon>
+                    Export
+                    <ExportMenu isOpen={exportMenuOpen} setIsOpen={setExportMenuOpen} save={props.save} anchor={exportMenuAnchorEl} />
+                </MenuItem>
+                <MenuItem
+                    key={"delete-save"}
+                    onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                    onClick={(e) => {
+                        handleDeleteModalClick(e);
+                        e.stopPropagation();
+                    }}
+                >
+                    <ListItemIcon style={{marginRight: 10}}> <DeleteIcon /> </ListItemIcon>
+                    Delete
+                    <ConfirmationModal
+                        isOpen={deleteModalOpen}
+                        setIsOpen={setDeleteModalOpen}
+                        message={`Are you sure you want to delete "${props.save.savename} : ${props.save.timestamp}"`}
+                        onConfirm={(e) => {
+                            deleteSave(state, props.save.fileid, props.save.savename, props.save.timestamp, props.save.userid).then(() => {
+                                props.loadSaves(props.save.fileid, props.save.userid)
+                            }
+                            );
+                            handleSaveOptionsMenuClose();
+                        }}
+                        onCancel={(e) => { console.log('cancel'); handleSaveOptionsMenuClose(); }}
+                    />
+                </MenuItem>
+            </Menu>
+        </React.Fragment>
+    );
+}
+
 
 export const SaveSelector = (props: SaveSelectorProps) => {
 
     const theme = useTheme();
     const state = React.useContext(GlobalState);
+
+    const [saveOptionsMenuOpen, setSaveOptionsMenuOpen] = React.useState<boolean>(false);
+
+    const handleSaveOptionsMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setSaveOptionsMenuAnchorEl(event.currentTarget);
+        setSaveOptionsMenuOpen(!saveOptionsMenuOpen)
+    };
+    const handleSaveOptionsMenuClose = () => {
+        setSaveOptionsMenuAnchorEl(null);
+        setSaveOptionsMenuOpen(false);
+    };
     const [selectedSaveGroup, setSelectedSaveGroup] = React.useState<string[]>([]);
     const [saves, setSaves] = React.useState<any[]>([]);
     const [selectedSave, setSelectedSave] = React.useState<number[]>([-1]);
-    const tokenizers = [
-        { name: "Llemma 7b", id: "EleutherAI/llemma_7b" },
-        { name: "Llemma 34b", id: "EleutherAI/llemma_34b" },
-        { name: "GPT-3.5", id: "Xenova/gpt-3.5" },
-        { name: "GPT-4", id: "Xenova/gpt-4" },
-        { name: "BERT Base (cased)", id: "bert-base-cased" },
-        { name: "BERT Large (cased)", id: "bert-large-cased" },
-    ]
-
     const loadSaves = async (fileid: string, userid: string) => {
         try {
             let res = null;
@@ -94,19 +282,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
         [state.fileid, state.annotations, state.savename]
     )
 
-    const [tokenizerMenuAnchorEl, setTokenizerMenuAnchorEl] = React.useState<null | HTMLElement>(null);
-    const [tokenizerMenuOpen, setTokenizerMenuOpen] = React.useState<number>(-1);
-
-    const handleTokenizerMenuClick = (event: React.MouseEvent<HTMLButtonElement>, index: number) => {
-        setTokenizerMenuAnchorEl(event.currentTarget);
-        setTokenizerMenuOpen(tokenizerMenuOpen == index ? -1 : index)
-    };
-    const handleTokenizerMenuClose = () => {
-        setTokenizerMenuAnchorEl(null);
-        setTokenizerMenuOpen(-1);
-    };
-
-    const toggleIsFinal = async (timestamp, savename, userid, fileid) => {
+    const toggleIsFinal = async (timestamp: string, savename: string, userid: string, fileid: string) => {
         const requestOptions = {
             method: "POST",
             headers: { "Content-Type": "application/json", mode: "cors" },
@@ -145,64 +321,15 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                         <ListItemButton selected={contains(selectedSave, save.timestamp) && contains(selectedSaveGroup, save.savename)}>
                             <Grid container >
                                 <Grid item xs={1}>
-                                    {
-                                        !props.disableExport &&
-                                        <>
-                                            <IconButton
-                                                id={save.timestamp + `groupIndex:${saveGroupIndex}:${index}`}
-                                                onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                                                onClick={(e) => {
-                                                    handleTokenizerMenuClick(e, index);
-                                                    e.stopPropagation();
-                                                }}
-                                                style={{ padding: "0px" }}
-                                            >
-                                                <DownloadIcon />
-                                            </IconButton>
-                                            <Menu
-                                                anchorEl={tokenizerMenuAnchorEl}
-                                                open={tokenizerMenuOpen == index && contains(selectedSaveGroup, save.savename)}
-                                                onClose={handleTokenizerMenuClose}
-                                            >
-                                                {
-                                                    tokenizers.map(({ name, id }) => {
-                                                        return (
-                                                            <MenuItem
-                                                                key={`name:${name}id:${id}:${save.timestamp}:${save.userid}:${save.fileid}`}
-                                                                component="a"
-                                                                href={`/api/export?fileid=${state.fileid}&userid=${save.userid}&timestamp=${save.timestamp}&savename=${save.savename}&tokenizer=${id}`}
-                                                                onClick={handleTokenizerMenuClose}
-                                                            >
-                                                                {name}
-                                                            </MenuItem>
-                                                        );
-                                                    })
-                                                }
-                                            </Menu>
-                                        </>
-                                    }
+                                    {<SaveOptionsMenu save={save} isOpen={saveOptionsMenuOpen} setIsOpen={setSaveOptionsMenuOpen} loadSaves={loadSaves}/>}
                                 </Grid>
-                                <Grid item xs={1}>
-                                    {
-                                        !props.disableMarkFinal &&
-                                        <IconButton
-                                            onMouseDown={(e) => { e.stopPropagation() }}
-                                            onClick={(e) => { e.stopPropagation(); toggleIsFinal(save.timestamp, save.savename, save.userid, save.fileid) }}
-                                            style={{ padding: "0px" }}
-                                        >
-                                            {save.final ? <CheckBoxIcon /> : <CheckBoxOutlineBlankIcon />}
-                                        </IconButton>
-                                    }
-                                </Grid>
-                                <Grid item xs={3}>
+                                <Grid item xs={4}>
                                     {save.autosave ? "autosave" : `version ${total - save.saveIndex}`}
                                 </Grid>
-                                <Grid item xs={2}>
-                                </Grid>
-                                <Grid item xs={2}>
+                                <Grid item xs={3}>
                                     {save.userid}
                                 </Grid>
-                                <Grid item xs={2}>
+                                <Grid item xs={3}>
                                     {save.timestamp.split('.', 1)[0]}
                                 </Grid>
                                 <Grid item xs={1}>
@@ -232,21 +359,14 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                     <ListSubheader >
                         <Grid container>
                             <Grid item xs={1}>
-                                {props.disableExport ? "" : "Export"}
                             </Grid>
-                            <Grid item xs={1}>
-                                {props.disableMarkFinal ? "" : "Mark Final"}
-                            </Grid>
-                            <Grid item xs={3}>
+                            <Grid item xs={4}>
                                 Save Name
                             </Grid>
-                            <Grid item xs={2}>
-                                Initial User ID
+                            <Grid item xs={3}>
+                                Initial/Last User ID
                             </Grid>
-                            <Grid item xs={2}>
-                                Last User ID
-                            </Grid>
-                            <Grid item xs={2}>
+                            <Grid item xs={3}>
                                 Last Timestamp
                             </Grid>
                             <Grid item xs={1}>
@@ -260,21 +380,18 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                                 <div key={index}>
                                     <ListItemButton selected={contains(selectedSaveGroup, savelist[0].savename)} onClick={(e) => handleSaveGroupClick(savelist[0].savename)}>
                                         <Grid container >
-                                            <Grid item xs={2}>
+                                            <Grid item xs={1}>
                                                 {contains(selectedSaveGroup, savelist[0].savename) ? <ExpandLess /> : <ExpandMore />}
                                             </Grid>
-                                            <Grid item xs={3}>
+                                            <Grid item xs={4}>
                                                 <Tooltip title={savelist[0].savename}>
                                                     <span>{savelist[0].savename.length > 20 ? savelist[0].savename.slice(0, 20) + '...' : savelist[0].savename}</span>
                                                 </Tooltip>
                                             </Grid>
-                                            <Grid item xs={2}>
-                                                {savelist.at(-1).userid}
+                                            <Grid item xs={3}>
+                                                {savelist.at(-1).userid} / {savelist[0].userid}
                                             </Grid>
-                                            <Grid item xs={2}>
-                                                {savelist[0].userid}
-                                            </Grid>
-                                            <Grid item xs={2}>
+                                            <Grid item xs={3}>
                                                 {savelist[0].timestamp.split('.', 1)[0]}
                                             </Grid>
                                             <Grid item xs={1}>

@@ -122,7 +122,8 @@ def upload_new_textbooks():
 
 def load_save_files(file_id, user_id=None):
     """Loads all the annotation save files for a particular file/user"""
-    conditions = ["a.fileid = %(fileid)s"]
+
+    conditions = ["a.fileid = %(fileid)s", "s.deleted = 0"]
     params = dict(fileid=file_id)
 
     if user_id is not None:
@@ -286,6 +287,22 @@ def load_annotations(file_id, user_id, timestamp=None, add_timestamp_to_ids: boo
     return grouped.to_dict(orient="records")
 
 
+def delete_save_file(file_id, user_id, savename, timestamp):
+    with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
+        parsed = parse_timestamp(timestamp)
+        conn.execute(
+            """
+            UPDATE saves
+              SET deleted = 1
+            WHERE fileid = %(fileid)s
+              AND userid = %(userid)s
+              AND savename = %(savename)s
+              AND "timestamp" = %(timestamp)s;
+            """,
+            dict(savename=savename, timestamp=parsed, fileid=file_id, userid=user_id),
+        )
+
+
 def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename: str | None = None):
     with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
         if not savename:
@@ -437,6 +454,7 @@ def init_annotation_db():
                 userid TEXT,
                 final INTEGER,
                 autosave INTEGER,
+                deleted INTEGER DEFAULT 0,
                 "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE (savename, fileid, userid, autosave, "timestamp")
             );
