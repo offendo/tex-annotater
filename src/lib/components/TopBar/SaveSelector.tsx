@@ -159,6 +159,20 @@ const SaveOptionsMenu = (props: SaveOptionsMenuProps) => {
     const handleDeleteModalClick = (event: React.MouseEvent<HTMLButtonElement>) => { setDeleteModalOpen(!deleteModalOpen) };
     const handleDeleteModalClose = () => { setDeleteModalOpen(false); };
 
+
+    // Mark Final function
+    const toggleIsFinal = async (timestamp: string, savename: string, userid: string, fileid: string) => {
+        const requestOptions = {
+            method: "POST",
+            headers: { "Content-Type": "application/json", mode: "cors" },
+        };
+        const response = await fetch(`/api/finalize?timestamp=${timestamp}&savename=${savename}&userid=${userid}&fileid=${fileid}`, requestOptions);
+        const json = await response.json();
+        props.loadSaves(state.fileid, state.userid);
+        return;
+    }
+
+
     return (
         <React.Fragment>
             <IconButton
@@ -177,14 +191,29 @@ const SaveOptionsMenu = (props: SaveOptionsMenuProps) => {
                 onClose={handleSaveOptionsMenuClose}
             >
                 <MenuItem
+                    key={"mark-final-menu"}
+                    onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                    onClick={(e) => {
+                        toggleIsFinal(props.save.timestamp, props.save.savename, props.save.userid, props.save.fileid)
+                        e.stopPropagation();
+                    }}
+                    disabled={!props.allowMarkFinal}
+                >
+
+                    <ListItemIcon style={{ marginRight: 10 }}> {props.save.final ? <CheckBoxIcon /> : <CheckBoxOutlineBlankIcon />} </ListItemIcon>
+                    Mark Final
+                </MenuItem>
+
+                <MenuItem
                     key={"export-menu"}
                     onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                     onClick={(e) => {
                         handleExportMenuClick(e);
                         e.stopPropagation();
                     }}
+                    disabled={!props.allowExport}
                 >
-                    <ListItemIcon style={{marginRight: 10}}> <DownloadIcon /> </ListItemIcon>
+                    <ListItemIcon style={{ marginRight: 10 }}> <DownloadIcon /> </ListItemIcon>
                     Export
                     <ExportMenu isOpen={exportMenuOpen} setIsOpen={setExportMenuOpen} save={props.save} anchor={exportMenuAnchorEl} />
                 </MenuItem>
@@ -195,8 +224,9 @@ const SaveOptionsMenu = (props: SaveOptionsMenuProps) => {
                         handleDeleteModalClick(e);
                         e.stopPropagation();
                     }}
+                    disabled={!props.allowDelete}
                 >
-                    <ListItemIcon style={{marginRight: 10}}> <DeleteIcon /> </ListItemIcon>
+                    <ListItemIcon style={{ marginRight: 10 }}> <DeleteIcon /> </ListItemIcon>
                     Delete
                     <ConfirmationModal
                         isOpen={deleteModalOpen}
@@ -282,17 +312,6 @@ export const SaveSelector = (props: SaveSelectorProps) => {
         [state.fileid, state.annotations, state.savename]
     )
 
-    const toggleIsFinal = async (timestamp: string, savename: string, userid: string, fileid: string) => {
-        const requestOptions = {
-            method: "POST",
-            headers: { "Content-Type": "application/json", mode: "cors" },
-        };
-        const response = await fetch(`/api/finalize?timestamp=${timestamp}&savename=${savename}&userid=${userid}&fileid=${fileid}`, requestOptions);
-        const json = await response.json();
-        loadSaves(state.fileid, state.userid);
-        return;
-    }
-
     const makeSubSaveList = (savelist: any[], saveGroupIndex: number) => {
         let total = savelist.length;
         let index = 0;
@@ -310,7 +329,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                 return (
                     <ListItem
                         key={save.timestamp + `groupIndex:${saveGroupIndex}:${index}`}
-                        style={{ backgroundColor: "var(--solarized-base3)" }}
+                        style={{ backgroundColor: save.final ? "rgb(from var(--solarized-green) r g b / 30%)" : "var(--solarized-base3)" }}
                         value={save.timestamp}
                         onClick={(e) => {
                             onSelectSave(save, index);
@@ -321,7 +340,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
                         <ListItemButton selected={contains(selectedSave, save.timestamp) && contains(selectedSaveGroup, save.savename)}>
                             <Grid container >
                                 <Grid item xs={1}>
-                                    {<SaveOptionsMenu save={save} isOpen={saveOptionsMenuOpen} setIsOpen={setSaveOptionsMenuOpen} loadSaves={loadSaves}/>}
+                                    {<SaveOptionsMenu save={save} isOpen={saveOptionsMenuOpen} setIsOpen={setSaveOptionsMenuOpen} loadSaves={loadSaves} />}
                                 </Grid>
                                 <Grid item xs={4}>
                                     {save.autosave ? "autosave" : `version ${total - save.saveIndex}`}
