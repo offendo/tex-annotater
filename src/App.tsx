@@ -10,14 +10,14 @@ import "@/style/style.css";
 import AnnotationTool from "@/pages/AnnotationTool";
 import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
-import ComparisonTool from './pages/ComparisonTool';
+import Dashboard from "@/pages/Dashboard";
+import ComparisonTool from '@/pages/ComparisonTool';
 
 // Libs
 import { GlobalState as GlobalContext, GlobalStateProps, Status } from "@/lib/GlobalState";
 import useAuth from "@/lib/Token";
 import { defaultColorMap } from "@/lib/colors";
 import { TextSpan } from "@/lib/span";
-import Dashboard from "./pages/Dashboard/Dashboard";
 
 
 export default function App() {

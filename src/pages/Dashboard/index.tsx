@@ -3,7 +3,7 @@ import useAuth from "@/lib/Token";
 import { defaultColorMap } from "@/lib/colors";
 import Annotater from "@/lib/components/Annotater/Annotater";
 import PDFViewer from "@/lib/components/PDFViewer";
-import { DocumentSelectorModal } from "@/lib/components/TopBar/DocumentSelectorModal";
+import { DocumentSelector, Document } from "@/lib/components/TopBar/DocumentSelectorModal";
 import { SaveSelector } from "@/lib/components/TopBar/SaveSelector";
 import TopBar from "@/lib/components/TopBar/TopBar";
 import { TextSpan } from "@/lib/span";
@@ -20,11 +20,13 @@ import Grid from "@mui/material/Grid";
 // A list of files which have annotations from us, and each collapses into a list of saves from that file
 
 type SaveData = {
+    document: Document
+    final: boolean
     savename: string
     timestamp: string
     fileid: string
     annotations: number
-    averageScore: number
+    score: number
 }
 
 type UserData = {
@@ -32,11 +34,13 @@ type UserData = {
     saves: SaveData[]
 }
 
-const Dashboard = () => {
+type DashboardProps = {
+}
+
+const Dashboard = (props: DashboardProps) => {
 
     // Login stuff
     const { token, userid, setAuth } = useAuth();
-    const navigate = useNavigate();
 
     // Global State
     const state = useContext(GlobalState);
@@ -45,14 +49,21 @@ const Dashboard = () => {
     const [queryParameters, setQueryParameters] = useSearchParams();
 
     // Page state
-    const [user, setUser] = useState<string>(queryParameters.get("user") || state.userid)
+    const [userData, setUserData] = useState<UserData>({ saves: [], userid: queryParameters.get("user") || userid });
 
-    const [userData, setUserData] = useState<UserData>({ saves: [], userid: user });
-
+    async function loadUserData() {
+        try {
+            const response = await fetch(`/api/user?userid=${userData.userid}`, { mode: "cors" });
+            const json = await response.json();
+            console.log(json['saves'].map(x => { return { fileid: x.fileid, scores: x.scores } }));
+            setUserData(json);
+        } catch (e) {
+            console.error(e);
+        }
+    }
     React.useEffect(() => {
-        setUserData({ saves: [], userid: user })
-    }, [user])
-
+        loadUserData();
+    }, [])
 
     return (
         <ThemeProvider theme={theme}>
@@ -72,7 +83,7 @@ const Dashboard = () => {
                             flexGrow: 1,
                             resize: "horizontal",
                             overflow: "scroll",
-                            width: "49vw",
+                            width: "60vw",
                             height: "90vh",
                         }}
                     >
@@ -86,19 +97,27 @@ const Dashboard = () => {
                         />
                     </div>
                     <div style={{ flexGrow: 3 }}>
-                        <Typography variant="h5"> {user}'s Dashboard </Typography >
+                        <Typography variant="h5"> {userData.userid}'s Dashboard </Typography >
                         <div>
-                            # Complete Annotations: {userData.saves.length}
+                            Finalized Annotations: {userData.saves.filter((save: SaveData) => save.final).length} / {userData.saves.length}
                         </div>
                         <div>
-                            Avg. F1 Score: {userData.saves.length > 0 ? userData.saves.map((x) => x.averageScore).reduce((a, b) => a + b, 0) / userData.saves.length : 0.0}
+                            Avg. F1 Score: {
+                                userData.saves.length > 0
+                                    ? userData.saves.map((x) => x.score).filter(x => x > 0).reduce((a, b) => a + b, 0) / userData.saves.filter(x => x.score > 0).length
+                                    : 0.0}
                         </div>
-                        <Grid container spacing={1}>
-                            <Grid item xs={3}> Export </Grid>
-                            <Grid item xs={3}> File ID </Grid>
-                            <Grid item xs={3}> Savename </Grid>
-                            <Grid item xs={3}> Timestamp </Grid>
-                        </Grid>
+                        <SaveSelector
+                            onSelectSave={(save, index) => {
+                                loadDocument(state, save.fileid, false);
+                                loadAnnotations(state, save.fileid, userData.userid, save.timestamp, save.savename);
+                            }}
+                            showFileId={true}
+                            showAllFiles={true}
+                            allowDelete={true}
+                            allowExport={true}
+                            allowMarkFinal={true}
+                        />
                     </div>
                 </div>
             </div>

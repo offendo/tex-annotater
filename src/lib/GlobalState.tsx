@@ -116,7 +116,7 @@ const defaultState = {
 } as GlobalStateProps;
 
 export const checkIsAdmin = async (state: GlobalStateProps) => {
-    const url = `/api/admin?userid=${state.userid}`;
+    const url = `/api/user/admin?userid=${state.userid}`;
     const response = await fetch(url, { mode: "cors" });
     const json = await response.json();
     state.setIsAdmin(json['isAdmin']);
@@ -277,9 +277,9 @@ export async function deleteSave(
     timestamp: string,
     userid: string,
 ) {
-    const url = `/api/delete?fileid=${fileid}&userid=${userid}&savename=${savename}&timestamp=${timestamp}`;
+    const url = `/api/save?fileid=${fileid}&userid=${userid}&savename=${savename}&timestamp=${timestamp}`;
     const requestOptions = {
-        method: "POST",
+        method: "DELETE",
     };
     try {
         const response = await fetch(url, requestOptions);

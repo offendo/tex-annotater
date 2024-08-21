@@ -1,143 +1,57 @@
 #!/usr/bin/env python3
+from collections import defaultdict
 import logging
-import os
-import re
-import psycopg
-from pathlib import Path
 from typing import Optional
-from datetime import datetime
 
-import boto3
-import gdown
 import pandas as pd
+import psycopg
 import randomname
-from transformers import BatchEncoding, PreTrainedTokenizer
+from pprint import pprint
 from psycopg.rows import dict_row
-from psycopg.adapt import Loader
-from .data_utils import CONN_STR, query_db, parse_timestamp
+from transformers import AutoTokenizer, PreTrainedTokenizer
 
-session = boto3.client(
-    "s3",
-    aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", None),
-    aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", None),
-)
+from .data_utils import CONN_STR, load_tex, parse_timestamp, query_db, list_s3_documents
+from .scoring import align_annotations_to_tokens, compute_annotation_score
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
 
-# Register adapter to make sure psycopg3 returns datetime strings instead of objects
-class TimestampLoader(Loader):
-    def load(self, data):
-        return bytes(data).decode()
-
-
-psycopg.adapters.register_loader("timestamp", TimestampLoader)
-psycopg.adapters.register_loader("timestamptz", TimestampLoader)
-
-
-def list_s3_documents():
-    docs = session.list_objects(Bucket="tex-annotation")["Contents"]
-    objs = [
-        {
-            "name": d["Key"].replace("texs/", ""),
-            "modified": d["LastModified"].strftime("'%y %b %d @%H:%M"),
-            "size": f"{int(d['Size']) / 1024:.1f}",
-        }
-        for d in docs
-        if d["Key"].startswith("texs/")
-    ]
-    # names = [d["Key"].replace("texs/", "") for d in docs if d["Key"].startswith("texs/")]
-
-    result = []
-    for obj in objs:
-        name = obj["name"]
-        if re.match(r"\d+\.\d+-", name):
-            arxiv_id, filename = name.split("-", maxsplit=1)
-            filename = filename.replace(".tex", "")
-        else:
-            arxiv_id = ""
-            filename = name.replace(".tex", "")
-        result.append({"arxiv_id": arxiv_id, "filename": filename, **obj})
-    return result
-
-
-def load_pdf(pdf_key):
-    url = f"https://tex-annotation.s3.amazonaws.com/pdfs/{pdf_key}"
-    return url
-
-
-def load_tex(obj_key):
-    obj = session.get_object(Bucket="tex-annotation", Key=f"texs/{obj_key}")
-    data = obj["Body"].read()
-    return data.decode()
-
-
-def get_savename_from_annoid(annoid: str):
-    query = """SELECT "timestamp", fileid, userid, savename FROM annotations WHERE annoid = %(annoid)s;"""
+def load_anno_from_annoid(annoid: str):
+    query = """SELECT * FROM annotations WHERE annoid = %(annoid)s;"""
     params = dict(annoid=annoid)
     return query_db(query, params)[0]
 
 
-def get_save_info_from_timestamp(timestamp: str):
-    timestamp = parse_timestamp(timestamp)
+def load_save_info_from_timestamp(timestamp: str):
     query = """SELECT * FROM saves WHERE "timestamp" = %(timestamp)s;"""
-    params = dict(timestamp=timestamp)
+    parsed = parse_timestamp(timestamp)
+    params = dict(timestamp=parsed)
     return query_db(query, params)[0]
 
 
-def list_all_textbooks():
-    """Load the textbooks from the excel sheet."""
-    sheet_id = "1XCkPQo__bxACu2dWUgCuRoH4FUeNc2ODCI1dpBO-n3U"
-    sheet_name = "Sheet1"
-    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
-    df = pd.read_csv(url)
-    return df
+def load_saves(fileid=None, userid=None):
+    """Loads all the annotation save files for a particular file and/or user"""
 
+    conditions = ["s.deleted = 0"]
+    params = {}
 
-def upload_new_textbooks():
-    df = list_all_textbooks()
-    docs = session.list_objects(Bucket="tex-annotation")["Contents"]
-    existing = [d["Key"].replace("pdfs/", "").replace(".pdf", "") for d in docs if d["Key"].startswith("pdfs/")]
-    for idx, row in df.iterrows():
-        if row["name"] not in existing:
-            # download and upload tex file
-            tex_id = row["tex"].split("/")[5]
-            tex_out = gdown.download(id=tex_id, output=f"/tmp/{row['name']}.tex")
-            session.upload_file(tex_out, 'tex-annotation', f"texs/{Path(tex_out).name}", ExtraArgs={'ACL':'public-read', 'ContentType': 'application/x-tex'})
-            # download and upload pdf file
-            pdf_id = row.pdf.split("/")[5]
-            pdf_out = gdown.download(id=pdf_id, output=f"/tmp/{row['name']}.pdf")
-            session.upload_file(
-                pdf_out,
-                "tex-annotation",
-                f"pdfs/{Path(pdf_out).name}",
-                ExtraArgs={"ACL": "public-read", "ContentType": "application/pdf"},
-            )
+    if fileid:
+        conditions.append("a.fileid = %(fileid)s")
+        params = dict(fileid=fileid)
 
-            # remove both
-            os.remove(tex_out)
-            os.remove(pdf_out)
-            logger.info(f"Uploaded {Path(tex_out).name} to S3.")
-
-
-def load_save_files(file_id, user_id=None):
-    """Loads all the annotation save files for a particular file/user"""
-
-    conditions = ["a.fileid = %(fileid)s", "s.deleted = 0"]
-    params = dict(fileid=file_id)
-
-    if user_id is not None:
+    if userid:
         conditions.append("a.userid = %(userid)s")
-        params["userid"] = user_id
+        params["userid"] = userid
 
     query = (
-        """SELECT a.userid, a.fileid, a.timestamp, a.savename, a.autosave, s.final, COUNT(*) AS count
+        """SELECT a.userid, a.fileid, a.timestamp, a.savename, a.autosave, s.final, s.start, s.end, COUNT(*) AS count
            FROM annotations a
            LEFT JOIN saves s
              ON a.fileid = s.fileid AND a.userid = s.userid AND a.timestamp = s.timestamp AND a.savename = s.savename
            WHERE """
         + " AND ".join(conditions)
-        + " GROUP BY a.userid, a.fileid, a.timestamp, a.savename, a.autosave, s.final"
+        + " GROUP BY a.userid, a.fileid, a.timestamp, a.savename, a.autosave, s.final, s.start, s.end"
         + " ORDER BY a.timestamp DESC;"
     )
     return query_db(query, params)
@@ -201,12 +115,12 @@ def load_all_annotations(fileid: str):
     return grouped.to_dict(orient="records")
 
 
-def load_annotations(file_id, user_id, timestamp=None, add_timestamp_to_ids: bool = False):
+def load_annotations(fileid, userid, timestamp=None, add_timestamp_to_ids: bool = False):
     # use most recent save by default
     if not timestamp:
         result = query_db(
             """SELECT MAX("timestamp") FROM annotations WHERE fileid = %(fileid)s AND userid = %(userid)s;""",
-            params=dict(fileid=file_id, userid=user_id),
+            params=dict(fileid=fileid, userid=userid),
         )
         result = pd.DataFrame.from_records(result)
         if len(result) == 0 or result.iloc[0] is None:
@@ -239,7 +153,7 @@ def load_annotations(file_id, user_id, timestamp=None, add_timestamp_to_ids: boo
     # know why...I think the only difference is the lack of a '+' before the
     # timezone 00 at the end, which may be mangled by over HTTP.
     parsed = parse_timestamp(timestamp)
-    params = dict(fileid=file_id, userid=user_id, timestamp=parsed)
+    params = dict(fileid=fileid, userid=userid, timestamp=parsed)
 
     # Query for annotations, but we don't care about user or file id
     annotations = query_db(query, params=params)
@@ -270,40 +184,25 @@ def load_annotations(file_id, user_id, timestamp=None, add_timestamp_to_ids: boo
     # assign the annotations to the current state
     grouped = grouped.reset_index()
     if add_timestamp_to_ids:
-        grouped['annoid'] = timestamp + grouped['annoid']
+        grouped["annoid"] = timestamp + grouped["annoid"]
+
         def _update_link_with_timestamp(links):
             result = []
             for link in links:
                 new = {}
                 for key, val in link.items():
-                    if key == 'source' or key == 'target':
+                    if key == "source" or key == "target":
                         new[key] = timestamp + val
                     else:
                         new[key] = val
                 result.append(new)
             return result
 
-        grouped['links'] = grouped['links'].apply(lambda links: _update_link_with_timestamp(links))
+        grouped["links"] = grouped["links"].apply(lambda links: _update_link_with_timestamp(links))
     return grouped.to_dict(orient="records")
 
 
-def delete_save_file(file_id, user_id, savename, timestamp):
-    with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
-        parsed = parse_timestamp(timestamp)
-        conn.execute(
-            """
-            UPDATE saves
-              SET deleted = 1
-            WHERE fileid = %(fileid)s
-              AND userid = %(userid)s
-              AND savename = %(savename)s
-              AND "timestamp" = %(timestamp)s;
-            """,
-            dict(savename=savename, timestamp=parsed, fileid=file_id, userid=user_id),
-        )
-
-
-def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename: str | None = None):
+def insert_annotations(fileid, userid, annotations, autosave: int = 0, savename: str | None = None):
     with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
         if not savename:
             savename = randomname.get_name()
@@ -314,23 +213,28 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
                 """
                 DELETE FROM annotations WHERE fileid = %(fileid)s AND userid = %(userid)s AND savename = %(savename)s AND autosave = %(autosave)s;
                 """,
-                dict(savename=savename, autosave=int(autosave), fileid=file_id, userid=user_id),
+                dict(savename=savename, autosave=int(autosave), fileid=fileid, userid=userid),
             )
             conn.execute(
                 """
                 DELETE FROM saves WHERE fileid = %(fileid)s AND userid = %(userid)s AND savename = %(savename)s AND autosave = %(autosave)s;
                 """,
-                dict(savename=savename, autosave=int(autosave), fileid=file_id, userid=user_id),
+                dict(savename=savename, autosave=int(autosave), fileid=fileid, userid=userid),
             )
 
         # Create save if needed
+        start = [a["start"] for a in annotations if a["tag"] == "begin annotation"][0]
+        end = [a["end"] for a in annotations if a["tag"] == "end annotation"][0]
+
         conn.execute(
             """
-            INSERT INTO saves (fileid, userid, savename, final, autosave)
-                VALUES (%(fileid)s, %(userid)s, %(savename)s, %(final)s, %(autosave)s)
+            INSERT INTO saves (start, "end", fileid, userid, savename, final, autosave)
+                VALUES (%(start)s, %(end)s, %(fileid)s, %(userid)s, %(savename)s, %(final)s, %(autosave)s)
             ON CONFLICT(fileid, userid, savename, autosave, "timestamp") DO NOTHING;
             """,
-            dict(fileid=file_id, userid=user_id, savename=savename, autosave=int(autosave), final=0),
+            dict(
+                start=start, end=end, fileid=fileid, userid=userid, savename=savename, autosave=int(autosave), final=0
+            ),
         )
 
         # Insert new entries
@@ -344,8 +248,8 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
                 """,
                 dict(
                     annoid=an["annoid"],
-                    fileid=file_id,
-                    userid=user_id,
+                    fileid=fileid,
+                    userid=userid,
                     start=an["start"],
                     end=an["end"],
                     text=an["text"],
@@ -365,7 +269,7 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
                     """,
                     dict(
                         fileid=ln["fileid"],
-                        userid=user_id,
+                        userid=userid,
                         start=ln["start"],
                         end=ln["end"],
                         tag=ln["tag"],
@@ -384,10 +288,26 @@ def save_annotations(file_id, user_id, annotations, autosave: int = 0, savename:
             stamp = top["timestamp"]
         else:
             stamp = conn.execute("SELECT CURRENT_TIMESTAMP").fetchone()["timestamp"]
-        return {"timestamp": stamp, "savename": savename, "fileid": file_id, "userid": user_id}
+        return {"timestamp": stamp, "savename": savename, "fileid": fileid, "userid": userid}
 
 
-def mark_save_as_final(file_id, user_id, savename, timestamp):
+def delete_save(fileid, userid, savename, timestamp):
+    with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
+        parsed = parse_timestamp(timestamp)
+        conn.execute(
+            """
+            UPDATE saves
+              SET deleted = 1
+            WHERE fileid = %(fileid)s
+              AND userid = %(userid)s
+              AND savename = %(savename)s
+              AND "timestamp" = %(timestamp)s;
+            """,
+            dict(savename=savename, timestamp=parsed, fileid=fileid, userid=userid),
+        )
+
+
+def finalize_save(fileid, userid, savename, timestamp):
     parsed = parse_timestamp(timestamp)
     with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
         conn.execute(
@@ -399,7 +319,7 @@ def mark_save_as_final(file_id, user_id, savename, timestamp):
               AND savename = %(savename)s
               AND "timestamp" = %(timestamp)s;
             """,
-            dict(savename=savename, fileid=file_id, userid=user_id, timestamp=parsed),
+            dict(savename=savename, fileid=fileid, userid=userid, timestamp=parsed),
         )
         return True
 
@@ -450,6 +370,8 @@ def init_annotation_db():
             (
                 saveid SERIAL PRIMARY KEY,
                 savename TEXT,
+                start INTEGER,
+                "end" INTEGER,
                 fileid TEXT,
                 userid TEXT,
                 final INTEGER,
@@ -463,8 +385,8 @@ def init_annotation_db():
 
 
 def export_annotations(
-    file_id,
-    user_id,
+    fileid,
+    userid,
     timestamp: Optional[str] = None,
     export_whole_file: bool = False,
     tokenizer: Optional[PreTrainedTokenizer] = None,
@@ -472,8 +394,8 @@ def export_annotations(
     end: Optional[dict] = None,
 ):
     # annotations is a list of dicts, each containing an annotation. We want to format this into an IOB tagged block of text.
-    annotations = load_annotations(file_id, user_id, timestamp)
-    tex = load_tex(file_id)
+    annotations = load_annotations(fileid, userid, timestamp)
+    tex = load_tex(fileid)
 
     # Find the begin/end annotations, otherwise use the earliest and latest annotations
     if begin is None:
@@ -516,7 +438,7 @@ def export_annotations(
 
     if tokenizer:
         tokens = tokenizer(tex, add_special_tokens=False)
-        token_tags = align_tags_to_tokens(tokens, char_tags=iob_tags)
+        token_tags = align_annotations_to_tokens(tokens, char_tags=iob_tags)
 
         # Returns a list of (token, [tags])
         return {
@@ -538,61 +460,51 @@ def export_annotations(
     }
 
 
-def align_tags_to_tokens(tokens: BatchEncoding, char_tags: list[list[str]]):
-    aligned_tags = []
-    for idx in range(len(tokens.input_ids)):
-        span = tokens.token_to_chars(idx)
-        if span is None:
+def load_user_data(userid: str, tags: list[str], tokenizer_id: str = "bert-base-cased"):
+    files = list_s3_documents()
+    name2doc = {f["name"]: f for f in files}
+    saves = load_saves(userid=userid)
+    sys_saves = [save for save in saves if save["final"]]
+    ref_saves = [save for save in load_saves() if save["userid"] != userid and save["final"]]
+    range2save = {(s["start"], s["end"]): s for s in sys_saves}
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_id)
+
+    scores = defaultdict(list)
+    exported_cache = {}
+    for ref_save in ref_saves:
+        # check if the user save exists
+        if (ref_save["start"], ref_save["end"]) not in range2save:
             continue
 
-        tags_for_token = list({tag for token_tags in char_tags[span.start : span.end] for tag in token_tags})
-        if "O" in tags_for_token and len(tags_for_token) > 1:
-            tags_for_token.remove("O")
+        # Get the system/references, hitting the cache if possible
+        sys_save = range2save[(ref_save["start"], ref_save["end"])]
+        sys = exported_cache.get(
+            sys_save["timestamp"],
+            export_annotations(sys_save["fileid"], sys_save["userid"], sys_save["timestamp"], tokenizer=tokenizer),
+        )
+        ref = export_annotations(ref_save["fileid"], ref_save["userid"], ref_save["timestamp"], tokenizer=tokenizer)
 
-        # Ensure that we only have B- or I- but not both
-        for tag in tags_for_token:
-            b = tag.replace("I-", "B-")
-            i = tag.replace("B-", "I-")
-            if b in tags_for_token and i in tags_for_token:
-                tags_for_token.remove(i)
-        aligned_tags.append(tags_for_token)
-    return aligned_tags
+        # Compute the scores for this particular comparison
+        tags_sys = [tag for text, tag in sys["iob_tags"]]
+        tags_ref = [tag for text, tag in ref["iob_tags"]]
+        scores[(sys_save["fileid"], sys_save["timestamp"])].append(
+            compute_annotation_score(tags_sys, tags_ref, tags)["f1"]
+        )
+
+    pprint(scores)
+    print(flush=True)
+    return {
+        "saves": [
+            dict(
+                document=name2doc[s["fileid"]],
+                score=_avg(scores[s["fileid"], s["timestamp"]]),
+                **s,
+            )
+            for s in saves
+        ],
+        "userid": userid,
+    }
 
 
-def _find_annos_at_index(annos: list[dict], index: int) -> set[str]:
-    result = set()
-    for anno in annos:
-        start = anno['start']
-        end = anno['end']
-        tag = anno['tag']
-        if start <= index <= end:
-            result.add((start, end, tag))
-    return result
-
-
-def load_annotation_diff(tex: str, annos_list: list[list[dict]], tags: list[str], start: int, end: int):
-    N = len(annos_list)
-
-    tex = tex[start:end+1]
-
-    # Initialize the diffs, empty list for each character index
-    annos_at_index = [[set() for _ in tex] for _ in annos_list]
-    diffs = [set() for _ in annos_list]
-
-    # for each character, add all the annotations that exist at that index
-    for idx, char in enumerate(tex):
-        for anno_idx, annos in enumerate(annos_list):
-            annos_at_index[anno_idx][idx] = _find_annos_at_index(annos, idx + start)
-
-        # now compute the diffs
-        intersection = set.intersection(*(annos_at_index[i][idx] for i in range(N)))
-        for a in range(N):
-            # only add diffs for those things that are in the tags
-            annos = [i for i in annos_at_index[a][idx].difference(intersection) if i[-1] in tags]
-            diffs[a].update(annos)
-
-    # Return a list of annotations which are part of the diff
-    return [
-        [a for a in annos_list[idx] if (a['start'], a['end'], a['tag']) in d]
-        for idx, d in enumerate(diffs)
-    ]
+def _avg(xs):
+    return (sum(xs) / len(xs)) if len(xs) else -1

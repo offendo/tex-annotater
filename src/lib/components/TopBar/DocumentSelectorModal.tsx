@@ -1,38 +1,114 @@
-import * as React from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import TextField from "@mui/material/TextField";
 import { GlobalState, loadAnnotations, loadDocument } from "@/lib/GlobalState";
-import { Typography, Button, IconButton, Box, Dialog, DialogTitle, DialogContent, DialogActions, useTheme, Grid, ListSubheader, Collapse } from "@mui/material";
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
+import CloseIcon from '@mui/icons-material/Close';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import { Box, Button, Collapse, Dialog, DialogActions, DialogContent, Grid, IconButton, ListSubheader, useTheme } from "@mui/material";
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
+import TextField from "@mui/material/TextField";
 import fuzzysort from "fuzzysort";
-import FileOpenIcon from '@mui/icons-material/FileOpen';
-import DownloadIcon from '@mui/icons-material/Download';
-import CheckBoxIcon from '@mui/icons-material/CheckBox';
-import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
-import ExpandMore from '@mui/icons-material/ExpandMore';
-import ExpandLess from '@mui/icons-material/ExpandLess';
-import CloseIcon from '@mui/icons-material/Close';
-import { orderBy, groupBy, sortBy, maxBy, minBy } from "lodash";
+import { orderBy } from "lodash";
+import * as React from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { MenuItemProps } from "./MenuItemProps";
 import { SaveSelector } from "./SaveSelector";
 
 
+type Document = {
+    name: string
+    stem: string
+    arxiv_id: string
+    modified: string
+    size: string
+}
+
+type DocumentSelectorProps = {
+    documents: Document[]
+    onSelect: (doc: any, index: number) => any
+    filterFn: (docs: Document[]) => Document[]
+}
+
+export const DocumentSelector = (props: DocumentSelectorProps) => {
+    const theme = useTheme();
+
+    const [selectedDoc, setSelectedDoc] = React.useState<number>(-1);
+
+    return (
+        <Box
+            sx={{
+                maxWidth: "50vw",
+                maxHeight: 400,
+                height: "fit-content",
+                backgroundColor: theme.palette.background.default,
+                overflowY: "scroll",
+                fontFamily: theme.typography.fontFamily,
+                fontSize: "12pt",
+            }}
+        >
+            <Grid container>
+                <List dense sx={{ width: "100%" }}>
+                    <ListSubheader >
+                        <Grid container>
+                            <Grid item xs={2}>
+                                Arxiv ID
+                            </Grid>
+                            <Grid item xs={5}>
+                                File name
+                            </Grid>
+                            <Grid item xs={3}>
+                                Upload date
+                            </Grid>
+                            <Grid item xs={2}>
+                                Size
+                            </Grid>
+                        </Grid>
+                    </ListSubheader>
+                    {
+                        props.filterFn(orderBy(props.documents, ['arxiv_id', 'stem'], 'asc')).map((doc: any, index: number) => {
+                            return (
+                                <ListItem
+                                    key={doc.arxiv_id + doc.stem}
+                                    value={doc.name}
+                                    onClick={(e) => {
+                                        props.onSelect(doc, index)
+                                        setSelectedDoc(index);
+                                    }}
+                                >
+                                    <ListItemButton disableGutters selected={selectedDoc === index}>
+                                        <Grid container >
+                                            <Grid item xs={2}>
+                                                {doc.arxiv_id}
+                                            </Grid>
+                                            <Grid item xs={5} style={{ overflowX: "scroll" }}>
+                                                {doc.stem}
+                                            </Grid>
+                                            <Grid item xs={3}>
+                                                {doc.modified}
+                                            </Grid>
+                                            <Grid item xs={2}>
+                                                {doc.size} kb
+                                            </Grid>
+                                        </Grid>
+                                    </ListItemButton>
+                                </ListItem>
+                            );
+                        })
+                    }
+                </List>
+            </Grid>
+        </Box>
+    );
+}
+
+
 export const DocumentSelectorModal = (props: MenuItemProps) => {
     const state = React.useContext(GlobalState);
-    const theme = useTheme();
 
     const navigate = useNavigate();
     const [query, setQuery] = React.useState("");
     const [queryParameters, setQueryParameters] = useSearchParams();
     const [documents, setDocuments] = React.useState([]);
-    const [selectedDoc, setSelectedDoc] = React.useState<number>(-1);
-    const [documentSelectorOpen, setDocumentSelectorOpen] = React.useState<boolean>(true);
     const [saveSelectorOpen, setSaveSelectorOpen] = React.useState<boolean>(false);
 
     async function listAllDocuments() {
@@ -44,9 +120,7 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
             console.error(e);
         }
     }
-    const selectDocument = (doc: any, index: number) => {
-        setSelectedDoc(index);
-
+    const selectDocument = (doc: Document, index: number) => {
         // On bugged selection, just quit
         if (doc.name == null) {
             console.error("Tried to select an empty doc: ", doc);
@@ -71,19 +145,9 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
         navigate({ pathname: '/', search: queryParameters.toString() });
         e.stopPropagation();
     };
-    const handleDocumentSelectorClick = (e: any) => {
-        const isOpen = documentSelectorOpen;
-        setDocumentSelectorOpen(!isOpen);
-        if (isOpen) {
-            setSaveSelectorOpen(true);
-        }
-    };
     const handleSaveSelectorClick = (e: any) => {
         const isOpen = saveSelectorOpen;
         setSaveSelectorOpen(!isOpen);
-        if (isOpen) {
-            setDocumentSelectorOpen(true);
-        }
     };
 
     const onSelectSave = (save: any, index: number) => {
@@ -97,10 +161,10 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
     // Load documents immediately
     React.useEffect(() => { listAllDocuments(); }, []);
 
-    const filterSearch = (docs: any[], query: string) => {
+    const doSearch = (docs: any[]) => {
         return query.length == 0
             ? docs
-            : fuzzysort.go(query, docs, { keys: ["filename", "arxiv_id"] }).map((t) => t.obj);
+            : fuzzysort.go(query, docs, { keys: ["stem", "arxiv_id"] }).map((t) => t.obj);
     };
 
     return (
@@ -131,70 +195,19 @@ export const DocumentSelectorModal = (props: MenuItemProps) => {
             </DialogActions>
             <DialogContent>
                 <Collapse collapsedSize={200} in={!saveSelectorOpen} timeout="auto" >
-                    <Box
-                        sx={{
-                            width: 1200,
-                            minWidth: 1200,
-                            maxHeight: 400,
-                            height: "fit-content",
-                            backgroundColor: theme.palette.background.default,
-                            overflowY: "scroll",
-                            fontFamily: theme.typography.fontFamily,
-                            fontSize: "12pt",
-                        }}
-                    >
-                        <Grid container>
-                            <List dense sx={{ width: "100%" }}>
-                                <ListSubheader >
-                                    <Grid container>
-                                        <Grid item xs={2}>
-                                            Arxiv ID
-                                        </Grid>
-                                        <Grid item xs={5}>
-                                            File name
-                                        </Grid>
-                                        <Grid item xs={3}>
-                                            Upload date
-                                        </Grid>
-                                        <Grid item xs={2}>
-                                            Size
-                                        </Grid>
-                                    </Grid>
-                                </ListSubheader>
-                                {
-                                    filterSearch(orderBy(documents, ['arxiv_id', 'filename'], 'asc'), query).map((doc: any, index: number) => {
-                                        return (
-                                            <ListItem
-                                                key={doc.arxiv_id + doc.filename}
-                                                value={doc.name}
-                                                onClick={(e) => { selectDocument(doc, index); setSaveSelectorOpen(true); }}
-                                            >
-                                                <ListItemButton disableGutters selected={selectedDoc === index}>
-                                                    <Grid container >
-                                                        <Grid item xs={2}>
-                                                            {doc.arxiv_id}
-                                                        </Grid>
-                                                        <Grid item xs={5} style={{ overflowX: "scroll" }}>
-                                                            {doc.filename}
-                                                        </Grid>
-                                                        <Grid item xs={3}>
-                                                            {doc.modified}
-                                                        </Grid>
-                                                        <Grid item xs={2}>
-                                                            {doc.size} kb
-                                                        </Grid>
-                                                    </Grid>
-                                                </ListItemButton>
-                                            </ListItem>
-                                        );
-                                    })
-                                }
-                            </List>
-                        </Grid>
-                    </Box>
+                    <DocumentSelector
+                        documents={documents}
+                        onSelect={(doc: Document, index) => { selectDocument(doc, index); setSaveSelectorOpen(true) }}
+                        filterFn={doSearch}
+                    />
                 </Collapse>
                 <Collapse id={"save-selector-collapse"} in={saveSelectorOpen} timeout="auto" >
-                    <SaveSelector onSelectSave={onSelectSave} allowExport={true} allowMarkFinal={true} allowDelete={true} />
+                    <SaveSelector
+                        onSelectSave={onSelectSave}
+                        allowExport={true}
+                        allowMarkFinal={true}
+                        allowDelete={true}
+                    />
                 </Collapse>
             </DialogContent>
         </Dialog >

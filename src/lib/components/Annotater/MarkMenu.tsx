@@ -44,7 +44,7 @@ export function MarkMenu(props: MarkMenuProps) {
         if (props.anno.links.length > 0) {
             const file = props.anno.links[0].fileid;
             const target = props.anno.links[0].target;
-            fetch(`/api/savename?annoid=${target}`).then(res => res.json()).then((result: any) => {
+            fetch(`/api/save/name?annoid=${target}`).then(res => res.json()).then((result: any) => {
                 const timestamp = result['timestamp'];
                 const savename = result['savename'];
                 window.open(

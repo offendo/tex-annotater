@@ -13,7 +13,7 @@ import logging
 from rapidfuzz import process, fuzz
 from rapidfuzz.distance.LCSseq import normalized_distance, normalized_similarity
 
-from .data import list_all_textbooks, list_s3_documents, load_tex
+from .data_utils import list_s3_documents, load_tex
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -34,6 +34,15 @@ patterns = [
 ]
 
 
+def list_all_textbooks():
+    """Load the textbooks from the excel sheet."""
+    sheet_id = "1XCkPQo__bxACu2dWUgCuRoH4FUeNc2ODCI1dpBO-n3U"
+    sheet_name = "Sheet1"
+    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
+    df = pd.read_csv(url)
+    return df
+
+
 def download_books(output_dir: str):
     df = list_all_textbooks()
     for tex_url, name in zip(df["tex"], df["name"]):
@@ -47,7 +56,7 @@ def download_books(output_dir: str):
 
 
 def download_papers(output_dir: str):
-    names = [x['name'] for x in list_s3_documents()]
+    names = [x["name"] for x in list_s3_documents()]
     for name in names:
         outputfile = Path(output_dir, name).with_suffix(".tex")
         if outputfile.exists():
@@ -80,6 +89,7 @@ def index_tex(patterns: tuple[str, ...], tex: str, type: str):
 
     return searched
 
+
 def build_definition_index(patterns: list[str], books: list[str], papers: list[str]):
     """Grep
 
@@ -101,10 +111,10 @@ def build_definition_index(patterns: list[str], books: list[str], papers: list[s
     searched = []
     for book in books:
         # Create definition index
-        searched.extend(index_tex(tuple(patterns), book, 'book'))
+        searched.extend(index_tex(tuple(patterns), book, "book"))
     for paper in papers:
         # Create definition index
-        searched.extend(index_tex(tuple(patterns), paper, 'paper'))
+        searched.extend(index_tex(tuple(patterns), paper, "paper"))
 
     df = pd.DataFrame.from_records(searched, columns=["file", "type", "line", "text"])
     return df
@@ -167,7 +177,7 @@ def compute_fold_mapping(book: str, width: int):
 
 
 def download_and_index_tex(tex_dir: str, extraPatterns: list[str]):
-    uniq = hash(','.join(extraPatterns))
+    uniq = hash(",".join(extraPatterns))
     save_file = Path(tex_dir, f"index.{uniq}.csv")
     if save_file.exists():
         logger.info(f"Found cache: loading from index.{uniq}.csv")

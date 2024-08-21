@@ -14,5 +14,17 @@ export const themeOptions: ThemeOptions = {
     typography: {
         fontFamily: 'Roboto',
     },
+    components: {
+        MuiListItemButton: {
+            styleOverrides: {
+                root: {
+                    "&.Mui-selected": {
+                        backgroundColor: "#00000030",
+                        "&.Mui-focusVisible": { background: "orange" }
+                    }
+                }
+            }
+        }
+    }
 };
 export const theme = createTheme(themeOptions);

@@ -15,23 +15,28 @@ import json
 from apscheduler.schedulers.background import BackgroundScheduler
 from transformers import AutoTokenizer
 
-from backend.scoring import score_and_diff
+from .scoring import (
+    compute_annotation_diff,
+    compute_score_and_diff,
+)
 from .search import fuzzysearch
 from .data import (
     export_annotations,
-    get_save_info_from_timestamp,
-    load_annotation_diff,
-    load_tex,
+    load_save_info_from_timestamp,
     load_all_annotations,
-    load_pdf,
-    load_save_files,
+    load_saves,
     load_annotations,
-    mark_save_as_final,
-    save_annotations,
-    get_savename_from_annoid,
-    list_s3_documents,
+    insert_annotations,
+    load_anno_from_annoid,
     init_annotation_db,
-    delete_save_file,
+    finalize_save,
+    delete_save,
+    load_user_data,
+)
+from .data_utils import (
+    load_tex,
+    load_pdf,
+    list_s3_documents,
 )
 from .users import (
     add_user,
@@ -48,55 +53,26 @@ app.config["CORS_HEADERS"] = "Content-Type"
 init_annotation_db()
 init_users_db()
 
-# sched = BackgroundScheduler(daemon=True)
-# sched.add_job(upload_new_textbooks, "interval", minutes=10)
-# sched.start()
 
-
-@app.get("/admin")
+@app.get("/annotations/export")
 @cross_origin()
-def get_is_admin():
-    userid = request.args.get("userid")
-    admin = userid in ["nilay", "jeff"]  # TODO move this to database
-    return {"isAdmin": admin}, 200
-
-
-@app.post("/annotations")
-@cross_origin()
-def post_annotations():
-    userid = request.args.get("userid")
-    fileid = request.args.get("fileid")
-    autosave = request.args.get("autosave")
-    savename = request.args.get("savename")
-    autosave = 1 if autosave == "true" else 0
-    annotations = request.get_json()["annotations"]
-    if not fileid:
-        return {"error": "missing fileid"}, 400
-    if not userid:
-        return {"error": "missing userid"}, 400
-    save_info = save_annotations(fileid, userid, annotations, autosave=autosave, savename=savename)
-    return save_info, 200
-
-
-@app.get("/export")
-@cross_origin()
-def export_save():
+def get_export_save():
     userid = request.args.get("userid")
     fileid = request.args.get("fileid")
     timestamp = request.args.get("timestamp")
     savename = request.args.get("savename")
     tokenizer_id = request.args.get("tokenizer", "EleutherAI/llemma_7b")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_id)
-    anno_json = export_annotations(file_id=fileid, user_id=userid, timestamp=timestamp, tokenizer=tokenizer)
+    anno_json = export_annotations(fileid=fileid, userid=userid, timestamp=timestamp, tokenizer=tokenizer)
     out_file = f"/tmp/{fileid}-{userid}-{savename}-{tokenizer_id.replace('/', '_')}.json"
     with open(out_file, "w") as f:
         json.dump(anno_json, f)
     return send_file(out_file, as_attachment=True, download_name=out_file.split("/")[-1])
 
 
-@app.get("/score")
+@app.get("/annotations/score")
 @cross_origin()
-def score_annotations():
+def get_score_annotations():
     userid = request.args.get("userid")
     fileid = request.args.get("fileid")
     timestamp = request.args.get("timestamp")
@@ -108,15 +84,15 @@ def score_annotations():
     tokenizer_id = request.args.get("tokenizer", "EleutherAI/llemma_7b")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_id)
 
-    tags = request.args.get("tags").split(";")
+    tags = request.args.get("tags", "").split(";")
 
-    sys_json = export_annotations(file_id=fileid, user_id=userid, timestamp=timestamp, tokenizer=tokenizer)
+    sys_json = export_annotations(fileid=fileid, userid=userid, timestamp=timestamp, tokenizer=tokenizer)
     begin = sys_json["begin"]
     end = sys_json["end"]
     ref_json = export_annotations(
-        file_id=ref_fileid, user_id=ref_userid, timestamp=ref_timestamp, tokenizer=tokenizer, begin=begin, end=end
+        fileid=ref_fileid, userid=ref_userid, timestamp=ref_timestamp, tokenizer=tokenizer, begin=begin, end=end
     )
-    scores = score_and_diff(sys_json, ref_json, tags)
+    scores = compute_score_and_diff(sys_json, ref_json, tags)
     return scores, 200
 
 
@@ -140,7 +116,7 @@ def get_annotations():
     if userid is None or fileid is None or timestamp is None:
         return "Bad request: need userid, fileid, and timestamp!", 400
     annotations = load_annotations(fileid, userid, timestamp if len(timestamp) else None)
-    save_info = get_save_info_from_timestamp(timestamp)
+    save_info = load_save_info_from_timestamp(timestamp)
 
     return {
         "fileid": fileid,
@@ -149,6 +125,23 @@ def get_annotations():
         "timestamp": timestamp,
         "savename": save_info["savename"],
     }, 200
+
+
+@app.post("/annotations")
+@cross_origin()
+def post_annotations():
+    userid = request.args.get("userid")
+    fileid = request.args.get("fileid")
+    autosave = request.args.get("autosave")
+    savename = request.args.get("savename")
+    autosave = 1 if autosave == "true" else 0
+    annotations = request.get_json()["annotations"]
+    if not fileid:
+        return {"error": "missing fileid"}, 400
+    if not userid:
+        return {"error": "missing userid"}, 400
+    save_info = insert_annotations(fileid, userid, annotations, autosave=autosave, savename=savename)
+    return save_info, 200
 
 
 @app.get("/annotations/diff")
@@ -166,59 +159,60 @@ def get_annotations_diff():
     begin = 999999999999
     end = -1
     for timestamp in timestamps:
-        save_info = get_save_info_from_timestamp(timestamp)
+        save_info = load_save_info_from_timestamp(timestamp)
         anno = load_annotations(fileid, save_info["userid"], timestamp, add_timestamp_to_ids=True)
         for a in anno:
-            if a['start'] < begin:
-                begin = a['start']
-            if a['end'] > end:
-                end = a['end']
+            if a["start"] < begin:
+                begin = a["start"]
+            if a["end"] > end:
+                end = a["end"]
         annos.append(anno)
         result.append({"annotations": anno, **save_info})
 
     tex = load_tex(fileid)
-    diff = load_annotation_diff(tex, annos, tags, begin, end)
+    diff = compute_annotation_diff(tex, annos, tags, begin, end)
 
     return jsonify([dict(diff=d, **r) for d, r in zip(diff, result)]), 200
 
 
-@app.post("/finalize")
+@app.post("/save/finalize")
 @cross_origin()
-def finalize_save():
+def post_finalize_save():
     userid = request.args.get("userid")
     fileid = request.args.get("fileid")
     timestamp = request.args.get("timestamp")
     savename = request.args.get("savename")
     if userid is None or fileid is None or timestamp is None:
         return "Bad request: need userid, fileid, and timestamp!", 400
-    finalized = mark_save_as_final(fileid, userid, savename, timestamp)
+    finalized = finalize_save(fileid, userid, savename, timestamp)
 
     return {"finalized": finalized}, 200
 
-@app.post("/delete")
+
+@app.delete("/save")
 @cross_origin()
-def delete_save():
+def delete_delete_save():
     userid = request.args.get("userid")
     fileid = request.args.get("fileid")
     timestamp = request.args.get("timestamp")
     savename = request.args.get("savename")
     if userid is None or fileid is None or timestamp is None:
         return "Bad request: need userid, fileid, and timestamp!", 400
-    delete_save_file(fileid, userid, savename, timestamp)
+    delete_save(fileid, userid, savename, timestamp)
     return dict(timestamp=timestamp, userid=userid, fileid=fileid, savename=savename), 200
 
 
-@app.get("/saves")
+@app.get("/save/all")
 @cross_origin()
-def list_all_saves():
+def get_all_saves():
     fileid = request.args.get("fileid")
     userid = request.args.get("userid")
-    return {"saves": load_save_files(file_id=fileid, user_id=userid)}
+    return {"saves": load_saves(fileid=fileid, userid=userid)}
 
 
 @app.get("/documents")
 @cross_origin()
-def list_all_documents():
+def get_all_documents():
     return {"documents": list_s3_documents()}
 
 
@@ -234,22 +228,6 @@ def get_tex():
         "fileid": fileid,
         "tex": tex,
     }
-
-
-@app.get("/savename")
-@cross_origin()
-def get_savename():
-    annoid = request.args.get("annoid")
-    if annoid is None:
-        return "Bad request: need annoid!", 400
-    result = get_savename_from_annoid(annoid)
-
-    return {
-        "fileid": result["fileid"],
-        "userid": result["userid"],
-        "savename": result["savename"],
-        "timestamp": result["timestamp"],
-    }, 200
 
 
 @app.get("/pdf")
@@ -269,7 +247,31 @@ def get_pdf():
     }
 
 
-@app.post("/authenticate")
+@app.get("/save/name")
+@cross_origin()
+def get_savename():
+    annoid = request.args.get("annoid")
+    if annoid is None:
+        return "Bad request: need annoid!", 400
+    result = load_anno_from_annoid(annoid)
+
+    return {
+        "fileid": result["fileid"],
+        "userid": result["userid"],
+        "savename": result["savename"],
+        "timestamp": result["timestamp"],
+    }, 200
+
+
+@app.get("/user/admin")
+@cross_origin()
+def get_is_admin():
+    userid = request.args.get("userid")
+    admin = userid in ["nilay", "jeff"]  # TODO move this to database
+    return {"isAdmin": admin}, 200
+
+
+@app.post("/user/authenticate")
 @cross_origin()
 def login_user():
     body = request.get_json()
@@ -281,6 +283,17 @@ def login_user():
     else:
         token = ""
     return {"authenticated": authenticated, "token": token, "userid": userid}, 200
+
+
+@app.get("/user")
+@cross_origin()
+def get_user_data():
+    userid = request.args.get("userid")
+    if userid is None:
+        return {"error": "missing userid"}, 400
+    tags = ["definition", "theorem", "reference", "proof", "example", "name"]
+    data = load_user_data(userid, tags)
+    return data
 
 
 @app.post("/user")

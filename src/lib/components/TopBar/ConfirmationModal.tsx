@@ -8,8 +8,8 @@ import DialogTitle from '@mui/material/DialogTitle';
 import { MenuItemProps } from './MenuItemProps';
 
 export type ConfirmationModalProps = {
-    onConfirm: () => any
-    onCancel?: () => any
+    onConfirm: () => void
+    onCancel?: () => void
     message?: string;
 }
 

@@ -58,7 +58,7 @@ export function ScoresModal(props: MenuItemProps) {
 
     const getScores = (state: GlobalStateProps, ref_fileid: string, ref_userid: string, ref_timestamp: string, tags: string[]) => {
         const tag_str = tags.join(";")
-        const url = `/api/score?fileid=${state.fileid}&userid=${state.userid}&timestamp=${state.timestamp}&ref_fileid=${ref_fileid}&ref_userid=${ref_userid}&ref_timestamp=${ref_timestamp}&tags=${tag_str}`
+        const url = `/api/annotations/score?fileid=${state.fileid}&userid=${state.userid}&timestamp=${state.timestamp}&ref_fileid=${ref_fileid}&ref_userid=${ref_userid}&ref_timestamp=${ref_timestamp}&tags=${tag_str}`
         fetch(url).then((res) => {
             return res.blob()
         }).then((blob) => {
@@ -82,7 +82,7 @@ export function ScoresModal(props: MenuItemProps) {
                     <DialogContentText>
                         Select a save file to use as a reference.
                     </DialogContentText>
-                    <SaveSelector onSelectSave={(save, index) => setRefSave(save)} allowExport={false} allowMarkFinal={false} allowOtherUsers={true} />
+                    <SaveSelector onSelectSave={(save, index) => setRefSave(save)} allowExport={false} allowMarkFinal={false} showAllUsers={true} />
                     <DialogContentText>
                         Select tags to score against
                     </DialogContentText>
