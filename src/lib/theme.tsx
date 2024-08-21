@@ -20,7 +20,6 @@ export const themeOptions: ThemeOptions = {
                 root: {
                     "&.Mui-selected": {
                         backgroundColor: "#00000030",
-                        "&.Mui-focusVisible": { background: "orange" }
                     }
                 }
             }
