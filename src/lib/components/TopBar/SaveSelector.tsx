@@ -21,26 +21,6 @@ import * as React from "react";
 import { ConfirmationModal } from "./ConfirmationModal";
 import { MenuItemProps } from "./MenuItemProps";
 
-type SaveSelectorProps = {
-    // Callback on select
-    onSelectSave: (save: any, index: number) => any;
-
-    // Are we allowed to select multiple?
-    allowMultipleSelections?: boolean;
-
-    // What are we allowed to do in the options menu?
-    allowExport?: boolean;
-    allowMarkFinal?: boolean;
-    allowDelete?: boolean;
-
-    // Show everything or specifics?
-    showAllFiles?: boolean;
-    showAllUsers?: boolean;
-
-    // Columns
-    showFileId?: boolean;
-}
-
 const tokenizers = [
     { name: "Llemma 7b", id: "EleutherAI/llemma_7b" },
     { name: "Llemma 34b", id: "EleutherAI/llemma_34b" },
@@ -171,7 +151,7 @@ const SaveOptionsMenu = (props: SaveOptionsMenuProps) => {
         };
         const response = await fetch(`/api/save/finalize?timestamp=${timestamp}&savename=${savename}&userid=${userid}&fileid=${fileid}`, requestOptions);
         const json = await response.json();
-        props.loadSaves(props.showAllFiles ? "" : state.fileid, (props.showAllUsers || state.isAdmin) ? "" : state.userid);
+        props.loadSaves(props.showAllFiles ? "" : state.fileid, (props.showAllUsers || state.isAdmin) ? "" : userid);
         return;
     }
 
@@ -250,11 +230,36 @@ const SaveOptionsMenu = (props: SaveOptionsMenuProps) => {
     );
 }
 
+type SaveSelectorProps = {
+    // Callback on select
+    onSelectSave: (save: any, index: number) => any;
+
+    // Are we allowed to select multiple?
+    allowMultipleSelections?: boolean;
+
+    // What are we allowed to do in the options menu?
+    allowExport?: boolean;
+    allowMarkFinal?: boolean;
+    allowDelete?: boolean;
+
+    // Show everything or specifics?
+    showAllFiles?: boolean;
+    showAllUsers?: boolean;
+
+    // Columns
+    showFileId?: boolean;
+
+    // In case we want a specific user's stuff
+    userid?: string;
+}
+
 
 export const SaveSelector = (props: SaveSelectorProps) => {
 
     const theme = useTheme();
     const state = React.useContext(GlobalState);
+
+    const userid = props.userid || state.userid;
 
     const [selectedSaveGroup, setSelectedSaveGroup] = React.useState<string[]>([]);
     const [saves, setSaves] = React.useState<any[]>([]);
@@ -295,7 +300,7 @@ export const SaveSelector = (props: SaveSelectorProps) => {
 
     // Load saves whenever the fileid changes
     React.useEffect(() => {
-        loadSaves(props.showAllFiles ? "" : state.fileid, (props.showAllUsers || state.isAdmin) ? "" : state.userid);
+        loadSaves(props.showAllFiles ? "" : state.fileid, (props.showAllUsers || state.isAdmin) ? "" : userid);
     },
         [state.fileid, state.annotations, state.savename]
     )

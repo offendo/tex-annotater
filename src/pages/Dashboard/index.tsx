@@ -117,6 +117,7 @@ const Dashboard = (props: DashboardProps) => {
                             allowDelete={true}
                             allowExport={true}
                             allowMarkFinal={true}
+                            userid={userData.userid}
                         />
                     </div>
                 </div>
