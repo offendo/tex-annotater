@@ -55,7 +55,6 @@ const Dashboard = (props: DashboardProps) => {
         try {
             const response = await fetch(`/api/user?userid=${userData.userid}`, { mode: "cors" });
             const json = await response.json();
-            console.log(json['saves'].map(x => { return { fileid: x.fileid, scores: x.scores } }));
             setUserData(json);
         } catch (e) {
             console.error(e);
@@ -77,6 +76,30 @@ const Dashboard = (props: DashboardProps) => {
                         margin: "10px",
                     }}
                 >
+                    <div style={{ flexGrow: 3 }}>
+                        <Typography variant="h5"> {userData.userid}'s Dashboard </Typography >
+                        <div>
+                            Finalized Annotations: {userData.saves.filter((save: SaveData) => save.final).length} / {userData.saves.length}
+                        </div>
+                        <div>
+                            Avg. F1 Score: {
+                                userData.saves.length > 0
+                                    ? (100.0 * userData.saves.map((x) => x.score).filter(x => x > 0).reduce((a, b) => a + b, 0) / userData.saves.filter(x => x.score > 0).length).toFixed(2)
+                                    : 0.0}
+                        </div>
+                        <SaveSelector
+                            onSelectSave={(save, index) => {
+                                loadDocument(state, save.fileid, false);
+                                loadAnnotations(state, save.fileid, userData.userid, save.timestamp, save.savename);
+                            }}
+                            showFileId={true}
+                            showAllFiles={true}
+                            allowDelete={true}
+                            allowExport={true}
+                            allowMarkFinal={true}
+                            userid={userData.userid}
+                        />
+                    </div>
                     <div
                         id="scroll-box"
                         style={{
@@ -94,30 +117,6 @@ const Dashboard = (props: DashboardProps) => {
                                 margin: "10px",
                             }}
                             editMode={false}
-                        />
-                    </div>
-                    <div style={{ flexGrow: 3 }}>
-                        <Typography variant="h5"> {userData.userid}'s Dashboard </Typography >
-                        <div>
-                            Finalized Annotations: {userData.saves.filter((save: SaveData) => save.final).length} / {userData.saves.length}
-                        </div>
-                        <div>
-                            Avg. F1 Score: {
-                                userData.saves.length > 0
-                                    ? userData.saves.map((x) => x.score).filter(x => x > 0).reduce((a, b) => a + b, 0) / userData.saves.filter(x => x.score > 0).length
-                                    : 0.0}
-                        </div>
-                        <SaveSelector
-                            onSelectSave={(save, index) => {
-                                loadDocument(state, save.fileid, false);
-                                loadAnnotations(state, save.fileid, userData.userid, save.timestamp, save.savename);
-                            }}
-                            showFileId={true}
-                            showAllFiles={true}
-                            allowDelete={true}
-                            allowExport={true}
-                            allowMarkFinal={true}
-                            userid={userData.userid}
                         />
                     </div>
                 </div>

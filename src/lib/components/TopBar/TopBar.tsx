@@ -22,6 +22,7 @@ import RedoIcon from '@mui/icons-material/Redo';
 import UndoIcon from '@mui/icons-material/Undo';
 import CompareIcon from '@mui/icons-material/Compare';
 import AddIcon from '@mui/icons-material/Add';
+import AccountBoxIcon from '@mui/icons-material/AccountBox';
 import { AnnotationMenu } from "./AnnotationMenu";
 import { DocumentSelectorModal } from "./DocumentSelectorModal";
 import { RegexPatternModal } from "./RegexPatternModal";
@@ -318,6 +319,14 @@ export default function TopBar(props: TopBarProps) {
                                 </ListItemText>
                                 <Typography variant="body2" color="text.secondary"> ⌘M </Typography>
                                 <RegexPatternModal isOpen={regexPatternMenuOpen} setIsOpen={setRegexPatternMenuOpen} />
+                            </MenuItem>
+                            <MenuItem component={"a"} href={`/dashboard?user=${state.userid}`}>
+                                <ListItemIcon>
+                                    <AccountBoxIcon />
+                                </ListItemIcon>
+                                <ListItemText>
+                                    Dashboard
+                                </ListItemText>
                             </MenuItem>
                         </Menu>
                     </span>
