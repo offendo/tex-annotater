@@ -11,15 +11,24 @@ const useAuth = () => {
     }
 
     const [auth, setAuth] = useState(getAuth())
+
     const saveToken = (userToken: string, userid: string) => {
         localStorage.setItem('token', JSON.stringify(userToken))
         localStorage.setItem('userid', JSON.stringify(userid))
         setAuth({ token: userToken, userid: userid })
     }
+
+    const deleteToken = () => {
+        localStorage.setItem('token', JSON.stringify(""))
+        localStorage.setItem('userid', JSON.stringify(""))
+        setAuth({ token: "", userid: "" })
+    }
+
     return {
         setAuth: saveToken,
         token: auth.token,
-        userid: auth.userid
+        userid: auth.userid,
+        unsetAuth: deleteToken,
     }
 }
 

@@ -23,6 +23,7 @@ import UndoIcon from '@mui/icons-material/Undo';
 import CompareIcon from '@mui/icons-material/Compare';
 import AddIcon from '@mui/icons-material/Add';
 import AccountBoxIcon from '@mui/icons-material/AccountBox';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { AnnotationMenu } from "./AnnotationMenu";
 import { DocumentSelectorModal } from "./DocumentSelectorModal";
 import { RegexPatternModal } from "./RegexPatternModal";
@@ -31,6 +32,7 @@ import { NewAnnotationForm } from "./NewAnnotationForm";
 import { ScoresModal } from "./ScoresModal";
 import { CompareModal } from "./CompareModal";
 import { parseSelection } from "@/lib/utils";
+import useAuth from "@/lib/Token";
 
 
 type TopBarProps = {
@@ -40,6 +42,8 @@ type TopBarProps = {
 export default function TopBar(props: TopBarProps) {
     const theme = useTheme();
     const state = React.useContext(GlobalState);
+    const { userid, token, setAuth, unsetAuth } = useAuth();
+    const navigate = useNavigate();
 
     /* NewAnnotationMenu */
     const [newAnnotationFormOpen, setNewAnnotationFormOpen] = React.useState<boolean>(false);
@@ -326,6 +330,14 @@ export default function TopBar(props: TopBarProps) {
                                 </ListItemIcon>
                                 <ListItemText>
                                     Dashboard
+                                </ListItemText>
+                            </MenuItem>
+                            <MenuItem onClick={(e) => { unsetAuth(); navigate('/signin') }}>
+                                <ListItemIcon>
+                                    <LogoutIcon />
+                                </ListItemIcon>
+                                <ListItemText>
+                                    Logout
                                 </ListItemText>
                             </MenuItem>
                         </Menu>

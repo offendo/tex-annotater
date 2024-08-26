@@ -60,6 +60,7 @@ const Dashboard = (props: DashboardProps) => {
             console.error(e);
         }
     }
+
     React.useEffect(() => {
         loadUserData();
     }, [])
