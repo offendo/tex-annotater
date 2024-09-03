@@ -120,6 +120,7 @@ export const checkIsAdmin = async (state: GlobalStateProps) => {
     const response = await fetch(url, { mode: "cors" });
     const json = await response.json();
     state.setIsAdmin(json['isAdmin']);
+    return json['isAdmin'];
 }
 
 export async function loadAnnotations(

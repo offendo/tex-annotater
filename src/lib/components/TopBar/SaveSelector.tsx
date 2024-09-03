@@ -1,4 +1,4 @@
-import { GlobalState, deleteSave, loadAnnotations, loadDocument } from "@/lib/GlobalState";
+import { GlobalState, checkIsAdmin, deleteSave, loadAnnotations, loadDocument } from "@/lib/GlobalState";
 import { contains, toggle } from "@/lib/utils";
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
@@ -300,7 +300,9 @@ export const SaveSelector = (props: SaveSelectorProps) => {
 
     // Load saves whenever the fileid changes
     React.useEffect(() => {
-        loadSaves(props.showAllFiles ? "" : state.fileid, (props.showAllUsers || state.isAdmin) ? "" : userid);
+        checkIsAdmin(state).then((isAdmin) => {
+            loadSaves(props.showAllFiles ? "" : state.fileid, (props.showAllUsers || isAdmin) ? "" : userid);
+        })
     },
         [state.fileid, state.annotations, state.savename]
     )
