@@ -186,7 +186,8 @@ export async function loadDocument(state: GlobalStateProps, fileid: string, load
         // Set pdf
         let pdf_res = null;
         if (loadPdf) {
-            const pdf_response = fetch(`/api/pdf?fileid=${fileid}`, { mode: "cors" });
+            const fileidNoMmd = fileid.replace('(mmd) ', '');
+            const pdf_response = fetch(`/api/pdf?fileid=${fileidNoMmd}`, { mode: "cors" });
             pdf_res = await (await pdf_response).json();
             state.setPdf(pdf_res["pdf"]);
         }
