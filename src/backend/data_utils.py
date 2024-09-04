@@ -82,10 +82,10 @@ def list_s3_documents():
         name = obj["name"]
         if re.match(r"\d+\.\d+-", name):
             arxiv_id, stem = name.split("-", maxsplit=1)
-            stem = stem.replace(".tex", "")
+            stem = stem.replace(".tex", "").replace(".mmd", "")
         else:
             arxiv_id = ""
-            stem = name.replace(".tex", "")
+            stem = name.replace(".tex", "").replace(".mmd", "")
         result.append({"arxiv_id": arxiv_id, "stem": stem, **obj})
     return result
 
