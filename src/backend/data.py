@@ -30,7 +30,7 @@ def load_save_info_from_timestamp(timestamp: str):
     return query_db(query, params)[0]
 
 
-def load_saves(fileid=None, userid=None):
+def load_saves(fileid=None, userid=None, final=None):
     """Loads all the annotation save files for a particular file and/or user"""
 
     conditions = ["s.deleted = 0"]
@@ -43,6 +43,10 @@ def load_saves(fileid=None, userid=None):
     if userid:
         conditions.append("a.userid = %(userid)s")
         params["userid"] = userid
+
+    if final:
+        conditions.append("s.final = %(final)s")
+        params["final"] = int(final)
 
     query = (
         """SELECT a.userid, a.fileid, a.timestamp, a.savename, a.autosave, s.final, s.start, s.end, COUNT(*) AS count
@@ -458,6 +462,36 @@ def export_annotations(
         "begin": begin,
         "end": end,
     }
+
+
+def load_dashboard_data(tags: list[str]):
+    # Load all final saves
+    finals = load_saves(final=True)
+    df = pd.DataFrame.from_records(finals)
+
+    # Export all the final annotations
+    annos = [export_annotations(save.fileid, save.userid, timestamp=save.timestamp) for idx, save in df.iterrows()]
+    df["annotations"] = annos
+
+
+    # Now, group by the key (fileid, start, end) and grab the user and annotations
+    save_ids = df.groupby(["fileid", "start", "end"])[['userid', 'annotations']].agg(list)
+    save_ids['f1'] = [[] for _ in range(len(save_ids))]
+    for saveid, row in save_ids.iterrows():
+        # For each user, grab their reference save files and compute the F1
+        for userid in row.userid:
+            refs = [anno for user, anno in zip(row.userid, row.annotations) if user != userid]
+            sys = [anno for user, anno in zip(row.userid, row.annotations) if user == userid][0]
+            tags_sys = [tag for text, tag in sys["iob_tags"]]
+
+            scores = []
+            for ref in refs:
+                tags_ref = [tag for text, tag in ref["iob_tags"]]
+                scores.append(compute_annotation_score(tags_sys, tags_ref, tags)["f1"])
+            user_avg_f1 = sum(scores) / len(scores) if len(scores) else None
+            save_ids.loc[saveid, "f1"].append(user_avg_f1)
+
+    return save_ids[['userid', 'f1']]
 
 
 def load_user_data(userid: str, tags: list[str], tokenizer_id: str = "bert-base-cased"):

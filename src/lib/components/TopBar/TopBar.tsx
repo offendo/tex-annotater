@@ -324,7 +324,7 @@ export default function TopBar(props: TopBarProps) {
                                 <Typography variant="body2" color="text.secondary"> ⌘M </Typography>
                                 <RegexPatternModal isOpen={regexPatternMenuOpen} setIsOpen={setRegexPatternMenuOpen} />
                             </MenuItem>
-                            <MenuItem component={"a"} href={`/dashboard?user=${state.userid}`}>
+                            <MenuItem component={"a"} href={"/dashboard"}>
                                 <ListItemIcon>
                                     <AccountBoxIcon />
                                 </ListItemIcon>

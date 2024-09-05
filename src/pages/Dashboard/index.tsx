@@ -23,7 +23,6 @@ import DataTable from "@/lib/components/Table";
 type UserData = {
     userid: string
     f1: number
-    annoCount: number
 }
 
 type SaveData = {
@@ -43,22 +42,6 @@ const testData = [
     { id: "Real Analysis", fileid: "Real Analysis", start: 1000, end: 20000, userData: [{ userid: "nilay", f1: 70.4, annoCount: 25 }, { userid: "jeff", f1: 85.5, annoCount: 22 }, { userid: "test", f1: 50.8, annoCount: 28 }] },
 ]
 
-const users = [... new Set(testData.flatMap((row) => row.userData.map((x) => x.userid)))]
-
-const columns: GridColDef[] = [
-    { field: 'fileid', headerName: 'File ID', width: 200, sortable: true },
-    { field: 'start-end', headerName: 'Start/End', width: 100, sortable: false, valueGetter: ({ row }) => { return `${row.start}/${row.end}` } },
-    ...users.map((user) => {
-        return {
-            field: user,
-            headerName: user,
-            width: 100,
-            sortable: true,
-            valueGetter: ({ row }) => { return row.userData.filter((u) => u.userid == user)?.[0]?.f1 }
-        }
-    })
-]
-
 type DashboardProps = {
 }
 
@@ -75,10 +58,29 @@ const Dashboard = (props: DashboardProps) => {
 
     // Page state
     const [saveData, setSaveData] = useState<SaveData[]>([]);
+    const [columns, setColumns] = useState<GridColDef[]>([]);
 
     async function loadSaveData() {
         try {
-            console.log("Loading save data")
+            console.log("Loading save data");
+            const response = await fetch("/api/dashboard");
+            const json = await response.json();
+            const users = [... new Set(json.flatMap((row) => row.userData.map((x) => x.userid)))];
+            const columns: GridColDef[] = [
+                { field: 'fileid', headerName: 'File ID', width: 200, sortable: true },
+                { field: 'start-end', headerName: 'Start/End', width: 100, sortable: false, valueGetter: ({ row }) => { return `${row.start}/${row.end}` } },
+                ...users.map((user) => {
+                    return {
+                        field: user,
+                        headerName: user,
+                        width: 100,
+                        sortable: true,
+                        valueGetter: ({ row }) => { return row.userData.filter((u) => u.userid == user)?.[0]?.f1 }
+                    }
+                })
+            ]
+            setSaveData(json);
+            setColumns(columns);
         } catch (e) {
             console.error(e)
         }
@@ -102,7 +104,7 @@ const Dashboard = (props: DashboardProps) => {
                 >
                     <div style={{ flexGrow: 3 }}>
                         <Typography variant="h5"> Dashboard </Typography >
-                        <DataTable columns={columns} rows={testData} onSelect={(x) => { console.log(x) }} allowMultiple={false} />
+                        <DataTable columns={columns} rows={saveData} onSelect={(x) => { console.log(x) }} allowMultiple={false} />
                     </div>
                 </div>
             </div>

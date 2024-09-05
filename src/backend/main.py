@@ -22,6 +22,7 @@ from .scoring import (
 from .search import fuzzysearch
 from .data import (
     export_annotations,
+    load_dashboard_data,
     load_save_info_from_timestamp,
     load_all_annotations,
     load_saves,
@@ -285,15 +286,15 @@ def login_user():
     return {"authenticated": authenticated, "token": token, "userid": userid}, 200
 
 
-@app.get("/user")
+@app.get("/dashboard")
 @cross_origin()
-def get_user_data():
-    userid = request.args.get("userid")
-    if userid is None:
-        return {"error": "missing userid"}, 400
+def get_dashboard_data():
     tags = ["definition", "theorem", "reference", "proof", "example", "name"]
-    data = load_user_data(userid, tags)
-    return data
+    data = load_dashboard_data(tags)
+    items = []
+    for (fileid, start, end), row in data.iterrows():
+        items.append(dict(id=fileid, fileid=fileid, start=start, end=end, userData=[dict(userid=u, f1=f)  for u, f in zip(row.userid, row.f1)]))
+    return json.dumps(items), 200
 
 
 @app.post("/user")
