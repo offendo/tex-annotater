@@ -289,11 +289,11 @@ def login_user():
 @app.get("/dashboard")
 @cross_origin()
 def get_dashboard_data():
-    tags = ["definition", "theorem", "reference", "proof", "example", "name"]
+    tags = ["definition", "theorem", "proof", "example", "name"]
     data = load_dashboard_data(tags)
     items = []
     for (fileid, start, end), row in data.iterrows():
-        items.append(dict(id=fileid, fileid=fileid, start=start, end=end, userData=[dict(userid=u, f1=f)  for u, f in zip(row.userid, row.f1)]))
+        items.append(dict(id=f"{fileid}:{start}:{end}", fileid=fileid, start=start, end=end, userData=[dict(userid=u, f1=f)  for u, f in zip(row.userid, row.f1)]))
     return json.dumps(items), 200
 
 

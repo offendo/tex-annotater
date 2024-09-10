@@ -75,12 +75,17 @@ const Dashboard = (props: DashboardProps) => {
                         headerName: user,
                         width: 100,
                         sortable: true,
-                        valueGetter: ({ row }) => { return row.userData.filter((u) => u.userid == user)?.[0]?.f1 }
+                        valueGetter: ({ row }) => { 
+			    const userDatas = row.userData.filter((u) => u.userid == user)
+			    const f1s = userDatas.map(x => x.f1);
+			    return f1s.length > 0 ? f1s.reduce((x,y) => x + y, 0) / f1s.length : null;
+			}
                     }
                 })
             ]
             setSaveData(json);
             setColumns(columns);
+	    console.log("Save data: ", json);
         } catch (e) {
             console.error(e)
         }
@@ -104,7 +109,7 @@ const Dashboard = (props: DashboardProps) => {
                 >
                     <div style={{ flexGrow: 3 }}>
                         <Typography variant="h5"> Dashboard </Typography >
-                        <DataTable columns={columns} rows={saveData} onSelect={(x) => { console.log(x) }} allowMultiple={false} />
+                        <DataTable columns={columns} rows={saveData} onSelect={(x) => {}} allowMultiple={false} />
                     </div>
                 </div>
             </div>
