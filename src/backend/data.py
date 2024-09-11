@@ -61,6 +61,11 @@ def load_saves(fileid=None, userid=None, final=None):
     return query_db(query, params)
 
 
+def get_initial_user_from_savename(savename: str):
+    query = """SELECT userid, timestamp FROM saves WHERE savename = %(savename)s ORDER BY timestamp LIMIT 1;"""
+    return query_db(query, dict(savename=savename))[0]
+
+
 def load_all_annotations(fileid: str):
     """Loads all annotations"""
     query = """
@@ -469,15 +474,15 @@ def load_dashboard_data(tags: list[str]):
     # Load all final saves
     finals = load_saves(final=True)
     df = pd.DataFrame.from_records(finals)
+    df["initial_user"] = df["savename"].apply(lambda item: get_initial_user_from_savename(item)["userid"])
 
     # Export all the final annotations
     annos = [export_annotations(save.fileid, save.userid, timestamp=save.timestamp) for idx, save in df.iterrows()]
     df["annotations"] = annos
 
-
     # Now, group by the key (fileid, start, end) and grab the user and annotations
-    save_ids = df.groupby(["fileid", "start", "end"])[['userid', 'annotations']].agg(list)
-    save_ids['f1'] = [[] for _ in range(len(save_ids))]
+    save_ids = df.groupby(["fileid", "start", "end"])[["initial_user", "annotations"]].agg(list)
+    save_ids.loc["f1"] = [[] for _ in range(len(save_ids))]
     for saveid, row in save_ids.iterrows():
         # For each user, grab their reference save files and compute the F1
         for userid in row.userid:
@@ -492,54 +497,4 @@ def load_dashboard_data(tags: list[str]):
             user_avg_f1 = sum(scores) / len(scores) if len(scores) else None
             save_ids.loc[saveid, "f1"].append(user_avg_f1)
 
-    return save_ids[['userid', 'f1']]
-
-
-def load_user_data(userid: str, tags: list[str], tokenizer_id: str = "bert-base-cased"):
-    files = list_s3_documents()
-    name2doc = {f["name"]: f for f in files}
-    saves = load_saves(userid=userid)
-    sys_saves = [save for save in saves if save["final"]]
-    ref_saves = [save for save in load_saves() if save["userid"] != userid and save["final"]]
-    range2save = {(s["start"], s["end"]): s for s in sys_saves}
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_id)
-
-    scores = defaultdict(list)
-    exported_cache = {}
-    for ref_save in ref_saves:
-        # check if the user save exists
-        if (ref_save["start"], ref_save["end"]) not in range2save:
-            continue
-
-        # Get the system/references, hitting the cache if possible
-        sys_save = range2save[(ref_save["start"], ref_save["end"])]
-        sys = exported_cache.get(
-            sys_save["timestamp"],
-            export_annotations(sys_save["fileid"], sys_save["userid"], sys_save["timestamp"], tokenizer=tokenizer),
-        )
-        ref = export_annotations(ref_save["fileid"], ref_save["userid"], ref_save["timestamp"], tokenizer=tokenizer)
-
-        # Compute the scores for this particular comparison
-        tags_sys = [tag for text, tag in sys["iob_tags"]]
-        tags_ref = [tag for text, tag in ref["iob_tags"]]
-        scores[(sys_save["fileid"], sys_save["timestamp"])].append(
-            compute_annotation_score(tags_sys, tags_ref, tags)["f1"]
-        )
-
-    pprint(scores)
-    print(flush=True)
-    return {
-        "saves": [
-            dict(
-                document=name2doc[s["fileid"]],
-                score=_avg(scores[s["fileid"], s["timestamp"]]),
-                **s,
-            )
-            for s in saves
-        ],
-        "userid": userid,
-    }
-
-
-def _avg(xs):
-    return (sum(xs) / len(xs)) if len(xs) else -1
+    return save_ids[["userid", "f1"]]

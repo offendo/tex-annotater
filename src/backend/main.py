@@ -32,7 +32,6 @@ from .data import (
     init_annotation_db,
     finalize_save,
     delete_save,
-    load_user_data,
 )
 from .data_utils import (
     load_tex,

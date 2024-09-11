@@ -116,7 +116,6 @@ export const displaySplitsWithDiff = (content: string, annotations: TextSpan[], 
   return splits;
 };
 
-
 export const displaySplits = (content: string, annotations: TextSpan[]) => {
   let offsetStart = 0;
   let offsetEnd = 0;
@@ -298,7 +297,6 @@ export const jumpToPercent = (percent: number) => {
   }
 };
 
-
 const singleCharacterWidth = (parent = document.body) => {
 
   const span = document.createElement("span");
@@ -334,6 +332,7 @@ function componentToHex(c) {
 export const rgbToHex = (r, g, b, a) => {
   return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b) + componentToHex(a);
 }
+
 export const parseColor = (input) => {
   const colors = input.split("(")[1].split(")")[0].split(",");
   if (colors.length == 3) {
@@ -346,7 +345,6 @@ export function contains<T>(xs: T[], x: T, key?: (a: T, b: T) => boolean) {
   const idx = key ? xs.findIndex((val) => key(val, x)) : xs.findIndex((val) => val == x);
   return idx != -1;
 }
-
 
 export function toggle<T>(xs: T[], x: T, key?: (a: T, b: T) => boolean, forceEnable: boolean = false) {
   const idx = key ? xs.findIndex((val) => key(val, x)) : xs.findIndex((val) => val == x);
