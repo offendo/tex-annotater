@@ -474,15 +474,15 @@ def load_dashboard_data(tags: list[str]):
     # Load all final saves
     finals = load_saves(final=True)
     df = pd.DataFrame.from_records(finals)
-    df["initial_user"] = df["savename"].apply(lambda item: get_initial_user_from_savename(item)["userid"])
+    df["userid"] = df["savename"].apply(lambda item: get_initial_user_from_savename(item)["userid"])
 
     # Export all the final annotations
     annos = [export_annotations(save.fileid, save.userid, timestamp=save.timestamp) for idx, save in df.iterrows()]
     df["annotations"] = annos
 
     # Now, group by the key (fileid, start, end) and grab the user and annotations
-    save_ids = df.groupby(["fileid", "start", "end"])[["initial_user", "annotations"]].agg(list)
-    save_ids.loc["f1"] = [[] for _ in range(len(save_ids))]
+    save_ids = df.groupby(["fileid", "start", "end"])[["userid", "annotations"]].agg(list)
+    save_ids["f1"] = [[] for _ in range(len(save_ids))]
     for saveid, row in save_ids.iterrows():
         # For each user, grab their reference save files and compute the F1
         for userid in row.userid:
