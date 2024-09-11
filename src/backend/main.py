@@ -207,7 +207,8 @@ def delete_delete_save():
 def get_all_saves():
     fileid = request.args.get("fileid")
     userid = request.args.get("userid")
-    return {"saves": load_saves(fileid=fileid, userid=userid)}
+    final = bool(request.args.get("final"))
+    return {"saves": load_saves(fileid=fileid, userid=userid, final=final)}
 
 
 @app.get("/documents")
