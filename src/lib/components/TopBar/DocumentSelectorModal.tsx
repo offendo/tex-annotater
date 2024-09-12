@@ -32,7 +32,18 @@ type DocumentSelectorProps = {
 export const DocumentSelector = (props: DocumentSelectorProps) => {
     const theme = useTheme();
 
+    const state = React.useContext(GlobalState);
     const [selectedDoc, setSelectedDoc] = React.useState<number>(-1);
+
+    React.useEffect(() => {
+	if (state.fileid != null){
+	    props.documents.map((doc, idx) => {
+		if (doc.name == state.fileid){
+                    setSelectedDoc(idx);
+		}
+	    });
+	}
+    }, [])
 
     return (
         <Box

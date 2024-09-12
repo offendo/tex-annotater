@@ -353,6 +353,9 @@ export function toggle<T>(xs: T[], x: T, key?: (a: T, b: T) => boolean, forceEna
   } else if (!forceEnable) {
     // only delete the item if forceEnable is false
     return [...xs.slice(0, idx), ...xs.slice(idx + 1)];
+  } else {
+    // on forceEnable, replace the item
+    return [...xs.slice(0, idx), x, ...xs.slice(idx + 1)];
   }
   return xs;
 }

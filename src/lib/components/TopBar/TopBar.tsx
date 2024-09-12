@@ -45,6 +45,8 @@ export default function TopBar(props: TopBarProps) {
     const { userid, token, setAuth, unsetAuth } = useAuth();
     const navigate = useNavigate();
 
+    const [selection, setSelection] = React.useState({start: 0, end: 0})
+
     /* NewAnnotationMenu */
     const [newAnnotationFormOpen, setNewAnnotationFormOpen] = React.useState<boolean>(false);
     const handleNewAnnotationFormClick = (event: any) => { setNewAnnotationFormOpen(true); };
@@ -70,7 +72,7 @@ export default function TopBar(props: TopBarProps) {
     const handleCompareModalClick = (event: any) => { setCompareModalOpen(true); };
 
     /* LoadFileMenu */
-    const handleLoadMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => { setLoadMenuAnchorEl(event.currentTarget); };
+    const handleLoadMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => { event.preventDefault(); setLoadMenuAnchorEl(event.currentTarget); };
     const handleLoadMenuClose = () => { setLoadMenuAnchorEl(null); };
     const [loadMenuAnchorEl, setLoadMenuAnchorEl] = React.useState<null | HTMLElement>(null);
 
@@ -157,6 +159,10 @@ export default function TopBar(props: TopBarProps) {
             // open regex menu on ctrl-m
             handleRegexPatternMenuClick(event)
             event.preventDefault();
+        } else if ((event.ctrlKey || event.metaKey) && event.key == 'n') {
+            // open new annotation menu on ctrl-n
+            handleNewAnnotationFormClick(event)
+            event.preventDefault();
         }
     }, [state]);
 
@@ -183,6 +189,14 @@ export default function TopBar(props: TopBarProps) {
                             color="inherit"
                             sx={{ mr: 2 }}
                             onClick={handleLoadMenuClick}
+                            onMouseDown={(e) => {
+	                        e.preventDefault(); 
+				e.stopPropagation();
+				const selection = window.getSelection();
+				const [start, end] = parseSelection(selection);
+				setSelection({start: start, end: end});
+			    }}
+                            onMouseUp={(e) => {e.preventDefault(); e.stopPropagation()}}
                         >
                             <MenuIcon />
                         </IconButton>
@@ -226,7 +240,7 @@ export default function TopBar(props: TopBarProps) {
                                     handleNewAnnotationFormClick(e);
                                     handleLoadMenuClose()
                                 }}
-                                disabled={parseSelection(window.getSelection())[1] == 0}
+                                disabled={selection[1] == 0}
                             >
                                 <ListItemIcon>
                                     <AddIcon />
@@ -237,7 +251,7 @@ export default function TopBar(props: TopBarProps) {
                                 <Typography variant="body2" color="text.secondary">
                                     ⌘N
                                 </Typography>
-                                <NewAnnotationForm isOpen={newAnnotationFormOpen} setIsOpen={setNewAnnotationFormOpen} doSave={doSave} range={parseSelection(window.getSelection())} />
+                                <NewAnnotationForm isOpen={newAnnotationFormOpen} setIsOpen={setNewAnnotationFormOpen} doSave={doSave} range={[selection.start, selection.end]} />
                             </MenuItem>
                             <MenuItem
                                 onClick={async (e) => {

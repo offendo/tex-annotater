@@ -203,7 +203,7 @@ export async function loadDocument(state: GlobalStateProps, fileid: string, load
 
 export function updateAnnotations(state: GlobalStateProps, annotations: TextSpan[]) {
     // When we make an update, reset the undo tree. Also, we have to clone it so the in-place updates in toggleLink get tracked
-    const buffer = state.undoBuffer
+    const buffer = state.undoBuffer;
     buffer.push(cloneDeep(annotations));
     const slicedBuffer = buffer.slice(-UNDO_BUF_MAXLEN, undefined);
 
@@ -213,7 +213,6 @@ export function updateAnnotations(state: GlobalStateProps, annotations: TextSpan
     // Now save the annotations
     state.setAnnotations(annotations);
     saveAnnotations(state, annotations, true, state.savename);
-
 };
 
 export function undoUpdate(state: GlobalStateProps) {
@@ -316,7 +315,7 @@ export const toggleEditStatus = (state: GlobalStateProps, anno: TextSpan | null)
 }
 
 export const updateMark = (state: GlobalStateProps, anno: TextSpan) => {
-    const newAnnos = [...toggle(state.annotations, anno, (a, b) => a.annoid == b.annoid), anno]
+    const newAnnos = toggle(state.annotations, anno, (a, b) => a.start == b.start && a.end == b.end && a.tag == b.tag);
     updateAnnotations(state, newAnnos);
     state.setEditing(null);
 }
