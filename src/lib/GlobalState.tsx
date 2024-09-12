@@ -315,7 +315,7 @@ export const toggleEditStatus = (state: GlobalStateProps, anno: TextSpan | null)
 }
 
 export const updateMark = (state: GlobalStateProps, anno: TextSpan) => {
-    const newAnnos = toggle(state.annotations, anno, (a, b) => a.start == b.start && a.end == b.end && a.tag == b.tag, true);
+    const newAnnos = toggle(state.annotations, anno, (a, b) => a.annoid == b.annoid, true);
     updateAnnotations(state, newAnnos);
     state.setEditing(null);
 }
