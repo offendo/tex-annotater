@@ -401,6 +401,7 @@ def export_annotations(
     tokenizer: Optional[PreTrainedTokenizer] = None,
     begin: Optional[dict] = None,
     end: Optional[dict] = None,
+    ignore_annotation_endpoints: bool = False,
 ):
     # annotations is a list of dicts, each containing an annotation. We want to format this into an IOB tagged block of text.
     annotations = load_annotations(fileid, userid, timestamp)
@@ -418,9 +419,9 @@ def export_annotations(
                 end = anno
                 break
 
-    if begin is None:
+    if begin is None or ignore_annotation_endpoints:
         begin = min(annotations, key=lambda x: x["start"])
-    if end is None:
+    if end is None or ignore_annotation_endpoints:
         end = max(annotations, key=lambda x: x["end"])
 
     offset = 0

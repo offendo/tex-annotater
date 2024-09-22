@@ -61,9 +61,10 @@ def get_export_save():
     fileid = request.args.get("fileid")
     timestamp = request.args.get("timestamp")
     savename = request.args.get("savename")
+    ignore = request.args.get("ignore_annotation_endpoints")
     tokenizer_id = request.args.get("tokenizer", "EleutherAI/llemma_7b")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_id)
-    anno_json = export_annotations(fileid=fileid, userid=userid, timestamp=timestamp, tokenizer=tokenizer)
+    anno_json = export_annotations(fileid=fileid, userid=userid, timestamp=timestamp, tokenizer=tokenizer, ignore_annotation_endpoints=ignore)
     out_file = f"/tmp/{fileid}-{userid}-{savename}-{tokenizer_id.replace('/', '_')}.json"
     with open(out_file, "w") as f:
         json.dump(anno_json, f)
