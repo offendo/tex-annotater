@@ -420,9 +420,9 @@ def export_annotations(
                 break
 
     if begin is None or ignore_annotation_endpoints:
-        begin = min(annotations, key=lambda x: x["start"])
+        begin = min(filter(lambda x: 'annotation' not in x['tag'], annotations), key=lambda x: x["start"])
     if end is None or ignore_annotation_endpoints:
-        end = max(annotations, key=lambda x: x["end"])
+        end = max(filter(lambda x: 'annotation' not in x['tag'], annotations), key=lambda x: x["end"])
 
     offset = 0
     if not export_whole_file:
