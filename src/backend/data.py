@@ -401,7 +401,6 @@ def export_annotations(
     tokenizer: Optional[PreTrainedTokenizer] = None,
     begin: Optional[dict] = None,
     end: Optional[dict] = None,
-    ignore_annotation_endpoints: bool = False,
 ):
     # annotations is a list of dicts, each containing an annotation. We want to format this into an IOB tagged block of text.
     annotations = load_annotations(fileid, userid, timestamp)
@@ -419,15 +418,13 @@ def export_annotations(
                 end = anno
                 break
 
-    if begin is None or ignore_annotation_endpoints:
-        begin = min(filter(lambda x: 'annotation' not in x['tag'], annotations), key=lambda x: x["start"])
-    if end is None or ignore_annotation_endpoints:
-        end = max(filter(lambda x: 'annotation' not in x['tag'], annotations), key=lambda x: x["end"])
+    first_anno = min(annotations, key=lambda x: x["start"])["start"]
+    last_anno = max(annotations, key=lambda x: x["end"])["end"]
 
     offset = 0
     if not export_whole_file:
-        tex = tex[begin["start"] : end["end"]]
-        offset = begin["start"]
+        tex = tex[first_anno:last_anno]
+        offset = first_anno
 
     # Now, we generate character-level IOB tags, which we can then merge together to create word/token level ones.
     iob_tags = [[] for _ in tex]
