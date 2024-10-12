@@ -22,6 +22,7 @@ from .scoring import (
 from .search import fuzzysearch
 from .data import (
     export_annotations,
+    insert_predictions,
     load_dashboard_data,
     load_save_info_from_timestamp,
     load_all_annotations,
@@ -64,7 +65,9 @@ def get_export_save():
     ignore = request.args.get("ignore_annotation_endpoints")
     tokenizer_id = request.args.get("tokenizer", "EleutherAI/llemma_7b")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_id)
-    anno_json = export_annotations(fileid=fileid, userid=userid, timestamp=timestamp, tokenizer=tokenizer, ignore_annotation_endpoints=ignore)
+    anno_json = export_annotations(
+        fileid=fileid, userid=userid, timestamp=timestamp, tokenizer=tokenizer, ignore_annotation_endpoints=ignore
+    )
     out_file = f"/tmp/{fileid}-{userid}-{savename}-{tokenizer_id.replace('/', '_')}.json"
     with open(out_file, "w") as f:
         json.dump(anno_json, f)
@@ -142,6 +145,18 @@ def post_annotations():
     if not userid:
         return {"error": "missing userid"}, 400
     save_info = insert_annotations(fileid, userid, annotations, autosave=autosave, savename=savename)
+    return save_info, 200
+
+
+@app.post("/predictions")
+@cross_origin()
+def post_predictions():
+    fileid = request.args.get("fileid")
+    savename = request.args.get("savename")
+    annotations = request.get_json()["annotations"]
+    if not fileid:
+        return {"error": "missing fileid"}, 400
+    save_info = insert_predictions(fileid, annotations, savename=savename)
     return save_info, 200
 
 
@@ -294,7 +309,15 @@ def get_dashboard_data():
     data = load_dashboard_data(tags)
     items = []
     for (fileid, start, end), row in data.iterrows():
-        items.append(dict(id=f"{fileid}:{start}:{end}", fileid=fileid, start=start, end=end, userData=[dict(userid=u, f1=f)  for u, f in zip(row.userid, row.f1)]))
+        items.append(
+            dict(
+                id=f"{fileid}:{start}:{end}",
+                fileid=fileid,
+                start=start,
+                end=end,
+                userData=[dict(userid=u, f1=f) for u, f in zip(row.userid, row.f1)],
+            )
+        )
     return json.dumps(items), 200
 
 

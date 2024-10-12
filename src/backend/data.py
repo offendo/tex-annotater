@@ -6,6 +6,7 @@ from typing import Optional
 import pandas as pd
 import psycopg
 import randomname
+import uuid
 from pprint import pprint
 from psycopg.rows import dict_row
 from transformers import AutoTokenizer, PreTrainedTokenizer
@@ -209,6 +210,75 @@ def load_annotations(fileid, userid, timestamp=None, add_timestamp_to_ids: bool 
 
         grouped["links"] = grouped["links"].apply(lambda links: _update_link_with_timestamp(links))
     return grouped.to_dict(orient="records")
+
+
+def insert_predictions(fileid: str, predictions: list[dict], savename: str):
+    userid = "ai-model"
+    with psycopg.connect(CONN_STR, row_factory=dict_row) as conn:
+        # Create save if needed
+        start = min([a["start"] for a in predictions])
+        end = max([a["end"] for a in predictions])
+
+        conn.execute(
+            """
+            INSERT INTO saves (start, "end", fileid, userid, savename, final, autosave)
+                VALUES (%(start)s, %(end)s, %(fileid)s, %(userid)s, %(savename)s, %(final)s, %(autosave)s)
+            ON CONFLICT(fileid, userid, savename, autosave, "timestamp") DO NOTHING;
+            """,
+            dict(start=start, end=end, fileid=fileid, userid=userid, savename=savename, autosave=0, final=0),
+        )
+        # Insert new entries
+        for an in predictions:
+            links = an.get("links", [])
+            conn.execute(
+                """
+                INSERT INTO annotations (annoid, fileid, userid, start, "end", text, tag, color, savename, autosave)
+                    VALUES (%(annoid)s, %(fileid)s, %(userid)s, %(start)s, %(end)s, %(text)s, %(tag)s, %(color)s, %(savename)s, %(autosave)s)
+                ON CONFLICT(fileid,userid,start,"end",tag,savename,"timestamp",autosave) DO NOTHING;
+                """,
+                dict(
+                    annoid=an.get("annoid", uuid.uuid4()),
+                    fileid=fileid,
+                    userid=userid,
+                    start=an["start"],
+                    end=an["end"],
+                    text=an["text"],
+                    tag=an["tag"],
+                    color=an.get("color", "#d3d3d3"),
+                    savename=savename,
+                    autosave=0,
+                ),
+            )
+            # Insert all the links
+            for ln in links:
+                conn.execute(
+                    """
+                    INSERT INTO links (fileid, userid, start, "end", tag, color, source, target)
+                        VALUES (%(fileid)s, %(userid)s, %(start)s, %(end)s, %(tag)s, %(color)s, %(source)s, %(target)s)
+                    ON CONFLICT(fileid,userid,start,"end",tag,source,target,"timestamp") DO NOTHING;
+                    """,
+                    dict(
+                        fileid=ln["fileid"],
+                        userid=userid,
+                        start=ln["start"],
+                        end=ln["end"],
+                        tag=ln["tag"],
+                        color=ln.get("color", "#d3d3d3"),
+                        source=ln["source"],
+                        target=ln["target"],
+                    ),
+                )
+        result = conn.execute(
+            """SELECT "timestamp" FROM annotations WHERE savename = %(savename)s AND autosave = %(autosave)s;""",
+            dict(savename=savename, autosave=int(autosave)),
+        )
+        top = result.fetchone()
+        # Return timestamp if it exists
+        if top is not None:
+            stamp = top["timestamp"]
+        else:
+            stamp = conn.execute("SELECT CURRENT_TIMESTAMP").fetchone()["timestamp"]
+        return {"timestamp": stamp, "savename": savename, "fileid": fileid, "userid": userid}
 
 
 def insert_annotations(fileid, userid, annotations, autosave: int = 0, savename: str | None = None):
