@@ -156,8 +156,22 @@ def post_predictions():
     annotations = request.get_json()["annotations"]
     if not fileid:
         return {"error": "missing fileid"}, 400
+    if not savename:
+        return {"error": "missing savename"}, 400
     if not annotations:
         return {"error": "empty save file"}, 400
+    if isinstance(annotations, dict):
+        new_annotations = []
+        # predictions save with 'tex' column, but our database uses 'text'
+        for text, tag, start, end in zip(
+            annotations['tex'].values(),
+            annotations['tag'].values(),
+            annotations['start'].values(),
+            annotations['end'].values(),
+        ):
+            new_annotations.append({'text': text, 'tag': tag, 'start': start, 'end': end})
+        annotations = new_annotations
+        print(annotations[:5], flush=True)
     save_info = insert_predictions(fileid, annotations, savename=savename)
     return save_info, 200
 

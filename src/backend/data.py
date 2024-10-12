@@ -270,7 +270,7 @@ def insert_predictions(fileid: str, predictions: list[dict], savename: str):
                 )
         result = conn.execute(
             """SELECT "timestamp" FROM annotations WHERE savename = %(savename)s AND autosave = %(autosave)s;""",
-            dict(savename=savename, autosave=int(autosave)),
+            dict(savename=savename, autosave=0),
         )
         top = result.fetchone()
         # Return timestamp if it exists
