@@ -162,16 +162,16 @@ def post_predictions():
         return {"error": "empty save file"}, 400
     if isinstance(annotations, dict):
         new_annotations = []
+        tex = load_tex(fileid)
         # predictions save with 'tex' column, but our database uses 'text'
-        for text, tag, start, end in zip(
-            annotations['tex'].values(),
+        for tag, start, end in zip(
             annotations['tag'].values(),
             annotations['start'].values(),
             annotations['end'].values(),
         ):
+            text = tex[start:end]
             new_annotations.append({'text': text, 'tag': tag, 'start': start, 'end': end})
         annotations = new_annotations
-        print(annotations[:5], flush=True)
     save_info = insert_predictions(fileid, annotations, savename=savename)
     return save_info, 200
 
