@@ -156,6 +156,8 @@ def post_predictions():
     annotations = request.get_json()["annotations"]
     if not fileid:
         return {"error": "missing fileid"}, 400
+    if not annotations:
+        return {"error": "empty save file"}, 400
     save_info = insert_predictions(fileid, annotations, savename=savename)
     return save_info, 200
 
