@@ -471,6 +471,7 @@ def export_annotations(
     tokenizer: Optional[PreTrainedTokenizer] = None,
     begin: Optional[dict] = None,
     end: Optional[dict] = None,
+    ignore_annotation_endpoints: Optional[bool] = None,
 ):
     # annotations is a list of dicts, each containing an annotation. We want to format this into an IOB tagged block of text.
     annotations = load_annotations(fileid, userid, timestamp)
